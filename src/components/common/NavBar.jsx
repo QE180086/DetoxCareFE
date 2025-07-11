@@ -7,21 +7,22 @@ import {
   AiOutlineLogout,
   AiOutlineLock,
 } from 'react-icons/ai';
+import { FaLeaf } from 'react-icons/fa';
 
 const cartItems = [
   {
     id: 1,
-    name: 'Detox Juice',
-    price: 10,
+    name: 'Nước Detox Chanh',
+    price: 184000,
     quantity: 2,
-    image: 'https://images.unsplash.com/photo-1596797038530-2c107229654b?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80',
+    image: 'https://file.hstatic.net/200000240163/article/nuoc_detox_chanh_676db881894d48ab9c0fcbdb1c5cdf6c_1024x1024.jpg',
   },
   {
     id: 2,
-    name: 'Green Smoothie',
-    price: 8,
+    name: 'Trà quốc mật ong',
+    price: 87000,
     quantity: 1,
-    image: 'https://images.unsplash.com/photo-1629056597533-2d7a2a7b7b7b?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80',
+    image: 'https://i1-suckhoe.vnecdn.net/2025/05/29/tra-quat-mat-ong-1748487492-6164-1748487528.png?w=1020&h=0&q=100&dpr=1&fit=crop&s=A4N3puvncI_bfPCN7OhQzA',
   },
 ];
 
@@ -35,17 +36,18 @@ export default function Navbar() {
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const handleLogout = () => setIsLoggedIn(false);
 
+  // Function to format price in VND
+  const formatPrice = (price) => {
+    return price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
+  };
+
   return (
     <nav className="bg-gradient-to-r from-green-600 to-green-800 text-white py-4 sticky top-0 z-50 shadow-lg">
       <div className="container mx-auto px-4 flex items-center justify-between gap-6">
         {/* Logo */}
         <div className="flex items-center space-x-4 transition-transform duration-200 hover:scale-105 hover:shadow-lg rounded-md p-1">
           <Link to="/" className="flex items-center space-x-2">
-            <img
-              src="https://upload.wikimedia.org/wikipedia/commons/a/ab/Logo_TV_2015.png"
-              alt="DetoxCare Logo"
-              className="h-12 w-auto"
-            />
+            <FaLeaf className="w-8 h-8 text-white" />
             <span className="text-3xl font-extrabold tracking-tight text-white">DetoxCare</span>
           </Link>
         </div>
@@ -125,7 +127,7 @@ export default function Navbar() {
                         <img src={item.image} alt={item.name} className="w-12 h-12 object-cover rounded-lg" />
                         <div className="flex-1">
                           <span className="font-medium">{item.name} (x{item.quantity})</span>
-                          <p className="text-green-600 font-semibold">${(item.price * item.quantity).toFixed(2)}</p>
+                          <p className="text-green-600 font-semibold">{formatPrice(item.price * item.quantity)}</p>
                         </div>
                       </li>
                     ))}
@@ -152,7 +154,7 @@ export default function Navbar() {
                   transition-transform duration-300 transform group-hover:scale-110 group-hover:shadow-xl"
               >
                 <img
-                  src="https://i.pravatar.cc/40?u=thuongnguyen"
+                  src="https://i.pinimg.com/736x/3e/ef/7a/3eef7adafb89a18819b0c3d3b9c93da8.jpg"
                   alt="avatar"
                   className="w-8 h-8 rounded-full border-2 border-white object-cover"
                 />

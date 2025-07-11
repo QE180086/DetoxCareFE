@@ -3,55 +3,11 @@ import ComboOffers from "./ComboOffers";
 import ProductGrid from "./ProductGrid";
 
 export default function Home() {
-  // const [isChatOpen, setIsChatOpen] = useState(false);
-  // const [messages, setMessages] = useState([
-  //   {
-  //     id: 1,
-  //     text: "Chào bạn! Tôi là AI Assistant. Tôi có thể giúp gì cho bạn về các sản phẩm detox?",
-  //     sender: "ai",
-  //   },
-  // ]);
-  // const [inputMessage, setInputMessage] = useState("");
-
-  // const toggleChat = () => {
-  //   setIsChatOpen((prev) => !prev);
-  // };
-
-  // const sendMessage = () => {
-  //   if (inputMessage.trim()) {
-  //     setMessages((prev) => [
-  //       ...prev,
-  //       { id: Date.now(), text: inputMessage, sender: "user" },
-  //     ]);
-  //     setInputMessage("");
-
-  //     // Fake AI reply
-  //     setTimeout(() => {
-  //       setMessages((prev) => [
-  //         ...prev,
-  //         {
-  //           id: Date.now(),
-  //           text:
-  //             "Cảm ơn bạn đã hỏi! Tôi sẽ giúp bạn tìm hiểu về sản phẩm detox phù hợp.",
-  //           sender: "ai",
-  //         },
-  //       ]);
-  //     }, 1000);
-  //   }
-  // };
-
-  // const handleKeyPress = (e) => {
-  //   if (e.key === "Enter") {
-  //     sendMessage();
-  //   }
-  // };
-
   return (
-    <div className="relative min-h-screen bg-green-50">
-     
+    <div className="min-h-screen bg-gradient-to-b from-green-100 via-green-50 to-white">
       {/* Main Content */}
-      <div className="container mx-auto py-8 flex flex-col items-center">
-        <div className="w-full max-w-6xl">
+      <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8 flex flex-col items-center">
+        <div className="w-full max-w-7xl space-y-12">
           <HeroSection />
           <ComboOffers />
           <ProductGrid />

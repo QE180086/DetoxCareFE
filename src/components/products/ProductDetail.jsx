@@ -1,21 +1,39 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { FaLeaf } from 'react-icons/fa';
+import Notification from '../common/Nontification';
 
 // Giả lập danh sách sản phẩm mở rộng
 const allProducts = Array.from({ length: 30 }).map((_, i) => ({
   id: i + 1,
   name: ['Detox Juice', 'Smoothie', 'Trà thải độc'][i % 3] + ' ' + (i + 1),
   category: ['Nước ép', 'Sinh tố', 'Trà detox'][i % 3],
-  price: 8 + (i % 5),
-  image: `https://th.bing.com/th/id/OIP.QBx5_pvYNd-u9gUk0GT6wgHaE8?w=226&h=180&c=7&r=0&o=5&dpr=1.5&pid=1.7`,
-  description: `Mô tả sản phẩm ${['Detox Juice', 'Smoothie', 'Trà thải độc'][i % 3]} ${i + 1}. Sản phẩm này giúp thanh lọc cơ thể và cung cấp dinh dưỡng tự nhiên.`,
+  price: (8 + (i % 5)) * 23000, // Convert USD to VNĐ (1 USD ~ 23,000 VNĐ)
+  image: `https://file.hstatic.net/200000240163/article/nuoc_detox_chanh_676db881894d48ab9c0fcbdb1c5cdf6c_1024x1024.jpg`,
+  description: `Mô tả sản phẩm ${['Detox Juice', 'Smoothie', 'Trà thải độc'][i % 3]} ${i + 1}. Sản phẩm này giúp thanh lọc cơ thể, cung cấp dinh dưỡng tự nhiên và hỗ trợ sức khỏe tổng thể.`,
   stock: 10 + (i % 5),
+  rating: (Math.random() * 4 + 1).toFixed(1),
+  purchases: Math.floor(Math.random() * 1000) + 100,
 }));
+
+// Giả lập danh sách bình luận
+const initialComments = {
+  1: [
+    { id: 1, user: 'Nguyen Van A', text: 'Sản phẩm rất tuyệt, giúp tôi cảm thấy nhẹ nhàng hơn!', date: '2025-07-10' },
+    { id: 2, user: 'Tran Thi B', text: 'Hương vị ngon, nhưng giao hàng hơi chậm.', date: '2025-07-09' },
+  ],
+  2: [{ id: 1, user: 'Le Van C', text: 'Sinh tố này rất dễ uống, sẽ mua lại!', date: '2025-07-08' }],
+};
 
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState('');
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationType, setNotificationType] = useState('info');
+  const [notificationMessage, setNotificationMessage] = useState('');
 
   useEffect(() => {
     const foundProduct = allProducts.find((p) => p.id === parseInt(id));
@@ -23,54 +41,224 @@ export default function ProductDetail() {
       navigate('/'); // Chuyển về trang chủ nếu không tìm thấy
     } else {
       setProduct(foundProduct);
+      setComments(initialComments[id] || []);
     }
   }, [id, navigate]);
 
+  // Hàm tạo sao đánh giá
+  const renderStars = (rating) => {
+    const fullStars = Math.floor(rating);
+    const halfStar = rating % 1 >= 0.5;
+    const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
+
+    return (
+      <div className="flex items-center">
+        {Array(fullStars).fill().map((_, i) => (
+          <svg key={i} className="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 24 24">
+            <path d="M12 .587l3.668 7.431 8.332 1.151-6.001 5.822 1.418 8.251L12 18.943l-7.417 3.298 1.418-8.251-6.001-5.822 8.332-1.151z" />
+          </svg>
+        ))}
+        {halfStar && (
+          <svg className="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 24 24">
+            <path d="M12 2.5l2.834 5.743 6.166.851-4.5 4.366.667 6.085L12 17.174l-5.167 2.371.667-6.085-4.5-4.366 6.166-.851z" />
+          </svg>
+        )}
+        {Array(emptyStars).fill().map((_, i) => (
+          <svg key={i + fullStars + (halfStar ? 1 : 0)} className="w-5 h-5 text-gray-300 fill-current" viewBox="0 0 24 24">
+            <path d="M12 .587l3.668 7.431 8.332 1.151-6.001 5.822 1.418 8.251L12 18.943l-7.417 3.298 1.418-8.251-6.001-5.822 8.332-1.151z" />
+          </svg>
+        ))}
+        <span className="ml-2 text-gray-600 text-sm">({rating})</span>
+      </div>
+    );
+  };
+
   const handleAddToCart = () => {
     if (product) {
-      alert(`Đã thêm "${product.name}" vào giỏ hàng!`);
+      if (product.stock === 0) {
+        setNotificationType('error');
+        setNotificationMessage('Sản phẩm đã hết hàng!');
+      } else {
+        setNotificationType('success');
+        setNotificationMessage(`Đã thêm "${product.name}" vào giỏ hàng!`);
+      }
+      setShowNotification(true);
     }
   };
 
-  if (!product) return <div className="min-h-screen bg-gray-50 py-8 px-4 text-center">Đang tải...</div>;
+  const handleCommentSubmit = (e) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+    const newCommentObj = {
+      id: comments.length + 1,
+      user: 'Người dùng ẩn danh', // Giả lập, có thể thay bằng thông tin người dùng thực
+      text: newComment,
+      date: new Date().toISOString().split('T')[0],
+    };
+    setComments([...comments, newCommentObj]);
+    setNewComment('');
+    setNotificationType('success');
+    setNotificationMessage('Bình luận của bạn đã được gửi thành công!');
+    setShowNotification(true);
+  };
+
+  const handleCloseNotification = () => {
+    setShowNotification(false);
+  };
+
+  // Tìm sản phẩm liên quan (cùng danh mục, loại trừ sản phẩm hiện tại)
+  const relatedProducts = allProducts
+    .filter((p) => p.category === product?.category && p.id !== product?.id)
+    .slice(0, 3);
+
+  if (!product) return <div className="min-h-screen bg-gradient-to-b from-green-100 to-green-50 py-8 px-4 text-center text-gray-600">Đang tải...</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 md:px-16">
-      <div className="max-w-4xl mx-auto flex flex-col md:flex-row gap-8">
-        {/* Hình ảnh sản phẩm */}
-        <div className="md:w-1/2">
-          <img
-            src={product.image}
-            alt={product.name}
-            className="w-full h-96 object-cover rounded-xl shadow-md hover:shadow-lg transition"
-          />
+    <div className="min-h-screen bg-gradient-to-b from-green-100 to-green-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto">
+        {/* Main Product Section */}
+        <div className="bg-white rounded-2xl shadow-lg p-8 flex flex-col lg:flex-row gap-8">
+          {/* Product Image */}
+          <div className="lg:w-1/2 relative">
+            <img
+              src={product.image}
+              alt={product.name}
+              className="w-full h-80 lg:h-96 object-cover rounded-xl border border-green-200 shadow-md"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent rounded-xl"></div>
+          </div>
+
+          {/* Product Details */}
+          <div className="lg:w-1/2 flex flex-col justify-between">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-extrabold text-green-800 mb-4">{product.name}</h1>
+              <div className="flex items-center gap-4 mb-4">
+                {renderStars(product.rating)}
+                <p className="text-gray-600 text-sm">Đã bán: {product.purchases}</p>
+              </div>
+              <p className="text-gray-600 mb-2">Danh mục: <span className="font-medium">{product.category}</span></p>
+              <p className="text-2xl text-green-800 font-bold mb-4">{product.price.toLocaleString('vi-VN')} VNĐ</p>
+              <p className="text-gray-700 mb-4 leading-relaxed">{product.description}</p>
+              <p className="text-gray-600 mb-6">Số lượng tồn kho: <span className="font-medium">{product.stock}</span></p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={handleAddToCart}
+                className={`w-full px-6 py-3 rounded-full text-lg font-semibold shadow-md transition-all ${
+                  product.stock === 0
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-green-600 text-white hover:bg-green-700 hover:shadow-lg'
+                }`}
+                disabled={product.stock === 0}
+              >
+                {product.stock === 0 ? 'Hết hàng' : 'Thêm vào giỏ hàng'}
+              </button>
+              <button
+                onClick={() => navigate(-1)}
+                className="w-full px-6 py-3 bg-green-100 text-green-700 rounded-full hover:bg-green-200 transition-all text-lg font-semibold shadow-md"
+              >
+                <FaLeaf className="inline mr-2" /> Quay lại
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* Thông tin sản phẩm */}
-        <div className="md:w-1/2 flex flex-col justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-green-700 mb-4">{product.name}</h1>
-            <p className="text-gray-600 mb-2">Danh mục: {product.category}</p>
-            <p className="text-2xl text-green-800 font-bold mb-4">${product.price}</p>
-            <p className="text-gray-700 mb-4">{product.description}</p>
-            <p className="text-gray-600 mb-4">Số lượng tồn kho: {product.stock}</p>
+        {/* Related Products Section */}
+        {relatedProducts.length > 0 && (
+          <div className="mt-12">
+            <h2 className="text-2xl font-semibold text-green-800 mb-6 flex items-center gap-2">
+              <FaLeaf className="text-green-600" /> Sản Phẩm Liên Quan
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {relatedProducts.map((relatedProduct) => (
+                <div
+                  key={relatedProduct.id}
+                  className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-transform duration-300 transform hover:-translate-y-1"
+                >
+                  <div
+                    onClick={() => navigate(`/product/${relatedProduct.id}`)}
+                    className="cursor-pointer"
+                  >
+                    <img
+                      src={relatedProduct.image}
+                      alt={relatedProduct.name}
+                      className="w-full h-48 object-cover rounded-lg mb-4 border border-green-200"
+                    />
+                    <h3 className="text-xl font-semibold text-green-700 hover:underline mb-2">
+                      {relatedProduct.name}
+                    </h3>
+                    {renderStars(relatedProduct.rating)}
+                    <p className="text-gray-600 text-sm mt-2">Đã bán: {relatedProduct.purchases}</p>
+                  </div>
+                  <p className="text-gray-600 text-sm mt-1">{relatedProduct.category}</p>
+                  <p className="text-green-800 font-bold text-lg mt-2">{relatedProduct.price.toLocaleString('vi-VN')} VNĐ</p>
+                  <button
+                    onClick={() => handleAddToCart(relatedProduct)}
+                    className={`mt-4 w-full px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                      relatedProduct.stock === 0
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-green-600 text-white hover:bg-green-700 hover:shadow-md'
+                    }`}
+                    disabled={relatedProduct.stock === 0}
+                  >
+                    {relatedProduct.stock === 0 ? 'Hết hàng' : 'Thêm vào giỏ hàng'}
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
-          <div>
-            <button
-              onClick={handleAddToCart}
-              className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all text-lg font-semibold shadow-md hover:shadow-lg"
-              disabled={product.stock === 0}
-            >
-              {product.stock === 0 ? 'Hết hàng' : 'Thêm vào giỏ hàng'}
-            </button>
-            <button
-              onClick={() => navigate(-1)}
-              className="mt-4 w-full px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all text-lg font-semibold"
-            >
-              Quay lại
-            </button>
+        )}
+
+        {/* Comments Section */}
+        <div className="mt-12">
+          <h2 className="text-2xl font-semibold text-green-800 mb-6 flex items-center gap-2">
+            <FaLeaf className="text-green-600" /> Bình Luận Sản Phẩm
+          </h2>
+          <div className="bg-white rounded-2xl shadow-lg p-6">
+            {/* Comment Form */}
+            <form onSubmit={handleCommentSubmit} className="mb-8">
+              <textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Viết bình luận của bạn..."
+                className="w-full p-4 border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-700 resize-none"
+                rows="4"
+              />
+              <button
+                type="submit"
+                className="mt-3 px-6 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition-all text-sm font-semibold shadow-md"
+              >
+                Gửi bình luận
+              </button>
+            </form>
+
+            {/* Comments List */}
+            {comments.length > 0 ? (
+              <div className="space-y-4">
+                {comments.map((comment) => (
+                  <div key={comment.id} className="border-b border-green-100 pb-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <p className="text-green-700 font-medium">{comment.user}</p>
+                      <p className="text-gray-500 text-sm">{comment.date}</p>
+                    </div>
+                    <p className="text-gray-700">{comment.text}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-600 text-center">Chưa có bình luận nào. Hãy là người đầu tiên bình luận!</p>
+            )}
           </div>
         </div>
+
+        {/* Notification Component */}
+        <Notification
+          isOpen={showNotification}
+          type={notificationType}
+          message={notificationMessage}
+          onClose={handleCloseNotification}
+          action={[{ label: 'OK', onClick: handleCloseNotification }]}
+        />
       </div>
     </div>
   );

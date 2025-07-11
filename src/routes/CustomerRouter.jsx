@@ -13,6 +13,8 @@ import Cart from "../components/cart/Cart"
 import Profile from "../components/profile/Profile"
 import SearchPage from "../components/products/SearchPage"
 import ProductDetail from "../components/products/ProductDetail"
+import HistoryOrders from "../components/order/HistoryOrder"
+import OrderDetail from "../components/order/OrderDetail"
 
 export const CustomerRouter = () => {
 
@@ -43,6 +45,9 @@ export const CustomerRouter = () => {
                 <Route path="/search" element={<SearchPage />} />
                 <Route path="/product/:id" element={<ProductDetail />} />
 
+                {/*  orders  */}
+                <Route path="/history-order" element={<HistoryOrders />} />
+                <Route path="/orders/:orderId" element={<OrderDetail />} />
             </Routes>
 
             <Footer></Footer>
