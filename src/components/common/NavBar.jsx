@@ -7,7 +7,6 @@ import {
   AiOutlineLogout,
   AiOutlineLock,
 } from 'react-icons/ai';
-import { FaLeaf } from 'react-icons/fa';
 
 const cartItems = [
   {
@@ -73,7 +72,11 @@ export default function Navbar() {
         {/* Logo */}
         <div className="flex items-center space-x-4 transition-transform duration-200 hover:scale-105 hover:shadow-lg rounded-md p-1">
           <Link to="/" className="flex items-center space-x-2">
-            <FaLeaf className="w-8 h-8 text-white" />
+            <img
+              src="http://res.cloudinary.com/dsenbweg2/image/upload/v1752324108/wiy6ivh4puq2evq4ccna.jpg"
+              alt="DetoxCare Logo"
+              className="w-12 h-12 object-contain rounded-md"
+            />
             <span className="text-3xl font-extrabold tracking-tight text-white">DetoxCare</span>
           </Link>
         </div>
@@ -118,7 +121,7 @@ export default function Navbar() {
               to={link.to}
               className="relative text-white hover:text-green-100
                  after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-green-100
- edits                 after:transition-all after:duration-300 hover:after:w-full
+                 after:transition-all after:duration-300 hover:after:w-full
                  transition-transform duration-200 hover:scale-110 hover:shadow-md px-2 py-1 rounded-md"
             >
               {link.label}

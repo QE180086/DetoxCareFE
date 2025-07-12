@@ -30,21 +30,21 @@ const blogList = [
     title: "Detox và Giấc Ngủ: Bí Mật Cho Sức Khỏe Toàn Diện",
     excerpt: "Khám phá cách detox hỗ trợ cải thiện chất lượng giấc ngủ.",
     created_at: "2025-06-10",
-    image: "https://images.unsplash.com/photo-1517438322307-e67111335448?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
+    image: "https://sieuthiyte.com.vn/blog/wp-content/uploads/2024/12/detox-chanh-dua-leo-nen-uong-bua-sang.jpg",
   },
   {
     id: 5,
     title: "Thực Đơn Detox 7 Ngày Cho Người Mới Bắt Đầu",
     excerpt: "Lên kế hoạch detox 7 ngày dễ dàng với hướng dẫn chi tiết.",
     created_at: "2025-06-05",
-    image: "https://images.unsplash.com/photo-1543363955-2f373c6e04f3?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
+    image: "https://sieuthiyte.com.vn/blog/wp-content/uploads/2024/12/cach-pha-che-detox-chanh-dua-leo.jpg",
   },
   {
     id: 6,
     title: "Tầm Quan Trọng Của Nước Trong Quá Trình Detox",
     excerpt: "Hiểu rõ vai trò của nước trong việc thanh lọc cơ thể.",
     created_at: "2025-06-01",
-    image: "https://images.unsplash.com/photo-1557170334-a9632e77b2f4?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
+    image: "https://i1-suckhoe.vnecdn.net/2025/05/29/tra-quat-mat-ong-1748487492-6164-1748487528.png?w=1020&h=0&q=100&dpr=1&fit=crop&s=A4N3puvncI_bfPCN7OhQzA",
   },
 ];
 

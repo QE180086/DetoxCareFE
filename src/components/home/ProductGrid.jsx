@@ -6,7 +6,7 @@ const ProductGrid = () => {
     {
       name: "Nước Detox Táo Xanh",
       price: 45000,
-      image: "https://file.hstatic.net/200000240163/article/nuoc_detox_chanh_676db881894d48ab9c0fcbdb1c5cdf6c_1024x1024.jpg",
+      image: "https://file.hstatic.net/200000342937/file/cach-lam-nuoc-ep-can-tay-va-tao_5c4f1de76ead47fcb48938416aca2e17_grande.jpg",
     },
     {
       name: "Nước Detox Chanh Leo",
@@ -16,7 +16,7 @@ const ProductGrid = () => {
     {
       name: "Combo 3 Ngày Detox",
       price: 280000,
-      image: "https://i1-suckhoe.vnecdn.net/2025/05/29/tra-quat-mat-ong-1748487492-6164-1748487528.png?w=1020&h=0&q=100&dpr=1&fit=crop&s=A4N3puvncI_bfPCN7OhQzA",
+      image: "https://sieuthiyte.com.vn/blog/wp-content/uploads/2024/12/detox-chanh-dua-leo-nen-uong-bua-sang.jpg",
     },
     {
       name: "Nước Detox Cà Mướp",
@@ -26,7 +26,7 @@ const ProductGrid = () => {
     {
       name: "Combo 7 Ngày Thanh Lọc",
       price: 280000,
-      image: "https://sieuthiyte.com.vn/blog/wp-content/uploads/2024/12/cach-pha-che-detox-chanh-dua-leo.jpg",
+      image: "https://sieuthiyte.com.vn/blog/wp-content/uploads/2024/12/detox-chanh-dua-leo-nen-uong-bua-sang.jpg",
     },
     {
       name: "Nước Detox Cà Đen",
@@ -41,7 +41,7 @@ const ProductGrid = () => {
     {
       name: "Nước Detox Cà Rốt",
       price: 45000,
-      image: "https://i1-suckhoe.vnecdn.net/2025/05/29/tra-quat-mat-ong-1748487492-6164-1748487528.png?w=1020&h=0&q=100&dpr=1&fit=crop&s=A4N3puvncI_bfPCN7OhQzA",
+      image: "https://suckhoedoisong.qltns.mediacdn.vn/324455921873985536/2024/4/22/nuoc-ep-can-tay-1713756549662927698966.jpg",
     },
   ];
 

@@ -39,8 +39,7 @@ export default function Contact() {
                     Liên Hệ Detox Care
                 </h1>
                 <p className="text-lg text-gray-600 text-center mb-12 max-w-2xl mx-auto">
-                    Bạn có thắc mắc về các gói dịch vụ detox? Muốn hợp tác kinh doanh cùng chúng tôi?
-                    Hãy liên hệ ngay với đội ngũ chuyên gia!
+                   Bạn đang tìm hiểu về các gói detox? Cần tư vấn để chọn liệu trình phù hợp với nhu cầu của mình? Hãy nhắn cho chúng tôi – đội ngũ DetoxCare luôn sẵn sàng hỗ trợ bạn!
                 </p>
 
                 {/* Contact Form & Info */}
@@ -107,7 +106,7 @@ export default function Contact() {
                                     htmlFor="message"
                                     className="block text-sm font-medium text-gray-700 mb-1"
                                 >
-                                    Thông tin hợp tác mong muốn *
+                                    Thông tin tư vấn mong muốn *
                                 </label>
                                 <textarea
                                     id="message"
@@ -115,7 +114,7 @@ export default function Contact() {
                                     value={formData.message}
                                     onChange={handleChange}
                                     className="w-full px-4 py-2 border border-gray-300 rounded-md h-32 resize-y focus:outline-none focus:ring-2 focus:ring-teal-500"
-                                    placeholder="Vui lòng mô tả loại hình hợp tác bạn quan tâm (nhượng quyền, đại lý, cộng tác viên...)"
+                                    placeholder="Vui lòng mô tả loại hình bạn quan tâm mong muốn tư vấn (hình ảnh sản phẩm, giá cả,...)"
                                     required
                                 ></textarea>
                             </div>
@@ -123,7 +122,7 @@ export default function Contact() {
                                 type="submit"
                                 className="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-md transition duration-300"
                             >
-                                Gửi yêu cầu hợp tác
+                                Gửi yêu cầu tư vấn
                             </button>
                             {status.message && (
                                 <p
@@ -149,8 +148,8 @@ export default function Contact() {
                                     <svg className="w-5 h-5 text-teal-600 mt-1 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                                     </svg>
-                                    <a href="mailto:notmposophin@gmail.com" className="hover:text-teal-600 transition duration-200">
-                                        notmposophin@gmail.com
+                                    <a href="mailto:detoxcare.qn@gmail.com" className="hover:text-teal-600 transition duration-200">
+                                         detoxcare.qn@gmail.com
                                     </a>
                                 </li>
                                 <li className="flex items-start">

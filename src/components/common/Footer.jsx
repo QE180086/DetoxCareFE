@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { FaLeaf, FaFacebookF, FaTwitter, FaInstagram } from 'react-icons/fa';
+import { FaLeaf, FaFacebookF, FaInstagram } from 'react-icons/fa';
 
 export default function Footer() {
   return (
@@ -45,10 +45,10 @@ export default function Footer() {
             <ul className="space-y-3 text-gray-600 text-sm mb-6">
               <li>
                 <a
-                  href="mailto:notmposophin@gmail.com"
+                  href="mailto:detoxcare.qn@gmail.com"
                   className="hover:text-green-600 hover:underline transition duration-200 ease-in-out"
                 >
-                  Email: notmposophin@gmail.com
+                  Email: detoxcare.qn@gmail.com
                 </a>
               </li>
               <li>
@@ -85,10 +85,7 @@ export default function Footer() {
                   href: 'https://www.facebook.com/van.thuong.654838',
                   icon: <FaFacebookF className="w-6 h-6" />,
                 },
-                {
-                  href: 'https://twitter.com',
-                  icon: <FaTwitter className="w-6 h-6" />,
-                },
+            
                 {
                   href: 'https://www.instagram.com/vt.patu/',
                   icon: <FaInstagram className="w-6 h-6" />,

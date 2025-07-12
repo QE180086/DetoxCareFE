@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { AiOutlineEdit, AiOutlineLock, AiOutlineShopping, AiOutlineGift, AiOutlineSave, AiOutlineClose, AiOutlineLogout } from 'react-icons/ai';
 import { FaLeaf } from 'react-icons/fa';
-import { getProfileByUserId, updateProfile } from '../../state/Profile/Action';
+import { updateProfile } from '../../state/Profile/Action';
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -38,7 +38,7 @@ export default function Profile() {
     const token = localStorage.getItem('accessToken');
     const userId = localStorage.getItem('userId') || 'currentUserId';
     if (token && userId) {
-      dispatch(getProfileByUserId(userId, token));
+      // dispatch(getProfileByUserId(userId, token));
     } else {
       console.warn('No token or userId found in localStorage');
     }

@@ -13,8 +13,7 @@ export default function About() {
             </h1>
           </div>
           <p className="text-lg md:text-xl text-green-700 max-w-3xl mx-auto leading-relaxed">
-            DetoxCare là nền tảng hàng đầu kết nối bạn với các sản phẩm detox cao cấp từ thiên nhiên, 
-            mang đến giải pháp thanh lọc cơ thể và tái tạo năng lượng một cách khoa học và an toàn.
+          DetoxCare bắt đầu từ mong muốn mang lại lựa chọn detox lành mạnh – tiện lợi – hiệu quả cho những người bận rộn và quan tâm đến sức khỏe mỗi ngày. Chúng tôi mang đến nước ép detox từ nguyên liệu tự nhiên, đi kèm hướng dẫn sử dụng cá nhân hoá – dễ áp dụng ngay tại nhà
           </p>
         </section>
 
@@ -47,8 +46,8 @@ export default function About() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-green-800">Công thức khoa học</h3>
-                    <p className="text-green-700 mt-1">Phối trộn bởi chuyên gia dinh dưỡng với tỷ lệ tối ưu</p>
+                    <h3 className="text-lg font-semibold text-green-800">Công thức dễ uống</h3>
+                    <p className="text-green-700 mt-1">Được pha chế với tỉ lệ hợp lý, dễ uống và tốt cho sức khỏe</p>
                   </div>
                 </div>
                 <div className="flex items-start">
@@ -59,7 +58,7 @@ export default function About() {
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-green-800">Cộng đồng lành mạnh</h3>
-                    <p className="text-green-700 mt-1">Kết nối và chia sẻ kinh nghiệm sống xanh cùng 50.000+ thành viên</p>
+                    <p className="text-green-700 mt-1">Kết nối và chia sẻ kinh nghiệm sống xanh cùng 1.000+ thành viên</p>
                   </div>
                 </div>
               </div>
@@ -81,7 +80,7 @@ export default function About() {
                     </svg>
                   </div>
                   <div>
-                    <p className="font-bold text-green-800">+5.000 Khách hàng</p>
+                    <p className="font-bold text-green-800">+1.000 Khách hàng</p>
                     <p className="text-sm text-green-600">Hài lòng mỗi tháng</p>
                   </div>
                 </div>
@@ -105,35 +104,35 @@ export default function About() {
         name: "Nguyễn Văn Thương",
         role: "CEO & Nhà sáng lập",
         description: "Người tiên phong trong lĩnh vực detox tự nhiên",
-        image: "https://photo2.tinhte.vn/data/attachment-files/2024/07/8406860_watermark-f33a7772d8593ea458c203104b4dbb41-7.jpeg",
+        image: "https://fap.fpt.edu.vn/temp/ImageRollNumber/QN/66c237e2-4357-4117-ab46-e0d82dcd8b6f.jpg",
         social: ["linkedin", "facebook"]
       },
       {
         name: "Đặng Thị Tường Vy",
         role: "CEO & Nhà sáng lập",
-        description: "Chuyên gia nông nghiệp hữu cơ",
-        image: "https://gaming.vn/wp-content/uploads/2024/11/vuong-lam121236.jpg",
+        description: "Chuyên gia sản xuất nước detox",
+        image: "https://fap.fpt.edu.vn/temp/ImageRollNumber/QN/0dc32fe0-f9e9-417f-8e15-354009027966.jpg",
         social: ["twitter", "instagram"]
       },
       {
         name: "Nguyễn Quỳnh Diễm My",
         role: "Quản lý Cộng đồng",
         description: "Xây dựng cộng đồng sống xanh",
-        image: "https://gaming.vn/wp-content/uploads/2024/11/ly-mo-uyen121240.jpg",
+        image: "https://fap.fpt.edu.vn/temp/ImageRollNumber/QN/5a6ccd88-9e73-4884-ad2f-4b3e3c1a8451.jpg",
         social: ["facebook", "youtube"]
       },
       {
         name: "Lê Ngọc Hiếu",
         role: "CSKH & Tư vấn",
         description: "Tư vấn chế độ detox cá nhân hóa",
-        image: "https://gaming.vn/wp-content/uploads/2024/11/ly-mo-uyen121240.jpg",
+        image: "https://fap.fpt.edu.vn/temp/ImageRollNumber/QN/f25441c6-e408-4896-b9a9-c06e2f8da75c.jpg",
         social: ["instagram", "tiktok"]
       },
       {
         name: "Phan Thị Minh Phương",
         role: "Quản lí sản xuất và đánh giá sản phẩm",
         description: "Đảm bảo chất lượng sản phẩm",
-        image: "https://gaming.vn/wp-content/uploads/2024/11/ly-mo-uyen121240.jpg",
+        image: "https://fap.fpt.edu.vn/temp/ImageRollNumber/QN/5a829f66-1c1e-4cdb-af13-30d76d1126c1.jpg",
         social: ["facebook", "linkedin"]
       }
     ].map((member, index) => (
@@ -173,15 +172,15 @@ export default function About() {
         <section className="mb-20 bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl p-8 md:p-12 text-white">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             <div>
-              <div className="text-3xl md:text-5xl font-bold mb-2">50K+</div>
+              <div className="text-3xl md:text-5xl font-bold mb-2">5K+</div>
               <div className="text-green-100">Khách hàng</div>
             </div>
             <div>
-              <div className="text-3xl md:text-5xl font-bold mb-2">120+</div>
+              <div className="text-3xl md:text-5xl font-bold mb-2">20+</div>
               <div className="text-green-100">Sản phẩm</div>
             </div>
             <div>
-              <div className="text-3xl md:text-5xl font-bold mb-2">15+</div>
+              <div className="text-3xl md:text-5xl font-bold mb-2">0+</div>
               <div className="text-green-100">Nông trại</div>
             </div>
             <div>
