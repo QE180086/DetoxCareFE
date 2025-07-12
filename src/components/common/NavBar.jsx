@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   AiOutlineUser,
   AiOutlineShoppingCart,
@@ -28,13 +28,39 @@ const cartItems = [
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('accessToken')); // Initialize based on accessToken
   const navigate = useNavigate();
   const user = { name: 'Thuong Nguyen' };
   const totalCartItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
+  // Check for accessToken on mount and listen for storage changes
+  useEffect(() => {
+    // Initial check for accessToken
+    const token = localStorage.getItem('accessToken');
+    setIsLoggedIn(!!token);
+
+    // Listen for storage events (e.g., accessToken removal from Profile component)
+    const handleStorageChange = (event) => {
+      if (event.key === 'accessToken') {
+        setIsLoggedIn(!!localStorage.getItem('accessToken'));
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    // Cleanup event listener on component unmount
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
-  const handleLogout = () => setIsLoggedIn(false);
+
+  const handleLogout = () => {
+    localStorage.removeItem('accessToken'); // Remove accessToken
+    setIsLoggedIn(false); // Update state
+    navigate('/login'); // Redirect to login page
+  };
 
   // Function to format price in VND
   const formatPrice = (price) => {
@@ -92,7 +118,7 @@ export default function Navbar() {
               to={link.to}
               className="relative text-white hover:text-green-100
                  after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-green-100
-                 after:transition-all after:duration-300 hover:after:w-full
+ edits                 after:transition-all after:duration-300 hover:after:w-full
                  transition-transform duration-200 hover:scale-110 hover:shadow-md px-2 py-1 rounded-md"
             >
               {link.label}

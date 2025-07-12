@@ -1,7 +1,6 @@
 import { FORGET_PASSWORD_FAILURE, FORGET_PASSWORD_REQUEST, FORGET_PASSWORD_SUCCESS, GET_USER_REQUEST, GET_USER_SUCCESS, LOGIN_FAILURE, LOGIN_REQUEST, LOGIN_SUCCESS, LOGOUT, REGISTER_FAILURE, REGISTER_REQUEST, RESET_PASSWORD_FAILURE, RESET_PASSWORD_REQUEST, RESET_PASSWORD_SUCCESS, SEND_OTP_FAILURE, SEND_OTP_REQUEST, SEND_OTP_SUCCESS, VERIFY_OTP_FAILURE, VERIFY_OTP_REQUEST, VERIFY_OTP_SUCCESS } from "./ActionType"
 import axios from "axios"
 import { API_URL } from "../../api/Api"
-
 // registerregister
 export const registerUser = (reqData) => async (dispatch) => {
     dispatch({ type: REGISTER_REQUEST });
@@ -82,22 +81,33 @@ export const resendOtp = (email) => async (dispatch) => {
 
 // login
 export const loginUser = (reqData) => async (dispatch) => {
-    dispatch({ type: LOGIN_REQUEST })
+    dispatch({ type: LOGIN_REQUEST });
     try {
-        const { data } = await axios.post(`${API_URL}/api/auth/login`, reqData.userData)
-        if (data.data.accessToken) localStorage.setItem("accessToken", data.data.accessToken)
-        if (data.role === "ADMIN") {
-            reqData.navigate("/admin")
-        } else {
-            reqData.navigate("/")
+        const { data } = await axios.post(`${API_URL}/api/auth/login`, reqData.userData);
+        
+        const accessToken = data?.data?.accessToken;
+
+        if (accessToken) {
+            localStorage.setItem("accessToken", accessToken);
+                        localStorage.setItem("userId", data?.data?.userId);
+            localStorage.setItem("username", data?.data?.username);
+            localStorage.setItem("email", data?.data?.email);
+
         }
-        dispatch({ type: LOGIN_SUCCESS, payload: data.accessToken })
+
+        if (data.role === "ADMIN") {
+            reqData.navigate("/admin");
+        } else {
+            reqData.navigate("/");
+        }
+
+        dispatch({ type: LOGIN_SUCCESS, payload: accessToken });
     } catch (error) {
         const errorMessage = error?.response?.data?.message?.messageDetail || 'Đăng nhập thất bại';
         dispatch({ type: LOGIN_FAILURE, payload: errorMessage });
         throw error;
     }
-}
+};
 
 // forget password
 export const forgetPassword = ({email, username}) => async (dispatch) => {
