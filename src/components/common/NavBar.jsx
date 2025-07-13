@@ -12,14 +12,14 @@ const cartItems = [
   {
     id: 1,
     name: 'Nước Detox Chanh',
-    price: 184000,
+    price: 30000,
     quantity: 2,
     image: 'https://file.hstatic.net/200000240163/article/nuoc_detox_chanh_676db881894d48ab9c0fcbdb1c5cdf6c_1024x1024.jpg',
   },
   {
     id: 2,
-    name: 'Trà quốc mật ong',
-    price: 87000,
+    name: 'Detox Tắc',
+    price: 25000,
     quantity: 1,
     image: 'https://i1-suckhoe.vnecdn.net/2025/05/29/tra-quat-mat-ong-1748487492-6164-1748487528.png?w=1020&h=0&q=100&dpr=1&fit=crop&s=A4N3puvncI_bfPCN7OhQzA',
   },
@@ -27,31 +27,32 @@ const cartItems = [
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('accessToken')); // Initialize based on accessToken
+  // const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('accessToken')); // Initialize based on accessToken
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
   const navigate = useNavigate();
   const user = { name: 'Thuong Nguyen' };
   const totalCartItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   // Check for accessToken on mount and listen for storage changes
-  useEffect(() => {
-    // Initial check for accessToken
-    const token = localStorage.getItem('accessToken');
-    setIsLoggedIn(!!token);
+  // useEffect(() => {
+  //   // Initial check for accessToken
+  //   const token = localStorage.getItem('accessToken');
+  //   setIsLoggedIn(!!token);
 
-    // Listen for storage events (e.g., accessToken removal from Profile component)
-    const handleStorageChange = (event) => {
-      if (event.key === 'accessToken') {
-        setIsLoggedIn(!!localStorage.getItem('accessToken'));
-      }
-    };
+  //   // Listen for storage events (e.g., accessToken removal from Profile component)
+  //   const handleStorageChange = (event) => {
+  //     if (event.key === 'accessToken') {
+  //       setIsLoggedIn(!!localStorage.getItem('accessToken'));
+  //     }
+  //   };
 
-    window.addEventListener('storage', handleStorageChange);
+  //   window.addEventListener('storage', handleStorageChange);
 
-    // Cleanup event listener on component unmount
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, []);
+  //   // Cleanup event listener on component unmount
+  //   return () => {
+  //     window.removeEventListener('storage', handleStorageChange);
+  //   };
+  // }, []);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 

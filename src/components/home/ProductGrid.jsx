@@ -15,33 +15,33 @@ const ProductGrid = () => {
     },
     {
       name: "Combo 3 Ngày Detox",
-      price: 280000,
+      price: 85000,
       image: "https://sieuthiyte.com.vn/blog/wp-content/uploads/2024/12/detox-chanh-dua-leo-nen-uong-bua-sang.jpg",
     },
     {
-      name: "Nước Detox Cà Mướp",
-      price: 45000,
+      name: "Nước Detox Dứa",
+      price: 30000,
+      image: "https://suckhoedoisong.qltns.mediacdn.vn/thumb_w/640/324455921873985536/2025/1/20/nuoc-ep-dua-gung-1-17373457424951710380999.png",
+    },
+    {
+      name: "Nước Detox Tắc",
+      price: 25000,
       image: "https://sieuthiyte.com.vn/blog/wp-content/uploads/2024/12/detox-chanh-dua-leo-nen-uong-bua-sang.jpg",
-    },
-    {
-      name: "Combo 7 Ngày Thanh Lọc",
-      price: 280000,
-      image: "https://sieuthiyte.com.vn/blog/wp-content/uploads/2024/12/detox-chanh-dua-leo-nen-uong-bua-sang.jpg",
-    },
-    {
-      name: "Nước Detox Cà Đen",
-      price: 45000,
-      image: "https://i1-suckhoe.vnecdn.net/2025/05/29/tra-quat-mat-ong-1748487492-6164-1748487528.png?w=1020&h=0&q=100&dpr=1&fit=crop&s=A4N3puvncI_bfPCN7OhQzA",
-    },
-    {
-      name: "Combo Rau Củ Detox",
-      price: 280000,
-      image: "https://i1-suckhoe.vnecdn.net/2025/05/29/tra-quat-mat-ong-1748487492-6164-1748487528.png?w=1020&h=0&q=100&dpr=1&fit=crop&s=A4N3puvncI_bfPCN7OhQzA",
     },
     {
       name: "Nước Detox Cà Rốt",
-      price: 45000,
-      image: "https://suckhoedoisong.qltns.mediacdn.vn/324455921873985536/2024/4/22/nuoc-ep-can-tay-1713756549662927698966.jpg",
+      price: 30000,
+      image: "https://magic.com.vn/wp-content/uploads/2023/04/Artboard-57-2048x1152.png",
+    },
+    {
+      name: "Combo detox 7 ngày",
+      price: 189000,
+      image: "https://tiki.vn/blog/wp-content/uploads/2023/01/detox-giam-can-1024x734.png",
+    },
+    {
+      name: "Nước Detox Cần Tây",
+      price: 30000,
+      image: "https://th.bing.com/th/id/OIP.QBx5_pvYNd-u9gUk0GT6wgHaE8?w=226&h=180&c=7&r=0&o=5&dpr=1.5&pid=1.7",
     },
   ];
 

@@ -58,7 +58,7 @@ const ComboOffers = () => {
             </Link>
           </div>
           <div className="bg-green-50 p-6 rounded-2xl shadow-lg hover:shadow-xl transition-transform duration-300 transform hover:-translate-y-1">
-            <h3 className="text-xl sm:text-2xl font-bold text-green-700 mb-3">GIẢM 50% MÓN ĂN DETOX</h3>
+            <h3 className="text-xl sm:text-2xl font-bold text-green-700 mb-3">GIẢM 50% NƯỚC UỐNG DETOX</h3>
             <p className="text-gray-600 mb-4">Dành riêng cho đơn hàng đầu tiên</p>
             <Link
               to="/products?category=do-an"

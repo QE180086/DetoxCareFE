@@ -25,7 +25,7 @@ const HeroSection = () => {
         {/* Image Content */}
         <div className="w-full lg:w-1/2">
           <img
-            src="https://media.istockphoto.com/id/641975492/vi/anh/ba-lo%E1%BA%A1i-tr%C3%A1i-c%C3%A2y-v%C3%A0-rau-qu%E1%BA%A3-gi%E1%BA%A3i-%C4%91%E1%BB%99c-%C4%91%E1%BB%93-u%E1%BB%91ng.jpg?s=2048x2048&w=is&k=20&c=FoYv0R7goDTLpJx9iIferkVEhrAHsr5EpzbZl2cH2ZE="
+            src="https://tpa.edu.vn/wp-content/uploads/2021/06/nuoc-detox-8-2048x1307.jpg"
             alt="Detox Juice"
             className="w-full h-64 sm:h-80 lg:h-96 object-cover rounded-2xl shadow-xl border border-green-200 transform hover:scale-105 transition-transform duration-300"
           />

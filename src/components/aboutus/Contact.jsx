@@ -157,7 +157,7 @@ export default function Contact() {
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
                                     </svg>
                                     <a href="tel:+842435678902" className="hover:text-teal-600 transition duration-200">
-                                        (+84) 379 560 889 (Bộ phận hợp tác)
+                                        (+84) 379 560 889 (Bộ phận tư vấn)
                                     </a>
                                 </li>
                                 <li className="flex items-start">
@@ -172,14 +172,14 @@ export default function Contact() {
 
                         {/* Giờ làm việc */}
                         <div className="bg-white p-6 rounded-lg shadow-md">
-                            <h3 className="text-lg font-medium text-teal-700 mb-3">Giờ tiếp nhận hồ sơ hợp tác</h3>
+                            <h3 className="text-lg font-medium text-teal-700 mb-3">Giờ tiếp nhận tư vấn</h3>
                             <ul className="space-y-2 text-gray-600">
                                 <li className="flex justify-between">
-                                    <span>Thứ 2 - Thứ 6:</span>
+                                    <span>Thứ 2 - Thứ 6: Sáng và chiều</span>
                                     <span>8:30 - 17:30</span>
                                 </li>
                                 <li className="flex justify-between">
-                                    <span>Thứ 7:</span>
+                                    <span>Thứ 7: Sáng</span>
                                     <span>8:30 - 12:00</span>
                                 </li>
                                 <li className="flex justify-between">

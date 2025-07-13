@@ -8,7 +8,7 @@ const orderData = {
   DH001: {
     id: 'DH001',
     date: '2025-07-01',
-    total: 450000,
+    total: 85000,
     status: 'Đã giao',
     shippingAddress: '123 Đường ABC, Quận 1, TP.HCM',
     paymentMethod: 'Thanh toán khi nhận hàng',
@@ -16,14 +16,14 @@ const orderData = {
       {
         name: 'Detox Chanh',
         quantity: 2,
-        price: 150000,
+        price: 30000,
         image: 'https://file.hstatic.net/200000240163/article/nuoc_detox_chanh_676db881894d48ab9c0fcbdb1c5cdf6c_1024x1024.jpg'
 
       },
       {
         name: 'Detox Tắc',
         quantity: 1,
-        price: 150000,
+        price: 25000,
         image: 'https://i1-suckhoe.vnecdn.net/2025/05/29/tra-quat-mat-ong-1748487492-6164-1748487528.png?w=1020&h=0&q=100&dpr=1&fit=crop&s=A4N3puvncI_bfPCN7OhQzA',
       },
     ],

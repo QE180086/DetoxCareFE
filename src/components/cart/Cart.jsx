@@ -9,15 +9,15 @@ import Notification from "../common/Nontification";
 const initialCartItems = [
   {
     id: 1,
-    name: "Detox Juice",
-    price: 230000, // Converted from $10 (1 USD ~ 23,000 VNĐ)
+    name: "Detox Chanh",
+    price: 30000, // Converted from $10 (1 USD ~ 23,000 VNĐ)
     quantity: 2,
     image: "https://file.hstatic.net/200000240163/article/nuoc_detox_chanh_676db881894d48ab9c0fcbdb1c5cdf6c_1024x1024.jpg",
   },
   {
     id: 2,
-    name: "Green Smoothie",
-    price: 184000, // Converted from $8 (1 USD ~ 23,000 VNĐ)
+    name: "Detox Tắc",
+    price: 25000, // Converted from $8 (1 USD ~ 23,000 VNĐ)
     quantity: 1,
     image: "https://i1-suckhoe.vnecdn.net/2025/05/29/tra-quat-mat-ong-1748487492-6164-1748487528.png?w=1020&h=0&q=100&dpr=1&fit=crop&s=A4N3puvncI_bfPCN7OhQzA",
   },

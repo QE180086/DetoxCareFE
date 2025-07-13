@@ -11,30 +11,30 @@ export default function HistoryOrders() {
     {
       id: 'DH001',
       date: '2025-07-01',
-      total: 450000,
+      total: 85000,
       status: 'Đã giao',
       items: [
-        { name: 'Green Juice Cleanse', quantity: 2, price: 150000 },
-        { name: 'Detox Tea Blend', quantity: 1, price: 150000 },
+        { name: 'Detox Chanh', quantity: 2, price: 30000 },
+        { name: 'Detox Tắc', quantity: 1, price: 25000 },
       ],
     },
     {
       id: 'DH002',
       date: '2025-06-15',
-      total: 300000,
+      total: 50000,
       status: 'Đã giao',
       items: [
-        { name: 'Berry Detox Smoothie', quantity: 1, price: 120000 },
-        { name: 'Herbal Detox Kit', quantity: 1, price: 180000 },
+        { name: 'Detox Chanh Leo', quantity: 1, price: 25000 },
+        { name: 'Detox Táo', quantity: 1, price: 25000 },
       ],
     },
     {
       id: 'DH003',
       date: '2025-05-20',
-      total: 200000,
+      total: 30000,
       status: 'Đang xử lý',
       items: [
-        { name: 'Lemon Ginger Detox', quantity: 2, price: 100000 },
+        { name: 'Detox Chanh + Cà rốt', quantity: 2, price: 30000 },
       ],
     },
   ];

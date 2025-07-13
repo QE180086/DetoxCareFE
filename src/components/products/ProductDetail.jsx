@@ -2,27 +2,86 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { FaLeaf } from 'react-icons/fa';
 import Notification from '../common/Nontification';
-
-// Giả lập danh sách sản phẩm mở rộng
-const allProducts = Array.from({ length: 30 }).map((_, i) => ({
-  id: i + 1,
-  name: ['Detox Juice', 'Smoothie', 'Trà thải độc'][i % 3] + ' ' + (i + 1),
-  category: ['Nước ép', 'Sinh tố', 'Trà detox'][i % 3],
-  price: (8 + (i % 5)) * 23000, // Convert USD to VNĐ (1 USD ~ 23,000 VNĐ)
-  image: `https://file.hstatic.net/200000240163/article/nuoc_detox_chanh_676db881894d48ab9c0fcbdb1c5cdf6c_1024x1024.jpg`,
-  description: `Mô tả sản phẩm ${['Detox Juice', 'Smoothie', 'Trà thải độc'][i % 3]} ${i + 1}. Sản phẩm này giúp thanh lọc cơ thể, cung cấp dinh dưỡng tự nhiên và hỗ trợ sức khỏe tổng thể.`,
-  stock: 10 + (i % 5),
-  rating: (Math.random() * 4 + 1).toFixed(1),
-  purchases: Math.floor(Math.random() * 1000) + 100,
-}));
+// Danh sách sản phẩm mở rộng
+const allProducts = [
+  {
+    id: 1,
+    name: 'Củ dền + Cà rốt + Táo + Dưa leo',
+    category: 'Nước ép',
+    price: 30000,
+    image: 'https://www.bartender.edu.vn/wp-content/uploads/2021/12/nuoc-ep-cu-den-nhieu-cong-dung.jpg',
+    description: 'Nước ép chanh giúp thanh lọc cơ thể, cung cấp vitamin C và hỗ trợ giảm cân hiệu quả.',
+    stock: 12,
+    rating: '4.5',
+    purchases: 342,
+  },
+  {
+    id: 2,
+    name: 'Nước Detox Chanh',
+    category: 'Sinh tố',
+    price: 30000,
+    image: 'https://file.hstatic.net/200000240163/article/nuoc_detox_chanh_676db881894d48ab9c0fcbdb1c5cdf6c_1024x1024.jpg',
+    description: 'Sinh tố dâu tươi giàu chất chống oxy hóa, hỗ trợ làm đẹp da và tăng sức đề kháng.',
+    stock: 8,
+    rating: '4.8',
+    purchases: 450,
+  },
+  {
+    id: 3,
+    name: 'Cần tây = Táo + Dưa leo',
+    category: 'Trà detox',
+    price: 30000,
+    image: 'https://omegajuicers.vn/wp-content/uploads/2023/11/nuoc-ep-can-tay-dua-tao-dua-chuot.jpg',
+    description: 'Trà gừng ấm áp giúp kích thích tiêu hóa và đào thải độc tố ra khỏi cơ thể.',
+    stock: 5,
+    rating: '4.2',
+    purchases: 290,
+  },
+  {
+    id: 4,
+    name: 'Detox Dưa Hấu',
+    category: 'Nước ép',
+    price: 30000,
+    image: 'https://cdn.nhathuoclongchau.com.vn/unsafe/800x0/filters:quality(95)/https://cms-prod.s3-sgn09.fptcloud.com/5_cach_lam_detox_dua_hau_sieu_don_gian_chi_voi_2_buoc_thu_ngay_3_3f7df3b5f2.jpg',
+    description: 'Nước ép dưa hấu giúp cấp nước, giải nhiệt, thích hợp cho mùa hè.',
+    stock: 10,
+    rating: '4.6',
+    purchases: 378,
+  },
+  {
+    id: 5,
+    name: 'Nước ép Cam + Gừng',
+    category: 'Nước ép',
+    price: 30000,
+    image: 'https://thucphamsachgreenhouse.com/upload/images/Orange-Ginger-Juice-2-of-2-1365x2048.jpg',
+    description: 'Nước ép cam và gừng tăng cường miễn dịch, hỗ trợ tiêu hóa.',
+    stock: 15,
+    rating: '4.7',
+    purchases: 400,
+  },
+  {
+    id: 6,
+    name: 'Nước ép Kiwi + Dứa',
+    category: 'Nước ép',
+    price: 31000,
+    image: 'https://cdn.tgdd.vn//News/0//goi-y-cach-lam-nuoc-ep-kiwi-don-gian-845x564.jpg',
+    description: 'Nước ép kiwi và dứa giàu vitamin C, làm đẹp da.',
+    stock: 10,
+    rating: '4.4',
+    purchases: 350,
+  },
+];
 
 // Giả lập danh sách bình luận
 const initialComments = {
   1: [
-    { id: 1, user: 'Nguyen Van A', text: 'Sản phẩm rất tuyệt, giúp tôi cảm thấy nhẹ nhàng hơn!', date: '2025-07-10' },
-    { id: 2, user: 'Tran Thi B', text: 'Hương vị ngon, nhưng giao hàng hơi chậm.', date: '2025-07-09' },
+    { id: 1, user: 'Minh Phương', text: 'Sản phẩm rất tuyệt, giúp tôi cảm thấy nhẹ nhàng hơn!', date: '2025-07-10' },
+    { id: 2, user: 'Ngọc Hiếu', text: 'Hương vị ngon, nhưng giao hàng hơi chậm.', date: '2025-07-09' },
   ],
-  2: [{ id: 1, user: 'Le Van C', text: 'Sinh tố này rất dễ uống, sẽ mua lại!', date: '2025-07-08' }],
+  2: [{ id: 1, user: 'Văn Thương', text: 'Sinh tố này rất dễ uống, sẽ mua lại!', date: '2025-07-08' }],
+  4: [
+    { id: 1, user: 'Lan Anh', text: 'Rất thích hợp cho mùa hè, uống mát lắm!', date: '2025-07-12' },
+  ],
 };
 
 export default function ProductDetail() {
@@ -91,7 +150,7 @@ export default function ProductDetail() {
     if (!newComment.trim()) return;
     const newCommentObj = {
       id: comments.length + 1,
-      user: 'Người dùng ẩn danh', // Giả lập, có thể thay bằng thông tin người dùng thực
+      user: 'Người dùng ẩn danh',
       text: newComment,
       date: new Date().toISOString().split('T')[0],
     };
