@@ -1,86 +1,111 @@
 import { Link } from 'react-router-dom';
-import { FaLeaf } from 'react-icons/fa';
+import { FaLeaf, FaStar, FaRegStar, FaStarHalfAlt, FaFire } from 'react-icons/fa';
+import { FiShoppingCart } from 'react-icons/fi';
+import { getHotProducts } from '../../data/products';
+import { useDispatch } from "react-redux";
+import { addToCart } from "../../state/Cart/Action";
 
 const ProductGrid = () => {
-  const products = [
-    {
-      name: "Nước Detox Táo Xanh",
-      price: 45000,
-      image: "https://file.hstatic.net/200000342937/file/cach-lam-nuoc-ep-can-tay-va-tao_5c4f1de76ead47fcb48938416aca2e17_grande.jpg",
-    },
-    {
-      name: "Nước Detox Chanh Leo",
-      price: 45000,
-      image: "https://sieuthiyte.com.vn/blog/wp-content/uploads/2024/12/cach-pha-che-detox-chanh-dua-leo.jpg",
-    },
-    {
-      name: "Combo 3 Ngày Detox",
-      price: 85000,
-      image: "https://sieuthiyte.com.vn/blog/wp-content/uploads/2024/12/detox-chanh-dua-leo-nen-uong-bua-sang.jpg",
-    },
-    {
-      name: "Nước Detox Dứa",
-      price: 30000,
-      image: "https://suckhoedoisong.qltns.mediacdn.vn/thumb_w/640/324455921873985536/2025/1/20/nuoc-ep-dua-gung-1-17373457424951710380999.png",
-    },
-    {
-      name: "Nước Detox Tắc",
-      price: 25000,
-      image: "https://sieuthiyte.com.vn/blog/wp-content/uploads/2024/12/detox-chanh-dua-leo-nen-uong-bua-sang.jpg",
-    },
-    {
-      name: "Nước Detox Cà Rốt",
-      price: 30000,
-      image: "https://magic.com.vn/wp-content/uploads/2023/04/Artboard-57-2048x1152.png",
-    },
-    {
-      name: "Combo detox 7 ngày",
-      price: 189000,
-      image: "https://tiki.vn/blog/wp-content/uploads/2023/01/detox-giam-can-1024x734.png",
-    },
-    {
-      name: "Nước Detox Cần Tây",
-      price: 30000,
-      image: "https://th.bing.com/th/id/OIP.QBx5_pvYNd-u9gUk0GT6wgHaE8?w=226&h=180&c=7&r=0&o=5&dpr=1.5&pid=1.7",
-    },
-  ];
+  const dispatch = useDispatch();
+  // Lấy tất cả sản phẩm hot
+  const products = getHotProducts();
+
+  // Hàm render sao đánh giá
+  const renderStars = (rating) => {
+    const full = Math.floor(rating);
+    const half = rating % 1 >= 0.5;
+    const empty = 5 - full - (half ? 1 : 0);
+    return (
+      <div className="flex items-center space-x-0.5">
+        {Array(full).fill().map((_, i) => <FaStar key={`f-${i}`} className="w-5 h-5 text-yellow-400" />)}
+        {half && <FaStarHalfAlt className="w-5 h-5 text-yellow-400" />}
+        {Array(empty).fill().map((_, i) => <FaRegStar key={`e-${i}`} className="w-5 h-5 text-yellow-400" />)}
+        <span className="ml-2 text-sm text-gray-500">({rating})</span>
+      </div>
+    );
+  };
+
+  const handleAddToCart = (product) => {
+    dispatch(addToCart(product));
+    alert(`Đã thêm "${product.name}" vào giỏ hàng!`);
+  };
 
   return (
     <section className="py-12 bg-gradient-to-b from-white to-green-50">
-      <h2 className="text-3xl font-extrabold text-green-800 text-center mb-8 flex items-center justify-center gap-2">
-        <FaLeaf className="text-green-600" /> Sản Phẩm Nổi Bật
-      </h2>
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {products.map((product, index) => (
-          <div
-            key={index}
-            className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-transform duration-300 transform hover:-translate-y-1 border border-green-100"
-          >
-            <Link to={`/product/${index + 1}`}>
-              <img
-                src={product.image}
-                alt={product.name}
-                className="w-full h-48 object-cover rounded-lg mb-4 border border-green-200"
-              />
-              <h3 className="text-lg font-semibold text-green-700 hover:underline mb-2">{product.name}</h3>
-            </Link>
-            <p className="text-green-800 font-bold text-lg mb-3">{product.price.toLocaleString('vi-VN')} VNĐ</p>
-            <Link
-              to={`/product/${index + 1}`}
-              className="block w-full px-4 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition-all text-sm font-semibold text-center shadow-md"
+      <div className="max-w-7xl mx-auto px-4 py-12">
+        <h2 className="text-3xl font-bold text-gray-800 mb-8 flex items-center gap-3">
+          <FaLeaf className="text-green-600" /> Sản Phẩm Nổi Bật
+        </h2>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {products.map((product) => (
+            <article
+              key={product.id}
+              className="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden group relative"
             >
-              Thêm vào giỏ
-            </Link>
-          </div>
-        ))}
-      </div>
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-center mt-8">
-        <Link
-          to="/search"
-          className="inline-flex items-center gap-2 px-8 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition-all duration-300 text-base font-semibold shadow-lg hover:shadow-xl"
-        >
-          <FaLeaf className="w-5 h-5" /> Xem thêm
-        </Link>
+              {/* Badge HOT */}
+              {product.hot && (
+                <div className="absolute top-3 left-3 z-10">
+                  <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg">
+                    <FaFire className="text-sm" />
+                    HOT
+                  </div>
+                </div>
+              )}
+
+              {/* Ảnh */}
+              <div className="relative rounded-2xl overflow-hidden leading-[0]">
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="block w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </div>
+
+              {/* Thông tin */}
+              <div className="p-5">
+                <h3
+                  onClick={() => window.location.href = `/product/${product.id}`}
+                  className="text-lg font-bold text-green-800 truncate cursor-pointer hover:text-green-600 transition"
+                >
+                  {product.name}
+                </h3>
+                {product.description && (
+                  <p className="text-xs text-gray-500 mt-1 mb-2 truncate">{product.description}</p>
+                )}
+                <p className="text-sm text-green-600 font-medium">{product.category}</p>
+
+                <div className="mt-3 mb-3">{renderStars(product.rating)}</div>
+
+                <p className="text-sm text-gray-500">Đã bán: {product.purchases}</p>
+
+                <div className="flex justify-between items-center mt-4">
+                  <span className="text-2xl font-bold text-green-800">
+                    {product.price.toLocaleString('vi-VN')}₫
+                  </span>
+
+                  <button
+                    onClick={() => handleAddToCart(product)}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition-all shadow-md hover:shadow-lg"
+                  >
+                    <FiShoppingCart />
+                    <span className="text-xs font-semibold">Thêm</span>
+                  </button>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+        
+        <div className="flex justify-center mt-8">
+          <Link
+            to="/search"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition-all duration-300 text-base font-semibold shadow-lg hover:shadow-xl"
+          >
+            <FaLeaf className="w-5 h-5" /> Xem tất cả sản phẩm
+          </Link>
+        </div>
       </div>
     </section>
   );

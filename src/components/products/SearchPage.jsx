@@ -1,267 +1,75 @@
-// import { useLocation, useNavigate } from 'react-router-dom';
-// import { useEffect, useState } from 'react';
-// import { FaLeaf } from 'react-icons/fa';
-
-// // Giả lập danh sách sản phẩm mở rộng
-// const allProducts = Array.from({ length: 30 }).map((_, i) => ({
-//   id: i + 1,
-//   name: ['Detox Juice', 'Smoothie', 'Trà thải độc'][i % 3] + ' ' + (i + 1),
-//   category: ['Nước ép', 'Sinh tố', 'Trà detox'][i % 3],
-//   price: (8 + (i % 5)) * 23000, // Convert USD to VNĐ (1 USD ~ 23,000 VNĐ)
-//   image: `https://file.hstatic.net/200000240163/article/nuoc_detox_chanh_676db881894d48ab9c0fcbdb1c5cdf6c_1024x1024.jpg`,
-//   rating: (Math.random() * 4 + 1).toFixed(1),
-//   purchases: Math.floor(Math.random() * 1000) + 100,
-// }));
-
-// export default function SearchPage() {
-//   const location = useLocation();
-//   const navigate = useNavigate();
-//   const query = new URLSearchParams(location.search).get('query')?.toLowerCase() || '';
-
-//   const [categoryFilter, setCategoryFilter] = useState('');
-//   const [filteredProducts, setFilteredProducts] = useState([]);
-//   const [currentPage, setCurrentPage] = useState(1);
-//   const itemsPerPage = 6;
-
-//   useEffect(() => {
-//     let result = allProducts.filter((p) =>
-//       p.name.toLowerCase().includes(query)
-//     );
-//     if (categoryFilter) {
-//       result = result.filter((p) => p.category === categoryFilter);
-//     }
-//     setFilteredProducts(result);
-//     setCurrentPage(1);
-//   }, [query, categoryFilter]);
-
-//   // Phân trang
-//   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-//   const currentItems = filteredProducts.slice(
-//     (currentPage - 1) * itemsPerPage,
-//     currentPage * itemsPerPage
-//   );
-
-//   const categories = ['Tất cả', 'Detox', 'Combo 3 ngày', ' Combo 5 ngày','Combo 7 ngày','Nước ép mix'];
-
-//   const handleAddToCart = (product) => {
-//     alert(`Đã thêm "${product.name}" vào giỏ hàng!`);
-//   };
-
-//   // Hàm tạo sao đánh giá
-//   const renderStars = (rating) => {
-//     const fullStars = Math.floor(rating);
-//     const halfStar = rating % 1 >= 0.5;
-//     const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
-
-//     return (
-//       <div className="flex items-center">
-//         {Array(fullStars).fill().map((_, i) => (
-//           <svg key={i} className="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 24 24">
-//             <path d="M12 .587l3.668 7.431 8.332 1.151-6.001 5.822 1.418 8.251L12 18.943l-7.417 3.298 1.418-8.251-6.001-5.822 8.332-1.151z" />
-//           </svg>
-//         ))}
-//         {halfStar && (
-//           <svg className="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 24 24">
-//             <path d="M12 2.5l2.834 5.743 6.166.851-4.5 4.366.667 6.085L12 17.174l-5.167 2.371.667-6.085-4.5-4.366 6.166-.851z" />
-//           </svg>
-//         )}
-//         {Array(emptyStars).fill().map((_, i) => (
-//           <svg key={i + fullStars + (halfStar ? 1 : 0)} className="w-5 h-5 text-gray-300 fill-current" viewBox="0 0 24 24">
-//             <path d="M12 .587l3.668 7.431 8.332 1.151-6.001 5.822 1.418 8.251L12 18.943l-7.417 3.298 1.418-8.251-6.001-5.822 8.332-1.151z" />
-//           </svg>
-//         ))}
-//         <span className="ml-2 text-gray-600 text-sm">({rating})</span>
-//       </div>
-//     );
-//   };
-
-//   return (
-//     <div className="min-h-screen bg-gradient-to-b from-green-100 to-green-50 py-12 px-4 sm:px-6 lg:px-8">
-//       <div className="max-w-6xl mx-auto">
-//         {/* Header */}
-//         <h1 className="text-4xl font-extrabold text-green-800 mb-8 flex items-center gap-2">
-//           <FaLeaf className="text-green-600" />
-//           Kết quả tìm kiếm: <span className="underline decoration-green-500">{query || 'Tất cả'}</span>
-//         </h1>
-
-//         <div className="flex flex-col lg:flex-row gap-8">
-//           {/* Sidebar danh mục */}
-//           <div className="lg:w-1/4 bg-white rounded-2xl shadow-lg p-6">
-//             <h2 className="text-xl font-semibold text-green-700 mb-4">Danh Mục Sản Phẩm</h2>
-//             <ul className="space-y-3">
-//               {categories.map((cat) => (
-//                 <li key={cat}>
-//                   <button
-//                     onClick={() => setCategoryFilter(cat === 'Tất cả' ? '' : cat)}
-//                     className={`w-full text-left px-4 py-2 rounded-full text-sm font-medium transition ${
-//                       categoryFilter === cat || (cat === 'Tất cả' && categoryFilter === '')
-//                         ? 'bg-green-600 text-white shadow-md'
-//                         : 'bg-green-50 text-green-700 hover:bg-green-100'
-//                     }`}
-//                   >
-//                     {cat}
-//                   </button>
-//                 </li>
-//               ))}
-//             </ul>
-//           </div>
-
-//           {/* Product grid */}
-//           <div className="lg:w-3/4 flex flex-col gap-8">
-//             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-//               {currentItems.length > 0 ? (
-//                 currentItems.map((product) => (
-//                   <div
-//                     key={product.id}
-//                     className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-transform duration-300 transform hover:-translate-y-1"
-//                   >
-//                     <div
-//                       onClick={() => navigate(`/product/${product.id}`)}
-//                       className="cursor-pointer"
-//                     >
-//                       <img
-//                         src={product.image}
-//                         alt={product.name}
-//                         className="w-full h-48 object-cover rounded-lg mb-4 border border-green-200"
-//                       />
-//                       <h3 className="text-xl font-semibold text-green-700 hover:underline mb-2">
-//                         {product.name}
-//                       </h3>
-//                       {renderStars(product.rating)}
-//                       <p className="text-gray-600 text-sm mt-2">Đã bán: {product.purchases}</p>
-//                     </div>
-//                     <p className="text-gray-600 text-sm mt-1">{product.category}</p>
-//                     <p className="text-green-800 font-bold text-lg mt-2">{product.price.toLocaleString('vi-VN')} VNĐ</p>
-//                     <button
-//                       onClick={() => handleAddToCart(product)}
-//                       className="mt-4 w-full px-4 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition-all text-sm font-semibold shadow-md"
-//                     >
-//                       Thêm vào giỏ hàng
-//                     </button>
-//                   </div>
-//                 ))
-//               ) : (
-//                 <p className="text-gray-600 col-span-full text-center text-lg">
-//                   Không tìm thấy sản phẩm nào phù hợp.
-//                 </p>
-//               )}
-//             </div>
-
-//             {/* Pagination */}
-//             {totalPages > 1 && (
-//               <div className="flex justify-center items-center gap-3 mt-8">
-//                 <button
-//                   onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-//                   disabled={currentPage === 1}
-//                   className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-//                     currentPage === 1
-//                       ? 'bg-green-200 text-green-400 cursor-not-allowed'
-//                       : 'bg-green-600 text-white hover:bg-green-700'
-//                   }`}
-//                 >
-//                   Trước
-//                 </button>
-//                 {Array.from({ length: totalPages }).map((_, i) => (
-//                   <button
-//                     key={i}
-//                     onClick={() => setCurrentPage(i + 1)}
-//                     className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-//                       currentPage === i + 1
-//                         ? 'bg-green-700 text-white'
-//                         : 'bg-white text-green-700 border border-green-500 hover:bg-green-100'
-//                     }`}
-//                   >
-//                     {i + 1}
-//                   </button>
-//                 ))}
-//                 <button
-//                   onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-//                   disabled={currentPage === totalPages}
-//                   className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-//                     currentPage === totalPages
-//                       ? 'bg-green-200 text-green-400 cursor-not-allowed'
-//                       : 'bg-green-600 text-white hover:bg-green-700'
-//                   }`}
-//                 >
-//                   Sau
-//                 </button>
-//               </div>
-//             )}
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
-
-
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { FaLeaf } from 'react-icons/fa';
-
-// Giả lập danh sách sản phẩm mở rộng
-const allProducts = [
-  // Detox (5 loại, 330ml)
-  { id: 1, name: 'Củ dền + Cà rốt + Táo + Dưa leo', category: 'Detox', price: 30000, image: 'https://www.bartender.edu.vn/wp-content/uploads/2021/12/nuoc-ep-cu-den-nhieu-cong-dung.jpg', rating: (Math.random() * 4 + 1).toFixed(1), purchases: Math.floor(Math.random() * 1000) + 100 },
-  { id: 2, name: 'Cần tây + Táo + Dưa leo', category: 'Detox', price: 30000, image: 'https://omegajuicers.vn/wp-content/uploads/2023/11/nuoc-ep-can-tay-dua-tao-dua-chuot.jpg', rating: (Math.random() * 4 + 1).toFixed(1), purchases: Math.floor(Math.random() * 1000) + 100 },
-  { id: 3, name: 'Cần tây + Táo + Thơm', category: 'Detox', price: 30000, image: 'https://file.hstatic.net/200000342937/file/cach-lam-nuoc-ep-can-tay-va-tao_5c4f1de76ead47fcb48938416aca2e17_grande.jpg', rating: (Math.random() * 4 + 1).toFixed(1), purchases: Math.floor(Math.random() * 1000) + 100 },
-  { id: 4, name: 'Cần tây + Thơm', category: 'Detox', price: 30000, image: 'https://suckhoedoisong.qltns.mediacdn.vn/324455921873985536/2024/4/22/nuoc-ep-can-tay-1713756549662927698966.jpg', rating: (Math.random() * 4 + 1).toFixed(1), purchases: Math.floor(Math.random() * 1000) + 100 },
-  { id: 5, name: 'Thơm + Táo + Dưa leo + Cà rốt', category: 'Detox', price: 30000, image: 'https://drinkocany.com/wp-content/uploads/2023/10/detox-tao.jpg', rating: (Math.random() * 4 + 1).toFixed(1), purchases: Math.floor(Math.random() * 1000) + 100 },
-  // Combo 3 ngày (85k)
-  { id: 6, name: 'Combo 3 ngày - Ngày 1', category: 'Combo 3 ngày', price: 85000, image: 'https://sieuthiyte.com.vn/blog/wp-content/uploads/2024/12/detox-chanh-dua-leo-nen-uong-bua-sang.jpg', rating: (Math.random() * 4 + 1).toFixed(1), purchases: Math.floor(Math.random() * 1000) + 100, description: 'Củ dền + Cà rốt + Táo + Dưa leo' },
-  { id: 7, name: 'Combo 3 ngày - Ngày 2', category: 'Combo 3 ngày', price: 85000, image: 'https://sieuthiyte.com.vn/blog/wp-content/uploads/2024/12/detox-chanh-dua-leo-nen-uong-bua-sang.jpg', rating: (Math.random() * 4 + 1).toFixed(1), purchases: Math.floor(Math.random() * 1000) + 100, description: 'Cần tây + Táo + Thơm' },
-  { id: 8, name: 'Combo 3 ngày - Ngày 3', category: 'Combo 3 ngày', price: 85000, image: 'https://sieuthiyte.com.vn/blog/wp-content/uploads/2024/12/detox-chanh-dua-leo-nen-uong-bua-sang.jpg', rating: (Math.random() * 4 + 1).toFixed(1), purchases: Math.floor(Math.random() * 1000) + 100, description: 'Thơm + Táo + Dưa leo + Cà rốt' },
-  // Combo 5 ngày (135k)
-  { id: 9, name: 'Combo 5 ngày - Ngày 1', category: 'Combo 5 ngày', price: 135000, image: 'https://vivita.cdn.vccloud.vn/wp-content/uploads/2022/08/nuoc-ep-detox.jpg', rating: (Math.random() * 4 + 1).toFixed(1), purchases: Math.floor(Math.random() * 1000) + 100, description: 'Cần tây + Táo + Dưa leo' },
-  { id: 10, name: 'Combo 5 ngày - Ngày 2', category: 'Combo 5 ngày', price: 135000, image: 'https://vivita.cdn.vccloud.vn/wp-content/uploads/2022/08/nuoc-ep-detox.jpg', rating: (Math.random() * 4 + 1).toFixed(1), purchases: Math.floor(Math.random() * 1000) + 100, description: 'Thơm + Táo + Dưa leo + Cà rốt' },
-  { id: 11, name: 'Combo 5 ngày - Ngày 3', category: 'Combo 5 ngày', price: 135000, image: 'https://vivita.cdn.vccloud.vn/wp-content/uploads/2022/08/nuoc-ep-detox.jpg', rating: (Math.random() * 4 + 1).toFixed(1), purchases: Math.floor(Math.random() * 1000) + 100, description: 'Củ dền + Cà rốt + Táo + Dưa leo' },
-  { id: 12, name: 'Combo 5 ngày - Ngày 4', category: 'Combo 5 ngày', price: 135000, image: 'https://vivita.cdn.vccloud.vn/wp-content/uploads/2022/08/nuoc-ep-detox.jpg', rating: (Math.random() * 4 + 1).toFixed(1), purchases: Math.floor(Math.random() * 1000) + 100, description: 'Cần tây + Thơm' },
-  { id: 13, name: 'Combo 5 ngày - Ngày 5', category: 'Combo 5 ngày', price: 135000, image: 'https://vivita.cdn.vccloud.vn/wp-content/uploads/2022/08/nuoc-ep-detox.jpg', rating: (Math.random() * 4 + 1).toFixed(1), purchases: Math.floor(Math.random() * 1000) + 100, description: 'Cần tây + Táo + Thơm' },
-  // Combo 7 ngày (189k)
-  { id: 14, name: 'Combo 7 ngày - Ngày 1', category: 'Combo 7 ngày', price: 189000, image: 'https://chaipetsaigon.com/wp-content/uploads/2021/03/10-cong-thuc-lam-nuoc-ep-detox.jpg', rating: (Math.random() * 4 + 1).toFixed(1), purchases: Math.floor(Math.random() * 1000) + 100, description: 'Cần tây + Táo + Dưa leo' },
-  { id: 15, name: 'Combo 7 ngày - Ngày 2', category: 'Combo 7 ngày', price: 189000, image: 'https://chaipetsaigon.com/wp-content/uploads/2021/03/10-cong-thuc-lam-nuoc-ep-detox.jpg', rating: (Math.random() * 4 + 1).toFixed(1), purchases: Math.floor(Math.random() * 1000) + 100, description: 'Củ dền + Cà rốt + Táo + Dưa leo' },
-  { id: 16, name: 'Combo 7 ngày - Ngày 3', category: 'Combo 7 ngày', price: 189000, image: 'https://chaipetsaigon.com/wp-content/uploads/2021/03/10-cong-thuc-lam-nuoc-ep-detox.jpg', rating: (Math.random() * 4 + 1).toFixed(1), purchases: Math.floor(Math.random() * 1000) + 100, description: 'Cần tây + Thơm' },
-  { id: 17, name: 'Combo 7 ngày - Ngày 4', category: 'Combo 7 ngày', price: 189000, image: 'https://chaipetsaigon.com/wp-content/uploads/2021/03/10-cong-thuc-lam-nuoc-ep-detox.jpg', rating: (Math.random() * 4 + 1).toFixed(1), purchases: Math.floor(Math.random() * 1000) + 100, description: 'Thơm + Táo + Dưa leo + Cà rốt' },
-  { id: 18, name: 'Combo 7 ngày - Ngày 5', category: 'Combo 7 ngày', price: 189000, image: 'https://chaipetsaigon.com/wp-content/uploads/2021/03/10-cong-thuc-lam-nuoc-ep-detox.jpg', rating: (Math.random() * 4 + 1).toFixed(1), purchases: Math.floor(Math.random() * 1000) + 100, description: 'Cần tây + Táo + Thơm' },
-  { id: 19, name: 'Combo 7 ngày - Ngày 6', category: 'Combo 7 ngày', price: 189000, image: 'https://chaipetsaigon.com/wp-content/uploads/2021/03/10-cong-thuc-lam-nuoc-ep-detox.jpg', rating: (Math.random() * 4 + 1).toFixed(1), purchases: Math.floor(Math.random() * 1000) + 100, description: 'Củ dền + Cà rốt + Táo + Dưa leo' },
-  { id: 20, name: 'Combo 7 ngày - Ngày 7', category: 'Combo 7 ngày', price: 189000, image: 'https://chaipetsaigon.com/wp-content/uploads/2021/03/10-cong-thuc-lam-nuoc-ep-detox.jpg', rating: (Math.random() * 4 + 1).toFixed(1), purchases: Math.floor(Math.random() * 1000) + 100, description: 'Thơm + Táo + Dưa leo + Cà rốt' },
-  // Nước ép mix (5 loại, 330ml)
-  { id: 21, name: 'Ép Thơm Táo', category: 'Nước ép mix', price: 25000, image: 'https://cdn.nhathuoclongchau.com.vn/unsafe/800x0/https://cms-prod.s3-sgn09.fptcloud.com/nuoc_ep_tao_co_tac_dung_gi_nuoc_ep_tao_mix_voi_gi_cho_giau_dinh_duong_1_9ad02a8c5f.jpg', rating: (Math.random() * 4 + 1).toFixed(1), purchases: Math.floor(Math.random() * 1000) + 100 },
-  { id: 22, name: 'Ép Ổi Cóc', category: 'Nước ép mix', price: 25000, image: 'https://satrafoods.com.vn/uploads/Images/mon-ngon-moi-ngay/nuoc-ep-oi.jpg', rating: (Math.random() * 4 + 1).toFixed(1), purchases: Math.floor(Math.random() * 1000) + 100 },
-  { id: 23, name: 'Ép Táo Thơm', category: 'Nước ép mix', price: 25000, image: 'https://cdn.nhathuoclongchau.com.vn/unsafe/800x0/https://cms-prod.s3-sgn09.fptcloud.com/nuoc_ep_tao_co_tac_dung_gi_nuoc_ep_tao_mix_voi_gi_cho_giau_dinh_duong_1_9ad02a8c5f.jpg', rating: (Math.random() * 4 + 1).toFixed(1), purchases: Math.floor(Math.random() * 1000) + 100 },
-  { id: 24, name: 'Ép Thơm Ổi', category: 'Nước ép mix', price: 25000, image: 'https://cdn2.fptshop.com.vn/unsafe/1920x0/filters:format(webp):quality(75)/2023_11_1_638344439347794038_nuoc-ep-tao-thumb.jpg', rating: (Math.random() * 4 + 1).toFixed(1), purchases: Math.floor(Math.random() * 1000) + 100 },
-  { id: 25, name: 'Ép Táo Lê', category: 'Nước ép mix', price: 25000, image: 'https://elmich.vn/wp-content/uploads/2023/12/nuoc-ep-le-1.jpg', rating: (Math.random() * 4 + 1).toFixed(1), purchases: Math.floor(Math.random() * 1000) + 100 },
-  // Thêm 5 sản phẩm ngẫu nhiên để đủ 30
-  { id: 26, name: 'Detox Xanh Đặc Biệt', category: 'Detox', price: 30000, image: 'https://file.hstatic.net/200000240163/article/nuoc_detox_xanh_5y6z7a8b9c0d1e2f_1024x1024.jpg', rating: (Math.random() * 4 + 1).toFixed(1), purchases: Math.floor(Math.random() * 1000) + 100 },
-  { id: 27, name: 'Combo 3 ngày - Phiên bản Đặc biệt', category: 'Combo 3 ngày', price: 85000, image: 'https://sieuthiyte.com.vn/blog/wp-content/uploads/2024/12/detox-chanh-dua-leo-nen-uong-bua-sang.jpg', rating: (Math.random() * 4 + 1).toFixed(1), purchases: Math.floor(Math.random() * 1000) + 100, description: 'Củ dền + Cà rốt + Táo + Dưa leo' },
-  { id: 28, name: 'Combo 5 ngày - Phiên bản Đặc biệt', category: 'Combo 5 ngày', price: 135000, image: 'https://vivita.cdn.vccloud.vn/wp-content/uploads/2022/08/nuoc-ep-detox.jpg', rating: (Math.random() * 4 + 1).toFixed(1), purchases: Math.floor(Math.random() * 1000) + 100, description: 'Cần tây + Táo + Dưa leo' },
-  { id: 29, name: 'Combo 7 ngày - Phiên bản Đặc biệt', category: 'Combo 7 ngày', price: 189000, image: 'https://file.hstatic.net/200000240163/article/combo_7_ngay_dac_biet_8b9c0d1e2f3g4h5i_1024x1024.jpg', rating: (Math.random() * 4 + 1).toFixed(1), purchases: Math.floor(Math.random() * 1000) + 100, description: 'Cần tây + Táo + Dưa leo' },
-  { id: 30, name: 'Ép Mix Đặc Biệt', category: 'Nước ép mix', price: 25000, image: 'https://file.hstatic.net/200000240163/article/nuoc_ep_mix_dac_biet_9c0d1e2f3g4h5i6j_1024x1024.jpg', rating: (Math.random() * 4 + 1).toFixed(1), purchases: Math.floor(Math.random() * 1000) + 100 },
-];
+import { FaLeaf, FaStar, FaRegStar, FaStarHalfAlt, FaFire, FaPlus, FaMinus } from 'react-icons/fa';
+import { AiOutlineSearch } from 'react-icons/ai';
+import { FiShoppingCart } from 'react-icons/fi';
+import { allProducts } from '../../data/products';
+import { useDispatch } from "react-redux";
+import { addToCart } from "../../state/Cart/Action";
 
 export default function SearchPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const query = new URLSearchParams(location.search).get('query')?.toLowerCase() || '';
+  const hasQuery = query.trim().length > 0;
 
   const [categoryFilter, setCategoryFilter] = useState('');
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
+  const itemsPerPage = 9;
+  // Price & Rating filters (áp dụng ở chế độ không có query)
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  // Draft inputs to avoid instant filtering; apply on button click
+  const [draftMinPrice, setDraftMinPrice] = useState('');
+  const [draftMaxPrice, setDraftMaxPrice] = useState('');
+  const [minRating, setMinRating] = useState(''); // '' | 1..5
+  const [sortByPurchases, setSortByPurchases] = useState(''); // '' | 'asc' | 'desc'
+  const [filterHot, setFilterHot] = useState(false);
+  // Collapsible controls for sidebar (chỉ hiển thị khi không có query)
+  const [showAllFilters, setShowAllFilters] = useState(false);
+  const [showRatingOptions, setShowRatingOptions] = useState(false);
+  const [showPurchasesOptions, setShowPurchasesOptions] = useState(false);
 
   useEffect(() => {
-    let result = allProducts.filter((p) =>
-      p.name.toLowerCase().includes(query)
-    );
+    let result = allProducts.filter((p) => p.name.toLowerCase().includes(query));
     if (categoryFilter) {
       result = result.filter((p) => p.category === categoryFilter);
     }
+    // Áp dụng thêm lọc giá và đánh giá khi đang ở chế độ xem tất cả (không bắt buộc, nhưng vẫn hữu ích)
+    const minP = parseInt(minPrice, 10);
+    const maxP = parseInt(maxPrice, 10);
+    const minR = parseFloat(minRating);
+    if (!isNaN(minP)) {
+      result = result.filter((p) => p.price >= minP);
+    }
+    if (!isNaN(maxP)) {
+      result = result.filter((p) => p.price <= maxP);
+    }
+    if (!isNaN(minR)) {
+      result = result.filter((p) => p.rating >= minR);
+    }
+    if (filterHot) {
+      result = result.filter((p) => p.hot === true);
+    }
+    setFilteredProducts(result);
+    // Sắp xếp theo lượt mua nếu có
+    if (sortByPurchases === 'asc') {
+      result = [...result].sort((a, b) => (a.purchases ?? 0) - (b.purchases ?? 0));
+    } else if (sortByPurchases === 'desc') {
+      result = [...result].sort((a, b) => (b.purchases ?? 0) - (a.purchases ?? 0));
+    }
+
     setFilteredProducts(result);
     setCurrentPage(1);
-  }, [query, categoryFilter]);
+  }, [query, categoryFilter, minPrice, maxPrice, minRating, sortByPurchases, filterHot]);
 
-  // Phân trang
+  // Scroll to top whenever search query changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [query]);
+
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const currentItems = filteredProducts.slice(
     (currentPage - 1) * itemsPerPage,
@@ -271,151 +79,416 @@ export default function SearchPage() {
   const categories = ['Tất cả', 'Detox', 'Combo 3 ngày', 'Combo 5 ngày', 'Combo 7 ngày', 'Nước ép mix'];
 
   const handleAddToCart = (product) => {
+    dispatch(addToCart(product));
     alert(`Đã thêm "${product.name}" vào giỏ hàng!`);
   };
 
-  // Hàm tạo sao đánh giá
+  /* ======= Render sao ======= */
   const renderStars = (rating) => {
-    const fullStars = Math.floor(rating);
-    const halfStar = rating % 1 >= 0.5;
-    const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
-
+    const full = Math.floor(rating);
+    const half = rating % 1 >= 0.5;
+    const empty = 5 - full - (half ? 1 : 0);
     return (
-      <div className="flex items-center">
-        {Array(fullStars).fill().map((_, i) => (
-          <svg key={i} className="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 24 24">
-            <path d="M12 .587l3.668 7.431 8.332 1.151-6.001 5.822 1.418 8.251L12 18.943l-7.417 3.298 1.418-8.251-6.001-5.822 8.332-1.151z" />
-          </svg>
-        ))}
-        {halfStar && (
-          <svg className="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 24 24">
-            <path d="M12 2.5l2.834 5.743 6.166.851-4.5 4.366.667 6.085L12 17.174l-5.167 2.371.667-6.085-4.5-4.366 6.166-.851z" />
-          </svg>
-        )}
-        {Array(emptyStars).fill().map((_, i) => (
-          <svg key={i + fullStars + (halfStar ? 1 : 0)} className="w-5 h-5 text-gray-300 fill-current" viewBox="0 0 24 24">
-            <path d="M12 .587l3.668 7.431 8.332 1.151-6.001 5.822 1.418 8.251L12 18.943l-7.417 3.298 1.418-8.251-6.001-5.822 8.332-1.151z" />
-          </svg>
-        ))}
-        <span className="ml-2 text-gray-600 text-sm">({rating})</span>
+      <div className="flex items-center space-x-0.5">
+        {Array(full).fill().map((_, i) => <FaStar key={`f-${i}`} className="text-yellow-400" />)}
+        {half && <FaStarHalfAlt className="text-yellow-400" />}
+        {Array(empty).fill().map((_, i) => <FaRegStar key={`e-${i}`} className="text-yellow-400" />)}
+        <span className="ml-1 text-sm text-gray-500">({rating})</span>
       </div>
     );
   };
 
+  /* ======= UI ======= */
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-100 to-green-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <h1 className="text-4xl font-extrabold text-green-800 mb-8 flex items-center gap-2">
-          <FaLeaf className="text-green-600" />
-          Kết quả tìm kiếm: <span className="underline decoration-green-500">{query || 'Tất cả'}</span>
-        </h1>
-
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar danh mục */}
-          <div className="lg:w-1/4 bg-white rounded-2xl shadow-lg p-6">
-            <h2 className="text-xl font-semibold text-green-700 mb-4">Danh Mục Sản Phẩm</h2>
-            <ul className="space-y-3">
-              {categories.map((cat) => (
-                <li key={cat}>
-                  <button
-                    onClick={() => setCategoryFilter(cat === 'Tất cả' ? '' : cat)}
-                    className={`w-full text-left px-4 py-2 rounded-full text-sm font-medium transition ${
-                      categoryFilter === cat || (cat === 'Tất cả' && categoryFilter === '')
-                        ? 'bg-green-600 text-white shadow-md'
-                        : 'bg-green-50 text-green-700 hover:bg-green-100'
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Product grid */}
-          <div className="lg:w-3/4 flex flex-col gap-8">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {currentItems.length > 0 ? (
-                currentItems.map((product) => (
-                  <div
-                    key={product.id}
-                    className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-transform duration-300 transform hover:-translate-y-1"
-                  >
-                    <div
-                      onClick={() => navigate(`/product/${product.id}`)}
-                      className="cursor-pointer"
-                    >
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="w-full h-48 object-cover rounded-lg mb-4 border border-green-200"
-                      />
-                      <h3 className="text-xl font-semibold text-green-700 hover:underline mb-2">
-                        {product.name}
-                      </h3>
-                      {product.description && <p className="text-gray-600 text-sm mb-2">{product.description}</p>}
-                      {renderStars(product.rating)}
-                      <p className="text-gray-600 text-sm mt-2">Đã bán: {product.purchases}</p>
-                    </div>
-                    <p className="text-gray-600 text-sm mt-1">{product.category}</p>
-                    <p className="text-green-800 font-bold text-lg mt-2">{product.price.toLocaleString('vi-VN')} VNĐ</p>
-                    <button
-                      onClick={() => handleAddToCart(product)}
-                      className="mt-4 w-full px-4 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition-all text-sm font-semibold shadow-md"
-                    >
-                      Thêm vào giỏ hàng
-                    </button>
-                  </div>
-                ))
-              ) : (
-                <p className="text-gray-600 col-span-full text-center text-lg">
-                  Không tìm thấy sản phẩm nào phù hợp.
-                </p>
-              )}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-3 mt-8">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-lime-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Header / Banner */}
+        {hasQuery ? (
+          <div className="mb-10">
+            <div className="w-full bg-gradient-to-r from-green-600 to-lime-500 rounded-2xl py-10 px-6 text-center text-white shadow-lg">
+              <h1 className="text-4xl md:text-5xl font-extrabold flex items-center justify-center gap-3">
+                <FaLeaf className="animate-pulse" />
+                Kết quả tìm kiếm
+              </h1>
+              <p className="mt-3 text-white/90">
+                Từ khóa: <span className="font-semibold underline decoration-white/80">{query}</span>
+              </p>
+              <div className="mt-6">
                 <button
-                  onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                  disabled={currentPage === 1}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-                    currentPage === 1
-                      ? 'bg-green-200 text-green-400 cursor-not-allowed'
-                      : 'bg-green-600 text-white hover:bg-green-700'
-                  }`}
+                  onClick={() => { setCategoryFilter(''); navigate('/search'); }}
+                  className="inline-flex items-center gap-2 px-6 py-2 bg-white/90 text-green-700 rounded-full hover:bg-white transition shadow font-semibold"
                 >
-                  Trước
-                </button>
-                {Array.from({ length: totalPages }).map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setCurrentPage(i + 1)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-                      currentPage === i + 1
-                        ? 'bg-green-700 text-white'
-                        : 'bg-white text-green-700 border border-green-500 hover:bg-green-100'
-                    }`}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
-                <button
-                  onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-                    currentPage === totalPages
-                      ? 'bg-green-200 text-green-400 cursor-not-allowed'
-                      : 'bg-green-600 text-white hover:bg-green-700'
-                  }`}
-                >
-                  Sau
+                  <FaLeaf className="text-green-600" />
+                  Xem tất cả sản phẩm
                 </button>
               </div>
-            )}
+            </div>
           </div>
+        ) : (
+          <div className="mb-10">
+            <div className="w-full bg-gradient-to-r from-green-600 to-lime-500 rounded-2xl py-10 px-6 text-center text-white shadow-lg">
+              <h1 className="text-4xl md:text-5xl font-extrabold flex items-center justify-center gap-3">
+                <FaLeaf className="animate-pulse" />
+                Tất cả sản phẩm
+              </h1>
+              <p className="mt-3 text-white/90">Khám phá các sản phẩm tốt nhất từ DetoxCare</p>
+            </div>
+          </div>
+        )}
+
+        {/* No filter bar when searching (requested) */}
+
+        <div className="flex flex-col lg:flex-row gap-10">
+          {/* === Sidebar === */}
+          {!hasQuery && (
+            <aside className="lg:w-1/4">
+              <div className="sticky top-24 bg-white/70 backdrop-blur-lg rounded-2xl shadow-lg p-6">
+                <div className="mb-5 flex items-center justify-between">
+                  <h2 className="text-xl font-bold text-green-700">Danh mục</h2>
+                  <button
+                    onClick={() => setShowAllFilters((v) => !v)}
+                    className="inline-flex items-center justify-center w-9 h-9 rounded-full text-green-700 hover:bg-green-100 hover:shadow transition"
+                    aria-label={showAllFilters ? 'Thu gọn danh mục' : 'Mở rộng danh mục'}
+                    title={showAllFilters ? 'Thu gọn danh mục' : 'Mở rộng danh mục'}
+                  >
+                    {showAllFilters ? <FaMinus /> : <FaPlus />}
+                  </button>
+                </div>
+                <ul className="space-y-3">
+                  {showAllFilters ? (
+                    // Mở rộng: hiển thị toàn bộ danh mục (bao gồm 'Tất cả')
+                    <>
+                      {categories.map((cat) => {
+                        const value = cat === 'Tất cả' ? '' : cat;
+                        const active = categoryFilter === value;
+                        return (
+                          <li key={cat}>
+                            <button
+                              onClick={() => setCategoryFilter(value)}
+                              className={`w-full text-left px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200
+                                ${active
+                                  ? 'bg-gradient-to-r from-green-600 to-lime-500 text-white shadow-md'
+                                  : 'text-green-700 hover:bg-green-100 hover:shadow'}`}
+                            >
+                              {cat}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </>
+                  ) : (
+                    // Thu gọn: chỉ hiển thị hạng mục đang chọn
+                    <li>
+                      <button
+                        onClick={() => setCategoryFilter(categoryFilter)}
+                        className={`w-full text-left px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200
+                          ${'bg-gradient-to-r from-green-600 to-lime-500 text-white shadow-md'}`}
+                      >
+                        {categoryFilter || 'Tất cả'}
+                      </button>
+                    </li>
+                  )}
+                </ul>
+
+                {/* Giá cả đã chuyển xuống cuối */}
+
+                {/* Đánh giá (thu gọn/mở rộng giống danh mục) */}
+                <div className="mt-6">
+                  <div className="mb-5 flex items-center justify-between">
+                    <h2 className="text-xl font-bold text-green-700">Đánh giá</h2>
+                    <button
+                      onClick={() => setShowRatingOptions((v) => !v)}
+                      className="inline-flex items-center justify-center w-9 h-9 rounded-full text-green-700 hover:bg-green-100 hover:shadow transition"
+                      aria-label={showRatingOptions ? 'Thu gọn đánh giá' : 'Mở rộng đánh giá'}
+                      title={showRatingOptions ? 'Thu gọn đánh giá' : 'Mở rộng đánh giá'}
+                    >
+                      {showRatingOptions ? <FaMinus /> : <FaPlus />}
+                    </button>
+                  </div>
+                  {showRatingOptions ? (
+                    <ul className="space-y-3">
+                      {[
+                        { label: 'Tất cả', value: '' },
+                        { label: '4.5', value: '4.5' },
+                        { label: '4', value: '4' },
+                        { label: '3.5', value: '3.5' },
+                        { label: '3', value: '3' },
+                      ].map((opt) => (
+                        <li key={opt.value || 'all'}>
+                          <button
+                            onClick={() => setMinRating(opt.value)}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200
+                              ${minRating === opt.value
+                                ? 'bg-gradient-to-r from-green-600 to-lime-500 text-white shadow-md'
+                                : 'text-green-700 hover:bg-green-100 hover:shadow'}`}
+                          >
+                            {opt.value === '' ? (
+                              <span>Tất cả</span>
+                            ) : (
+                              <span className="flex items-center">
+                                {Array.from({ length: 5 }).map((_, i) => {
+                                  const v = parseFloat(opt.value);
+                                  const rem = v - i;
+                                  if (rem >= 1) return <FaStar key={i} className="text-yellow-400" />;
+                                  if (rem >= 0.5) return <FaStarHalfAlt key={i} className="text-yellow-400" />;
+                                  return <FaRegStar key={i} className="text-yellow-400" />;
+                                })}
+                              </span>
+                            )}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <button
+                      onClick={() => setMinRating(minRating)}
+                      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 bg-gradient-to-r from-green-600 to-lime-500 text-white shadow-md`}
+                    >
+                      {minRating === '' ? (
+                        <span>Tất cả</span>
+                      ) : (
+                        <span className="flex items-center">
+                          {Array.from({ length: 5 }).map((_, i) => {
+                            const v = parseFloat(minRating);
+                            const rem = v - i;
+                            if (rem >= 1) return <FaStar key={i} className="text-yellow-300" />;
+                            if (rem >= 0.5) return <FaStarHalfAlt key={i} className="text-yellow-300" />;
+                            return <FaRegStar key={i} className="text-yellow-300" />;
+                          })}
+                        </span>
+                      )}
+                    </button>
+                  )}
+                </div>
+
+                {/* Lượt mua (thu gọn/mở rộng giống đánh giá) */}
+                <div className="mt-6">
+                  <div className="mb-5 flex items-center justify-between">
+                    <h2 className="text-xl font-bold text-green-700">Lượt mua</h2>
+                    <button
+                      onClick={() => setShowPurchasesOptions((v) => !v)}
+                      className="inline-flex items-center justify-center w-9 h-9 rounded-full text-green-700 hover:bg-green-100 hover:shadow transition"
+                      aria-label={showPurchasesOptions ? 'Thu gọn lượt mua' : 'Mở rộng lượt mua'}
+                      title={showPurchasesOptions ? 'Thu gọn lượt mua' : 'Mở rộng lượt mua'}
+                    >
+                      {showPurchasesOptions ? <FaMinus /> : <FaPlus />}
+                    </button>
+                  </div>
+                  {showPurchasesOptions ? (
+                    <ul className="space-y-3">
+                      {[
+                        { label: 'Mặc định', value: '' },
+                        { label: 'Tăng dần', value: 'asc' },
+                        { label: 'Giảm dần', value: 'desc' },
+                      ].map((opt) => (
+                        <li key={opt.value || 'default'}>
+                          <button
+                            onClick={() => setSortByPurchases(opt.value)}
+                            className={`w-full text-left px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200
+                              ${sortByPurchases === opt.value
+                                ? 'bg-gradient-to-r from-green-600 to-lime-500 text-white shadow-md'
+                                : 'text-green-700 hover:bg-green-100 hover:shadow'}`}
+                          >
+                            {opt.label}
+                          </button>
+                        </li>
+                      ))}
+                      {/* Toggle HOT */}
+                      <li>
+                        <button
+                          onClick={() => setFilterHot((v) => !v)}
+                          className={`w-full flex items-center justify-between px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200
+                            ${filterHot
+                              ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-md'
+                              : 'text-red-600 bg-red-50 hover:bg-red-100 hover:shadow'}`}
+                          title="Chỉ hiển thị sản phẩm HOT"
+                        >
+                          <span className="flex items-center gap-2">
+                            <FaFire />
+                            HOT
+                          </span>
+                          {/* Không cần chữ 'Bật' khi active */}
+                        </button>
+                      </li>
+                    </ul>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      <button
+                        onClick={() => setSortByPurchases(sortByPurchases)}
+                        className={`w-full text-left px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 bg-gradient-to-r from-green-600 to-lime-500 text-white shadow-md`}
+                      >
+                        {sortByPurchases === 'asc' ? 'Tăng dần' : sortByPurchases === 'desc' ? 'Giảm dần' : 'Mặc định'}
+                      </button>
+                      {filterHot && (
+                        <div className="inline-flex items-center gap-1 self-start px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-red-500 to-orange-500 text-white shadow">
+                          <FaFire className="text-sm" /> HOT
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Giá cả (đưa xuống cuối) */}
+                <div className="mt-6">
+                  <h2 className="text-xl font-bold text-green-700 mb-5">Giá cả</h2>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="number"
+                      min="0"
+                      value={draftMinPrice}
+                      onChange={(e) => setDraftMinPrice(e.target.value)}
+                      placeholder="Từ (đ)"
+                      className="w-1/2 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                    />
+                    <span className="text-gray-500">-</span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={draftMaxPrice}
+                      onChange={(e) => setDraftMaxPrice(e.target.value)}
+                      placeholder="Đến (đ)"
+                      className="w-1/2 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                    />
+                  </div>
+                  <div className="mt-3">
+                    <button
+                      onClick={() => {
+                        setMinPrice(draftMinPrice);
+                        setMaxPrice(draftMaxPrice);
+                      }}
+                      className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow"
+                    >
+                      <AiOutlineSearch className="w-4 h-4" />
+                      <span>Lọc giá</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Nút xóa lọc */}
+                <div className="mt-6 flex gap-2">
+                  <button
+                    onClick={() => { setCategoryFilter(''); setMinPrice(''); setMaxPrice(''); setMinRating(''); setSortByPurchases(''); setFilterHot(false); setDraftMinPrice(''); setDraftMaxPrice(''); }}
+                    className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
+                  >
+                    Xóa lọc
+                  </button>
+                </div>
+              </div>
+            </aside>
+          )}
+
+          {/* === Product Grid === */}
+          <main className={`${hasQuery ? 'w-full' : 'lg:w-3/4'}`}>
+            {currentItems.length ? (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {currentItems.map((p) => (
+                    <article
+                      key={p.id}
+                      className="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300
+                                 transform hover:-translate-y-2 overflow-hidden group relative"
+                    >
+                      {/* Badge HOT */}
+                      {p.hot && (
+                        <div className="absolute top-3 left-3 z-10">
+                          <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg">
+                            <FaFire className="text-sm" />
+                            HOT
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Ảnh */}
+                      <div className="relative rounded-2xl overflow-hidden leading-[0]">
+                        <img
+                          src={p.image}
+                          alt={p.name}
+                          className="block w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+
+                      {/* Thông tin */}
+                      <div className="p-5">
+                        <h3
+                          onClick={() => navigate(`/product/${p.id}`)}
+                          className="text-lg font-bold text-green-800 truncate cursor-pointer hover:text-green-600 transition"
+                        >
+                          {p.name}
+                        </h3>
+                        {p.description && (
+                          <p className="text-xs text-gray-500 mt-1 mb-2 truncate">{p.description}</p>
+                        )}
+                        <p className="text-sm text-green-600 font-medium">{p.category}</p>
+
+                        <div className="mt-3 mb-3">{renderStars(p.rating)}</div>
+
+                        <p className="text-sm text-gray-500">Đã bán: {p.purchases}</p>
+
+                        <div className="flex justify-between items-center mt-4">
+                          <span className="text-2xl font-bold text-green-800">
+                            {p.price.toLocaleString('vi-VN')}₫
+                          </span>
+
+                          <button
+                            onClick={() => handleAddToCart(p)}
+                            className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-full
+                                     hover:bg-green-700 transition-all shadow-md hover:shadow-lg"
+                          >
+                            <FiShoppingCart />
+                            <span className="text-xs font-semibold">Thêm</span>
+                          </button>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <nav className="flex justify-center items-center gap-2 mt-12">
+                    <button
+                      onClick={() => setCurrentPage((x) => Math.max(x - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="px-4 py-2 rounded-full text-sm font-semibold transition
+                        disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed
+                        bg-green-600 text-white hover:bg-green-700 shadow"
+                    >
+                      Trước
+                    </button>
+
+                    {Array.from({ length: totalPages }).map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setCurrentPage(i + 1)}
+                        className={`w-9 h-9 rounded-full text-sm font-bold transition
+                          ${currentPage === i + 1
+                            ? 'bg-green-700 text-white scale-110 shadow-md'
+                            : 'bg-white text-green-700 border border-green-300 hover:bg-green-100'}`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+
+                    <button
+                      onClick={() => setCurrentPage((x) => Math.min(x + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="px-4 py-2 rounded-full text-sm font-semibold transition
+                        disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed
+                        bg-green-600 text-white hover:bg-green-700 shadow"
+                    >
+                      Sau
+                    </button>
+                  </nav>
+                )}
+              </>
+            ) : (
+              <div className="text-center py-20">
+                <FaLeaf className="mx-auto text-7xl text-green-200 mb-4" />
+                <p className="text-xl text-gray-500">Không tìm thấy sản phẩm nào phù hợp.</p>
+              </div>
+            )}
+          </main>
         </div>
       </div>
     </div>

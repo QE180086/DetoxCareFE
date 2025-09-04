@@ -15,9 +15,7 @@ function App() {
   // },[auth.jwt||jwt])
 
   return (
-    <>
-     <CustomerRouter></CustomerRouter>
-    </>
+      <CustomerRouter></CustomerRouter>
   );
 }
 
