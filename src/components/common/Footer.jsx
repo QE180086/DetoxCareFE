@@ -3,23 +3,23 @@ import { FaLeaf, FaFacebookF, FaInstagram } from 'react-icons/fa';
 
 export default function Footer() {
   return (
-    <footer className="bg-gradient-to-br from-green-100 to-emerald-200 text-green-900 py-12">
+    <footer className="bg-gradient-to-br from-gray-900 to-black text-white py-12">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Logo & Description */}
           <div>
-            <h3 className="text-3xl font-bold text-green-800 mb-4 flex items-center gap-2">
-              <FaLeaf className="text-green-600" />
+            <h3 className="text-3xl font-bold text-green-400 mb-4 flex items-center gap-2">
+              <FaLeaf className="text-green-500" />
               DetoxCare
             </h3>
-            <p className="text-gray-600 text-sm leading-relaxed">
+            <p className="text-gray-300 text-sm leading-relaxed">
               DetoxCare giúp bạn thanh lọc cơ thể, cải thiện sức khỏe và duy trì lối sống lành mạnh thông qua các sản phẩm và phương pháp detox tự nhiên, an toàn.
             </p>
           </div>
 
           {/* Navigation Links */}
           <div>
-            <h4 className="text-lg font-semibold text-green-800 mb-4">Liên kết nhanh</h4>
+            <h4 className="text-lg font-semibold text-green-400 mb-4">Liên kết nhanh</h4>
             <ul className="space-y-3 text-sm">
               {[
                 { to: '/', label: 'Trang chủ' },
@@ -30,7 +30,7 @@ export default function Footer() {
                 <li key={link.to}>
                   <Link
                     to={link.to}
-                    className="text-gray-600 hover:text-green-600 hover:underline transition duration-200 ease-in-out"
+                    className="text-gray-300 hover:text-green-400 hover:underline transition duration-200 ease-in-out"
                   >
                     {link.label}
                   </Link>
@@ -41,12 +41,12 @@ export default function Footer() {
 
           {/* Contact Info */}
           <div>
-            <h4 className="text-lg font-semibold text-green-800 mb-4">Liên hệ</h4>
-            <ul className="space-y-3 text-gray-600 text-sm mb-6">
+            <h4 className="text-lg font-semibold text-green-400 mb-4">Liên hệ</h4>
+            <ul className="space-y-3 text-gray-300 text-sm mb-6">
               <li>
                 <a
                   href="mailto:detoxcare.qn@gmail.com"
-                  className="hover:text-green-600 hover:underline transition duration-200 ease-in-out"
+                  className="hover:text-green-400 hover:underline transition duration-200 ease-in-out"
                 >
                   Email: detoxcare.qn@gmail.com
                 </a>
@@ -54,7 +54,7 @@ export default function Footer() {
               <li>
                 <a
                   href="tel:+84379560889"
-                  className="hover:text-green-600 hover:underline transition duration-200 ease-in-out"
+                  className="hover:text-green-400 hover:underline transition duration-200 ease-in-out"
                 >
                   Điện thoại: +84 379 560 889
                 </a>
@@ -66,7 +66,7 @@ export default function Footer() {
             {/* Google Map */}
             <div className="mt-4">
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d247992.53885729308!2d109.06289033273319!3d13.785900662971352!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x316f6c65736eabd9%3A0xd362348e5af3d559!2zUXV5IE5oxqFuLCBCw6xuaCDEkOG7i25oLCBWaeG7h3QgTmFt!5e0!3m2!1svi!2s!4v1746858415560!5m2!1svi!2s"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d247992.53885729308!2d109.06289033273319!3d13.785900662971352!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x316f6c65736eabd9%3A0xd362348e5af3d559!2zUXV5IE5oxqFuLCBCw6xuaCDEkOG7j25oLCBWaeG7h3QgTmFt!5e0!3m2!1svi!2s!4v1746858415560!5m2!1svi!2s"
                 height="150"
                 style={{ border: 0, borderRadius: '8px', width: '100%' }}
                 allowFullScreen=""
@@ -78,7 +78,7 @@ export default function Footer() {
 
           {/* Social Media */}
           <div>
-            <h4 className="text-lg font-semibold text-green-800 mb-4">Theo dõi chúng tôi</h4>
+            <h4 className="text-lg font-semibold text-green-400 mb-4">Theo dõi chúng tôi</h4>
             <div className="flex space-x-4">
               {[
                 {
@@ -96,7 +96,7 @@ export default function Footer() {
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-gray-600 hover:text-green-600 transform hover:scale-110 transition duration-200 ease-in-out"
+                  className="text-gray-300 hover:text-green-400 transform hover:scale-110 transition duration-200 ease-in-out"
                 >
                   {icon}
                 </a>
@@ -106,8 +106,8 @@ export default function Footer() {
         </div>
 
         {/* Copyright */}
-        <div className="mt-12 pt-6 border-t border-green-300 text-center">
-          <p className="text-gray-600 text-sm">
+        <div className="mt-12 pt-6 border-t border-gray-700 text-center">
+          <p className="text-gray-300 text-sm">
             © {new Date().getFullYear()} DetoxCare. All rights reserved.
           </p>
         </div>

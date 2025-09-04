@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom"
+import { Route, Routes, useLocation } from "react-router-dom"
 import Navbar from "../components/common/NavBar"
 import Footer from "../components/common/Footer"
 import Home from "../components/home/Home"
@@ -7,6 +7,7 @@ import Register from "../components/auth/Register"
 import Contact from "../components/aboutus/Contact"
 import AboutUs from "../components/aboutus/AboutUs"
 import AIChat from "../components/common/AIChat"
+import ScrollToTop from "../components/common/ScrollToTop"
 import Blog from "../components/blog/Blog"
 import BlogDetail from "../components/blog/BlogDetail"
 import Cart from "../components/cart/Cart"
@@ -14,15 +15,17 @@ import Profile from "../components/profile/Profile"
 import SearchPage from "../components/products/SearchPage"
 import ProductDetail from "../components/products/ProductDetail"
 import HistoryOrders from "../components/order/HistoryOrder"
-import OrderDetail from "../components/order/OrderDetail"
 
 export const CustomerRouter = () => {
+    const location = useLocation();
+    const hideLayout = location.pathname === "/login" || location.pathname === "/register";
 
     return (
         <div>
-            <Navbar></Navbar>
+            <ScrollToTop />
+            {!hideLayout ? <Navbar></Navbar> : null}
             <AIChat />
-            <Routes>
+            <Routes key={location.pathname}>
                 {/* <Route path="/" element={<Home />}></Route>
                     <Route path="/account/register" element={<Home />}></Route>
                     <Route path="/account/login" element={<Home />}></Route>
@@ -47,10 +50,8 @@ export const CustomerRouter = () => {
 
                 {/*  orders  */}
                 <Route path="/history-order" element={<HistoryOrders />} />
-                <Route path="/orders/:orderId" element={<OrderDetail />} />
             </Routes>
-
-            <Footer></Footer>
+            {!hideLayout ? <Footer></Footer> : null}
 
         </div>
     )
