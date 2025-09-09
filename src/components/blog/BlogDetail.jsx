@@ -1,22 +1,78 @@
 import { Link, useParams } from "react-router-dom";
-import { FaLeaf, FaUser, FaCalendarAlt, FaArrowLeft, FaComments } from "react-icons/fa";
-import { useState } from "react";
-import { getBlogById } from "../../data/blogs";
+import {
+  FaLeaf,
+  FaUser,
+  FaCalendarAlt,
+  FaArrowLeft,
+  FaComments,
+} from "react-icons/fa";
+import { useState, useEffect } from "react";
+// import { getBlogById } from "../../data/blogs";
+import { blogApi } from "../../utils/api/blog.api";
 
 export default function BlogDetail() {
   const { blogId } = useParams();
-  const blog = getBlogById(blogId) || {
-    title: "Không tìm thấy",
-    content: "Bài viết không tồn tại.",
+  const [blog, setBlog] = useState({
+    title: "",
+    content: "",
     created_at: "",
-    author: "Admin DetoxCare",
-    image: "https://images.unsplash.com/photo-1506784361845-3903a963b3b8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-  };
+    author: "",
+    image: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const [comments, setComments] = useState([]);
   const [name, setName] = useState("");
   const [comment, setComment] = useState("");
   const [isLoggedIn] = useState(true);
+
+  useEffect(() => {
+    const fetchBlog = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        // Try to get blog by ID first, then by slug if needed
+        let res;
+        try {
+          res = await blogApi.getById(blogId);
+        } catch (idError) {
+          // If getById fails, try getBySlugName
+          res = await blogApi.getBySlugName(blogId);
+        }
+
+        const data = res?.data || res;
+        // Map fields if backend uses different naming
+        const mapped = {
+          id: data.id,
+          title: data.title || data.name || "Không có tiêu đề",
+          content: data.content || data.body || "",
+          created_at:
+            data.created_at || data.createdAt || data.created_date || "",
+          author: data.author || data.createdBy || "Admin DetoxCare",
+          image:
+            data.image ||
+            data.imageUrl ||
+            data.thumbnail ||
+            "https://images.unsplash.com/photo-1506784361845-3903a963b3b8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        };
+        setBlog(mapped);
+      } catch (e) {
+        setError(e?.message || "Không tải được bài viết");
+        setBlog({
+          title: "Không tìm thấy",
+          content: "Bài viết không tồn tại.",
+          created_at: "",
+          author: "Admin DetoxCare",
+          image:
+            "https://images.unsplash.com/photo-1506784361845-3903a963b3b8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (blogId) fetchBlog();
+  }, [blogId]);
 
   const handleCommentSubmit = (e) => {
     e.preventDefault();
@@ -59,7 +115,7 @@ export default function BlogDetail() {
                 Detox Blog
               </div>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight mb-6">
-                {blog.title}
+                {loading ? "Đang tải..." : blog.title || "Không tìm thấy"}
               </h1>
               <div className="flex flex-wrap items-center gap-6 text-gray-600">
                 <div className="flex items-center gap-2">
@@ -72,7 +128,7 @@ export default function BlogDetail() {
                 </div>
               </div>
             </div>
-            
+
             {/* Image */}
             <div className="order-1 lg:order-2">
               <div className="relative">
@@ -96,9 +152,15 @@ export default function BlogDetail() {
             <article className="bg-white">
               {/* Content */}
               <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed">
-                <div className="text-lg leading-8 whitespace-pre-wrap">
-                  {blog.content}
-                </div>
+                {loading ? (
+                  <div className="text-gray-500">Đang tải nội dung...</div>
+                ) : error ? (
+                  <div className="text-red-600">{error}</div>
+                ) : (
+                  <div className="text-lg leading-8 whitespace-pre-wrap">
+                    {blog.content}
+                  </div>
+                )}
               </div>
 
               {/* Divider */}
@@ -128,7 +190,9 @@ export default function BlogDetail() {
                 <h3 className="font-semibold text-gray-900 mb-4">Về tác giả</h3>
                 <div className="flex items-center gap-4">
                   <img
-                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(blog.author)}&background=10B981&color=fff&size=64`}
+                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
+                      blog.author
+                    )}&background=10B981&color=fff&size=64`}
                     alt={blog.author}
                     className="w-16 h-16 rounded-full"
                   />
@@ -153,7 +217,9 @@ export default function BlogDetail() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Bình luận</span>
-                    <span className="font-medium text-gray-900">{comments.length}</span>
+                    <span className="font-medium text-gray-900">
+                      {comments.length}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -179,7 +245,10 @@ export default function BlogDetail() {
               {isLoggedIn ? (
                 <form onSubmit={handleCommentSubmit} className="space-y-6">
                   <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="name"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       Tên của bạn *
                     </label>
                     <input
@@ -193,7 +262,10 @@ export default function BlogDetail() {
                     />
                   </div>
                   <div>
-                    <label htmlFor="comment" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="comment"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       Bình luận *
                     </label>
                     <textarea
@@ -216,7 +288,9 @@ export default function BlogDetail() {
                 </form>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-gray-600 mb-4">Vui lòng đăng nhập để bình luận</p>
+                  <p className="text-gray-600 mb-4">
+                    Vui lòng đăng nhập để bình luận
+                  </p>
                   <Link
                     to="/login"
                     className="inline-flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-green-700 transition-colors"
@@ -238,19 +312,30 @@ export default function BlogDetail() {
                 </div>
               ) : (
                 comments.map((c) => (
-                  <div key={c.id} className="bg-white border border-gray-100 rounded-2xl p-6 hover:shadow-sm transition-shadow">
+                  <div
+                    key={c.id}
+                    className="bg-white border border-gray-100 rounded-2xl p-6 hover:shadow-sm transition-shadow"
+                  >
                     <div className="flex items-start gap-4">
                       <img
-                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=10B981&color=fff&size=48`}
+                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
+                          c.name
+                        )}&background=10B981&color=fff&size=48`}
                         alt={`${c.name}'s avatar`}
                         className="w-12 h-12 rounded-full flex-shrink-0"
                       />
                       <div className="flex-grow">
                         <div className="flex items-center gap-3 mb-2">
-                          <h4 className="font-medium text-gray-900">{c.name}</h4>
-                          <span className="text-sm text-gray-500">{c.created_at}</span>
+                          <h4 className="font-medium text-gray-900">
+                            {c.name}
+                          </h4>
+                          <span className="text-sm text-gray-500">
+                            {c.created_at}
+                          </span>
                         </div>
-                        <p className="text-gray-700 leading-relaxed">{c.comment}</p>
+                        <p className="text-gray-700 leading-relaxed">
+                          {c.comment}
+                        </p>
                       </div>
                     </div>
                   </div>

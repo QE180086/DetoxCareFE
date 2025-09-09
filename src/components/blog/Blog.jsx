@@ -1,10 +1,15 @@
 // import { Link } from "react-router-dom"; // Removed for demo purposes
-import { useState, Fragment, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiSearch, FiCalendar, FiArrowRight, FiFilter, FiChevronDown, FiCheck } from "react-icons/fi";
+import {
+  FiSearch,
+  FiCalendar,
+  FiArrowRight,
+  FiChevronDown,
+} from "react-icons/fi";
 import { FaLeaf, FaHeart, FaStar } from "react-icons/fa";
-import { allBlogs } from "../../data/blogs";
-
+// import { allBlogs } from "../../data/blogs";
+import { blogApi } from "../../utils/api/blog.api";
 
 export default function Blog() {
   const navigate = useNavigate();
@@ -18,15 +23,21 @@ export default function Blog() {
   const blogsPerPage = 8;
   const maxVisibleCategories = 7;
 
-  // Use blog data from the data file
-  const blogList = allBlogs;
+  // Blog list from API
+  const [blogList, setBlogList] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [serverTotalPages, setServerTotalPages] = useState(0);
 
-  // Get unique categories
-  const categories = ["all", ...new Set(blogList.map(blog => blog.category))];
-  
+  // Get unique categories from current list
+  const categories = [
+    "all",
+    ...new Set((blogList || []).map((blog) => blog.category).filter(Boolean)),
+  ];
+
   // Category display logic
-  const visibleCategories = showAllCategories 
-    ? categories 
+  const visibleCategories = showAllCategories
+    ? categories
     : categories.slice(0, maxVisibleCategories);
   const hiddenCategoriesCount = categories.length - maxVisibleCategories;
   const hasHiddenCategories = hiddenCategoriesCount > 0;
@@ -45,39 +56,94 @@ export default function Blog() {
     return 0;
   });
 
-  // Featured articles - always visible, not affected by filters
-  const featuredBlogs = blogList.filter(blog => blog.featured);
+  // Featured articles - always visible, get first 2 blogs
+  const featuredBlogs = (blogList || []).slice(0, 2);
 
   // Regular articles - affected by search, category, and sorting
   const filteredRegularBlogs = sortedBlogs.filter((blog) => {
-    if (blog.featured) return false; // Exclude featured articles from regular list
-    const matchesSearch = blog.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || blog.category === selectedCategory;
+    const matchesSearch = blog.title
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+    const matchesCategory =
+      selectedCategory === "all" || blog.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
   // Pagination - only for regular articles
   const indexOfLastBlog = currentPage * blogsPerPage;
   const indexOfFirstBlog = indexOfLastBlog - blogsPerPage;
-  const currentBlogs = filteredRegularBlogs.slice(indexOfFirstBlog, indexOfLastBlog);
+  const currentBlogs = filteredRegularBlogs.slice(
+    indexOfFirstBlog,
+    indexOfLastBlog
+  );
   const totalPages = Math.ceil(filteredRegularBlogs.length / blogsPerPage);
+  const effectiveTotalPages = serverTotalPages || totalPages;
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   // Các tùy chọn sắp xếp
   const sortOptions = [
-    { id: 1, name: 'Mới nhất', value: 'created_at_desc' },
-    { id: 2, name: 'Cũ nhất', value: 'created_at_asc' },
-    { id: 3, name: 'A-Z', value: 'title_asc' },
-    { id: 4, name: 'Z-A', value: 'title_desc' },
+    { id: 1, name: "Mới nhất", value: "created_at_desc" },
+    { id: 2, name: "Cũ nhất", value: "created_at_asc" },
+    { id: 3, name: "A-Z", value: "title_asc" },
+    { id: 4, name: "Z-A", value: "title_desc" },
   ];
-  
-  const selectedOption = sortOptions.find(option => option.value === sortOption) || sortOptions[0];
+
+  const selectedOption =
+    sortOptions.find((option) => option.value === sortOption) || sortOptions[0];
 
   const handleSortChange = (value) => {
     setSortOption(value);
     setIsDropdownOpen(false);
   };
+
+  // Fetch blogs from API
+  useEffect(() => {
+    const fetchBlogs = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        // Map sort option to API field/direction
+        let field = "createdDate";
+        let direction = "desc";
+        if (sortOption === "created_at_asc") {
+          field = "createdDate";
+          direction = "asc";
+        } else if (sortOption === "title_asc") {
+          field = "title";
+          direction = "asc";
+        } else if (sortOption === "title_desc") {
+          field = "title";
+          direction = "desc";
+        }
+
+        const searchText = searchTerm.trim() || undefined;
+        const res = await blogApi.getAll(
+          currentPage,
+          blogsPerPage,
+          field,
+          direction,
+          searchText
+        );
+        const pageData = res?.data || {};
+        const content = pageData.content || [];
+        setBlogList(Array.isArray(content) ? content : []);
+        const apiTotalPages =
+          pageData.totalPages ||
+          (pageData.totalElements && blogsPerPage
+            ? Math.ceil(pageData.totalElements / blogsPerPage)
+            : 0);
+        setServerTotalPages(apiTotalPages || 0);
+      } catch (e) {
+        setError(e?.message || "Không tải được danh sách blog");
+        setBlogList([]);
+        setServerTotalPages(0);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBlogs();
+  }, [currentPage, blogsPerPage, sortOption, searchTerm]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -87,9 +153,9 @@ export default function Blog() {
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
@@ -97,15 +163,16 @@ export default function Blog() {
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
       <div className="relative h-96 overflow-hidden">
-        <div 
+        <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: "url('https://images.unsplash.com/photo-1490645935967-10de6ba17061?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2053&q=80')"
+            backgroundImage:
+              "url('https://images.unsplash.com/photo-1490645935967-10de6ba17061?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2053&q=80')",
           }}
         />
         <div className="absolute inset-0 bg-black bg-opacity-40" />
         <div className="absolute inset-0 bg-gradient-to-r from-green-900/30 to-green-700/30" />
-        
+
         <div className="relative z-10 h-full flex items-center justify-center px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
             <div className="flex justify-center items-center mb-6">
@@ -117,9 +184,10 @@ export default function Blog() {
               Blog Detox
             </h1>
             <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto drop-shadow-md">
-              Khám phá những bí quyết detox hiệu quả cho sức khỏe và sự sống động của bạn
+              Khám phá những bí quyết detox hiệu quả cho sức khỏe và sự sống
+              động của bạn
             </p>
-            
+
             {/* Decorative elements */}
             <div className="flex justify-center items-center mt-8 gap-4">
               <div className="w-16 h-0.5 bg-white/50"></div>
@@ -128,16 +196,22 @@ export default function Blog() {
             </div>
           </div>
         </div>
-        
+
         {/* Floating elements for decoration */}
         <div className="absolute top-20 left-10 opacity-20">
           <FaLeaf className="text-white text-2xl animate-pulse" />
         </div>
         <div className="absolute bottom-20 right-10 opacity-20">
-          <FaLeaf className="text-white text-3xl animate-pulse" style={{animationDelay: '1s'}} />
+          <FaLeaf
+            className="text-white text-3xl animate-pulse"
+            style={{ animationDelay: "1s" }}
+          />
         </div>
         <div className="absolute top-32 right-1/4 opacity-15">
-          <FaLeaf className="text-white text-xl animate-pulse" style={{animationDelay: '2s'}} />
+          <FaLeaf
+            className="text-white text-xl animate-pulse"
+            style={{ animationDelay: "2s" }}
+          />
         </div>
       </div>
 
@@ -147,7 +221,9 @@ export default function Blog() {
           <div className="mb-16">
             <div className="flex items-center gap-3 mb-8">
               <FaStar className="text-yellow-500 text-2xl" />
-              <h2 className="text-3xl font-bold text-gray-900">Bài viết nổi bật</h2>
+              <h2 className="text-3xl font-bold text-gray-900">
+                Bài viết nổi bật
+              </h2>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {featuredBlogs.map((blog) => (
@@ -177,7 +253,9 @@ export default function Blog() {
                     <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-green-600 transition-colors">
                       {blog.title}
                     </h3>
-                    <p className="text-gray-600 mb-4 line-clamp-2">{blog.excerpt}</p>
+                    <p className="text-gray-600 mb-4 line-clamp-2">
+                      {blog.excerpt}
+                    </p>
                     <div className="flex items-center justify-between text-sm text-gray-500">
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1">
@@ -200,7 +278,9 @@ export default function Blog() {
           <div className="flex flex-col lg:flex-row gap-6 items-start">
             {/* Search */}
             <div className="flex-1 max-w-md">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Tìm kiếm</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tìm kiếm
+              </label>
               <div className="relative">
                 <input
                   type="text"
@@ -215,7 +295,9 @@ export default function Blog() {
 
             {/* Category Filter */}
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Danh mục</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Danh mục
+              </label>
               <div className="flex flex-wrap gap-2">
                 {visibleCategories.map((category) => (
                   <button
@@ -230,7 +312,7 @@ export default function Blog() {
                     {category === "all" ? "Tất cả" : category}
                   </button>
                 ))}
-                
+
                 {/* Show +N... button if there are hidden categories */}
                 {hasHiddenCategories && !showAllCategories && (
                   <button
@@ -240,7 +322,7 @@ export default function Blog() {
                     +{hiddenCategoriesCount}
                   </button>
                 )}
-                
+
                 {/* Show collapse button when all categories are visible */}
                 {showAllCategories && hasHiddenCategories && (
                   <button
@@ -255,7 +337,9 @@ export default function Blog() {
 
             {/* Sort Filter */}
             <div className="w-full lg:w-auto relative" ref={dropdownRef}>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Sắp xếp</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Sắp xếp
+              </label>
               <div className="relative">
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -264,11 +348,13 @@ export default function Blog() {
                   {selectedOption.name}
                 </button>
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <FiChevronDown className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
-                    isDropdownOpen ? 'transform rotate-180' : ''
-                  }`} />
+                  <FiChevronDown
+                    className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
+                      isDropdownOpen ? "transform rotate-180" : ""
+                    }`}
+                  />
                 </div>
-                
+
                 {/* Custom Dropdown */}
                 {isDropdownOpen && (
                   <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
@@ -277,9 +363,9 @@ export default function Blog() {
                         key={option.id}
                         onClick={() => handleSortChange(option.value)}
                         className={`w-full px-4 py-3 text-left hover:bg-green-50 transition-colors duration-150 ${
-                          sortOption === option.value 
-                            ? 'bg-green-100 text-green-700 font-medium' 
-                            : 'text-gray-700 hover:text-green-600'
+                          sortOption === option.value
+                            ? "bg-green-100 text-green-700 font-medium"
+                            : "text-gray-700 hover:text-green-600"
                         }`}
                       >
                         {option.name}
@@ -289,14 +375,29 @@ export default function Blog() {
                 )}
               </div>
             </div>
-
           </div>
         </div>
 
         {/* Regular Articles */}
         <div className="mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8">Tất cả bài viết</h2>
-          {currentBlogs.length > 0 ? (
+          <h2 className="text-3xl font-bold text-gray-900 mb-8">
+            Tất cả bài viết
+          </h2>
+          {loading ? (
+            <div className="text-center py-16">
+              <div className="bg-gray-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FiSearch className="text-gray-400 text-3xl animate-pulse" />
+              </div>
+              <p className="text-gray-500">Đang tải bài viết...</p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-16">
+              <div className="bg-red-50 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FiSearch className="text-red-400 text-3xl" />
+              </div>
+              <p className="text-red-600">{error}</p>
+            </div>
+          ) : currentBlogs.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {currentBlogs.map((blog) => (
                 <div
@@ -320,7 +421,9 @@ export default function Blog() {
                     <h3 className="text-lg font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-green-600 transition-colors">
                       {blog.title}
                     </h3>
-                    <p className="text-gray-600 mb-4 line-clamp-2">{blog.excerpt}</p>
+                    <p className="text-gray-600 mb-4 line-clamp-2">
+                      {blog.excerpt}
+                    </p>
                     <div className="flex items-center justify-between text-sm text-gray-500">
                       <div className="flex items-center gap-1">
                         <FiCalendar className="w-4 h-4" />
@@ -337,14 +440,18 @@ export default function Blog() {
               <div className="bg-gray-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4">
                 <FiSearch className="text-gray-400 text-3xl" />
               </div>
-              <p className="text-xl text-gray-600 mb-2">Không tìm thấy bài viết</p>
-              <p className="text-gray-500">Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc</p>
+              <p className="text-xl text-gray-600 mb-2">
+                Không tìm thấy bài viết
+              </p>
+              <p className="text-gray-500">
+                Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc
+              </p>
             </div>
           )}
         </div>
 
         {/* Pagination */}
-        {totalPages > 1 && (
+        {effectiveTotalPages > 1 && (
           <nav className="flex justify-center items-center gap-2 mt-12">
             <button
               onClick={() => paginate(currentPage - 1)}
@@ -355,36 +462,41 @@ export default function Blog() {
             >
               Trước
             </button>
-            
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              let page;
-              if (totalPages <= 5) {
-                page = i + 1;
-              } else if (currentPage <= 3) {
-                page = i + 1;
-              } else if (currentPage >= totalPages - 2) {
-                page = totalPages - 4 + i;
-              } else {
-                page = currentPage - 2 + i;
+
+            {Array.from(
+              { length: Math.min(5, effectiveTotalPages) },
+              (_, i) => {
+                let page;
+                if (effectiveTotalPages <= 5) {
+                  page = i + 1;
+                } else if (currentPage <= 3) {
+                  page = i + 1;
+                } else if (currentPage >= effectiveTotalPages - 2) {
+                  page = effectiveTotalPages - 4 + i;
+                } else {
+                  page = currentPage - 2 + i;
+                }
+
+                return (
+                  <button
+                    key={page}
+                    onClick={() => paginate(page)}
+                    className={`w-9 h-9 rounded-full text-sm font-bold transition
+                    ${
+                      currentPage === page
+                        ? "bg-green-700 text-white scale-110 shadow-md"
+                        : "bg-white text-green-700 border border-green-300 hover:bg-green-100"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                );
               }
-              
-              return (
-                <button
-                  key={page}
-                  onClick={() => paginate(page)}
-                  className={`w-9 h-9 rounded-full text-sm font-bold transition
-                    ${currentPage === page
-                      ? 'bg-green-700 text-white scale-110 shadow-md'
-                      : 'bg-white text-green-700 border border-green-300 hover:bg-green-100'}`}
-                >
-                  {page}
-                </button>
-              );
-            })}
+            )}
 
             <button
               onClick={() => paginate(currentPage + 1)}
-              disabled={currentPage === totalPages}
+              disabled={currentPage === effectiveTotalPages}
               className="px-4 py-2 rounded-full text-sm font-semibold transition
                 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed
                 bg-green-600 text-white hover:bg-green-700 shadow"

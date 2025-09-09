@@ -1,4 +1,10 @@
-import { ADD_TO_CART, REMOVE_FROM_CART, INCREASE_QUANTITY, DECREASE_QUANTITY, CLEAR_CART } from "./ActionType";
+import {
+  ADD_TO_CART,
+  REMOVE_FROM_CART,
+  INCREASE_QUANTITY,
+  DECREASE_QUANTITY,
+  CLEAR_CART,
+} from "./ActionType";
 
 export const addToCart = (product) => ({
   type: ADD_TO_CART,

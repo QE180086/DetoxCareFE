@@ -1,31 +1,45 @@
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import { FaLeaf, FaStar, FaRegStar, FaStarHalfAlt, FaFire, FaPlus, FaMinus } from 'react-icons/fa';
-import { AiOutlineSearch } from 'react-icons/ai';
-import { FiShoppingCart } from 'react-icons/fi';
-import { allProducts } from '../../data/products';
+import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import {
+  FaLeaf,
+  FaStar,
+  FaRegStar,
+  FaStarHalfAlt,
+  FaFire,
+  FaPlus,
+  FaMinus,
+} from "react-icons/fa";
+import { AiOutlineSearch } from "react-icons/ai";
+import { FiShoppingCart } from "react-icons/fi";
+// import { allProducts } from "../../data/products";
 import { useDispatch } from "react-redux";
 import { addToCart } from "../../state/Cart/Action";
+import { productApi } from "../../utils/api/product.api";
 
 export default function SearchPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const query = new URLSearchParams(location.search).get('query')?.toLowerCase() || '';
+  const query =
+    new URLSearchParams(location.search).get("query")?.toLowerCase() || "";
   const hasQuery = query.trim().length > 0;
 
-  const [categoryFilter, setCategoryFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   // Price & Rating filters (áp dụng ở chế độ không có query)
-  const [minPrice, setMinPrice] = useState('');
-  const [maxPrice, setMaxPrice] = useState('');
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
   // Draft inputs to avoid instant filtering; apply on button click
-  const [draftMinPrice, setDraftMinPrice] = useState('');
-  const [draftMaxPrice, setDraftMaxPrice] = useState('');
-  const [minRating, setMinRating] = useState(''); // '' | 1..5
-  const [sortByPurchases, setSortByPurchases] = useState(''); // '' | 'asc' | 'desc'
+  const [draftMinPrice, setDraftMinPrice] = useState("");
+  const [draftMaxPrice, setDraftMaxPrice] = useState("");
+  const [minRating, setMinRating] = useState(""); // '' | 1..5
+  const [sortByPurchases, setSortByPurchases] = useState(""); // '' | 'asc' | 'desc'
   const [filterHot, setFilterHot] = useState(false);
   // Collapsible controls for sidebar (chỉ hiển thị khi không có query)
   const [showAllFilters, setShowAllFilters] = useState(false);
@@ -33,11 +47,47 @@ export default function SearchPage() {
   const [showPurchasesOptions, setShowPurchasesOptions] = useState(false);
 
   useEffect(() => {
-    let result = allProducts.filter((p) => p.name.toLowerCase().includes(query));
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        const res = await productApi.getAll(
+          currentPage,
+          itemsPerPage,
+          "createdDate",
+          "desc",
+          hasQuery ? query : undefined
+        );
+        const pageData = res?.data || {};
+        setProducts(pageData.content || []);
+        const apiTotalPages =
+          pageData.totalPages ||
+          (pageData.totalElements && itemsPerPage
+            ? Math.ceil(pageData.totalElements / itemsPerPage)
+            : 1);
+        setTotalPages(apiTotalPages || 1);
+      } catch (e) {
+        setError(e?.message || "Có lỗi xảy ra khi tải sản phẩm");
+        setProducts([]);
+        setTotalPages(1);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, [query, hasQuery, currentPage, itemsPerPage]);
+
+  // Reset to first page when query changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query]);
+
+  // Apply client-side filters on the fetched page
+  useEffect(() => {
+    let result = [...products];
     if (categoryFilter) {
       result = result.filter((p) => p.category === categoryFilter);
     }
-    // Áp dụng thêm lọc giá và đánh giá khi đang ở chế độ xem tất cả (không bắt buộc, nhưng vẫn hữu ích)
     const minP = parseInt(minPrice, 10);
     const maxP = parseInt(maxPrice, 10);
     const minR = parseFloat(minRating);
@@ -53,30 +103,41 @@ export default function SearchPage() {
     if (filterHot) {
       result = result.filter((p) => p.hot === true);
     }
-    setFilteredProducts(result);
-    // Sắp xếp theo lượt mua nếu có
-    if (sortByPurchases === 'asc') {
-      result = [...result].sort((a, b) => (a.purchases ?? 0) - (b.purchases ?? 0));
-    } else if (sortByPurchases === 'desc') {
-      result = [...result].sort((a, b) => (b.purchases ?? 0) - (a.purchases ?? 0));
+    if (sortByPurchases === "asc") {
+      result = [...result].sort(
+        (a, b) => (a.purchases ?? 0) - (b.purchases ?? 0)
+      );
+    } else if (sortByPurchases === "desc") {
+      result = [...result].sort(
+        (a, b) => (b.purchases ?? 0) - (a.purchases ?? 0)
+      );
     }
-
     setFilteredProducts(result);
-    setCurrentPage(1);
-  }, [query, categoryFilter, minPrice, maxPrice, minRating, sortByPurchases, filterHot]);
+  }, [
+    products,
+    categoryFilter,
+    minPrice,
+    maxPrice,
+    minRating,
+    sortByPurchases,
+    filterHot,
+  ]);
 
   // Scroll to top whenever search query changes
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, [query]);
 
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-  const currentItems = filteredProducts.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const currentItems = filteredProducts;
 
-  const categories = ['Tất cả', 'Detox', 'Combo 3 ngày', 'Combo 5 ngày', 'Combo 7 ngày', 'Nước ép mix'];
+  const categories = [
+    "Tất cả",
+    "Detox",
+    "Combo 3 ngày",
+    "Combo 5 ngày",
+    "Combo 7 ngày",
+    "Nước ép mix",
+  ];
 
   const handleAddToCart = (product) => {
     dispatch(addToCart(product));
@@ -85,14 +146,26 @@ export default function SearchPage() {
 
   /* ======= Render sao ======= */
   const renderStars = (rating) => {
-    const full = Math.floor(rating);
-    const half = rating % 1 >= 0.5;
+    const numericRating = Number(rating);
+    const safeRating = Number.isFinite(numericRating)
+      ? Math.max(0, Math.min(5, numericRating))
+      : 0;
+    const full = Math.floor(safeRating);
+    const half = safeRating % 1 >= 0.5;
     const empty = 5 - full - (half ? 1 : 0);
     return (
       <div className="flex items-center space-x-0.5">
-        {Array(full).fill().map((_, i) => <FaStar key={`f-${i}`} className="text-yellow-400" />)}
+        {Array(full)
+          .fill()
+          .map((_, i) => (
+            <FaStar key={`f-${i}`} className="text-yellow-400" />
+          ))}
         {half && <FaStarHalfAlt className="text-yellow-400" />}
-        {Array(empty).fill().map((_, i) => <FaRegStar key={`e-${i}`} className="text-yellow-400" />)}
+        {Array(empty)
+          .fill()
+          .map((_, i) => (
+            <FaRegStar key={`e-${i}`} className="text-yellow-400" />
+          ))}
         <span className="ml-1 text-sm text-gray-500">({rating})</span>
       </div>
     );
@@ -111,11 +184,17 @@ export default function SearchPage() {
                 Kết quả tìm kiếm
               </h1>
               <p className="mt-3 text-white/90">
-                Từ khóa: <span className="font-semibold underline decoration-white/80">{query}</span>
+                Từ khóa:{" "}
+                <span className="font-semibold underline decoration-white/80">
+                  {query}
+                </span>
               </p>
               <div className="mt-6">
                 <button
-                  onClick={() => { setCategoryFilter(''); navigate('/search'); }}
+                  onClick={() => {
+                    setCategoryFilter("");
+                    navigate("/search");
+                  }}
                   className="inline-flex items-center gap-2 px-6 py-2 bg-white/90 text-green-700 rounded-full hover:bg-white transition shadow font-semibold"
                 >
                   <FaLeaf className="text-green-600" />
@@ -131,7 +210,9 @@ export default function SearchPage() {
                 <FaLeaf className="animate-pulse" />
                 Tất cả sản phẩm
               </h1>
-              <p className="mt-3 text-white/90">Khám phá các sản phẩm tốt nhất từ DetoxCare</p>
+              <p className="mt-3 text-white/90">
+                Khám phá các sản phẩm tốt nhất từ DetoxCare
+              </p>
             </div>
           </div>
         )}
@@ -148,8 +229,12 @@ export default function SearchPage() {
                   <button
                     onClick={() => setShowAllFilters((v) => !v)}
                     className="inline-flex items-center justify-center w-9 h-9 rounded-full text-green-700 hover:bg-green-100 hover:shadow transition"
-                    aria-label={showAllFilters ? 'Thu gọn danh mục' : 'Mở rộng danh mục'}
-                    title={showAllFilters ? 'Thu gọn danh mục' : 'Mở rộng danh mục'}
+                    aria-label={
+                      showAllFilters ? "Thu gọn danh mục" : "Mở rộng danh mục"
+                    }
+                    title={
+                      showAllFilters ? "Thu gọn danh mục" : "Mở rộng danh mục"
+                    }
                   >
                     {showAllFilters ? <FaMinus /> : <FaPlus />}
                   </button>
@@ -159,16 +244,18 @@ export default function SearchPage() {
                     // Mở rộng: hiển thị toàn bộ danh mục (bao gồm 'Tất cả')
                     <>
                       {categories.map((cat) => {
-                        const value = cat === 'Tất cả' ? '' : cat;
+                        const value = cat === "Tất cả" ? "" : cat;
                         const active = categoryFilter === value;
                         return (
                           <li key={cat}>
                             <button
                               onClick={() => setCategoryFilter(value)}
                               className={`w-full text-left px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200
-                                ${active
-                                  ? 'bg-gradient-to-r from-green-600 to-lime-500 text-white shadow-md'
-                                  : 'text-green-700 hover:bg-green-100 hover:shadow'}`}
+                                ${
+                                  active
+                                    ? "bg-gradient-to-r from-green-600 to-lime-500 text-white shadow-md"
+                                    : "text-green-700 hover:bg-green-100 hover:shadow"
+                                }`}
                             >
                               {cat}
                             </button>
@@ -182,9 +269,9 @@ export default function SearchPage() {
                       <button
                         onClick={() => setCategoryFilter(categoryFilter)}
                         className={`w-full text-left px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200
-                          ${'bg-gradient-to-r from-green-600 to-lime-500 text-white shadow-md'}`}
+                          ${"bg-gradient-to-r from-green-600 to-lime-500 text-white shadow-md"}`}
                       >
-                        {categoryFilter || 'Tất cả'}
+                        {categoryFilter || "Tất cả"}
                       </button>
                     </li>
                   )}
@@ -195,12 +282,22 @@ export default function SearchPage() {
                 {/* Đánh giá (thu gọn/mở rộng giống danh mục) */}
                 <div className="mt-6">
                   <div className="mb-5 flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-green-700">Đánh giá</h2>
+                    <h2 className="text-xl font-bold text-green-700">
+                      Đánh giá
+                    </h2>
                     <button
                       onClick={() => setShowRatingOptions((v) => !v)}
                       className="inline-flex items-center justify-center w-9 h-9 rounded-full text-green-700 hover:bg-green-100 hover:shadow transition"
-                      aria-label={showRatingOptions ? 'Thu gọn đánh giá' : 'Mở rộng đánh giá'}
-                      title={showRatingOptions ? 'Thu gọn đánh giá' : 'Mở rộng đánh giá'}
+                      aria-label={
+                        showRatingOptions
+                          ? "Thu gọn đánh giá"
+                          : "Mở rộng đánh giá"
+                      }
+                      title={
+                        showRatingOptions
+                          ? "Thu gọn đánh giá"
+                          : "Mở rộng đánh giá"
+                      }
                     >
                       {showRatingOptions ? <FaMinus /> : <FaPlus />}
                     </button>
@@ -208,30 +305,49 @@ export default function SearchPage() {
                   {showRatingOptions ? (
                     <ul className="space-y-3">
                       {[
-                        { label: 'Tất cả', value: '' },
-                        { label: '4.5', value: '4.5' },
-                        { label: '4', value: '4' },
-                        { label: '3.5', value: '3.5' },
-                        { label: '3', value: '3' },
+                        { label: "Tất cả", value: "" },
+                        { label: "4.5", value: "4.5" },
+                        { label: "4", value: "4" },
+                        { label: "3.5", value: "3.5" },
+                        { label: "3", value: "3" },
                       ].map((opt) => (
-                        <li key={opt.value || 'all'}>
+                        <li key={opt.value || "all"}>
                           <button
                             onClick={() => setMinRating(opt.value)}
                             className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200
-                              ${minRating === opt.value
-                                ? 'bg-gradient-to-r from-green-600 to-lime-500 text-white shadow-md'
-                                : 'text-green-700 hover:bg-green-100 hover:shadow'}`}
+                              ${
+                                minRating === opt.value
+                                  ? "bg-gradient-to-r from-green-600 to-lime-500 text-white shadow-md"
+                                  : "text-green-700 hover:bg-green-100 hover:shadow"
+                              }`}
                           >
-                            {opt.value === '' ? (
+                            {opt.value === "" ? (
                               <span>Tất cả</span>
                             ) : (
                               <span className="flex items-center">
                                 {Array.from({ length: 5 }).map((_, i) => {
                                   const v = parseFloat(opt.value);
                                   const rem = v - i;
-                                  if (rem >= 1) return <FaStar key={i} className="text-yellow-400" />;
-                                  if (rem >= 0.5) return <FaStarHalfAlt key={i} className="text-yellow-400" />;
-                                  return <FaRegStar key={i} className="text-yellow-400" />;
+                                  if (rem >= 1)
+                                    return (
+                                      <FaStar
+                                        key={i}
+                                        className="text-yellow-400"
+                                      />
+                                    );
+                                  if (rem >= 0.5)
+                                    return (
+                                      <FaStarHalfAlt
+                                        key={i}
+                                        className="text-yellow-400"
+                                      />
+                                    );
+                                  return (
+                                    <FaRegStar
+                                      key={i}
+                                      className="text-yellow-400"
+                                    />
+                                  );
                                 })}
                               </span>
                             )}
@@ -244,16 +360,27 @@ export default function SearchPage() {
                       onClick={() => setMinRating(minRating)}
                       className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 bg-gradient-to-r from-green-600 to-lime-500 text-white shadow-md`}
                     >
-                      {minRating === '' ? (
+                      {minRating === "" ? (
                         <span>Tất cả</span>
                       ) : (
                         <span className="flex items-center">
                           {Array.from({ length: 5 }).map((_, i) => {
                             const v = parseFloat(minRating);
                             const rem = v - i;
-                            if (rem >= 1) return <FaStar key={i} className="text-yellow-300" />;
-                            if (rem >= 0.5) return <FaStarHalfAlt key={i} className="text-yellow-300" />;
-                            return <FaRegStar key={i} className="text-yellow-300" />;
+                            if (rem >= 1)
+                              return (
+                                <FaStar key={i} className="text-yellow-300" />
+                              );
+                            if (rem >= 0.5)
+                              return (
+                                <FaStarHalfAlt
+                                  key={i}
+                                  className="text-yellow-300"
+                                />
+                              );
+                            return (
+                              <FaRegStar key={i} className="text-yellow-300" />
+                            );
                           })}
                         </span>
                       )}
@@ -264,12 +391,22 @@ export default function SearchPage() {
                 {/* Lượt mua (thu gọn/mở rộng giống đánh giá) */}
                 <div className="mt-6">
                   <div className="mb-5 flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-green-700">Lượt mua</h2>
+                    <h2 className="text-xl font-bold text-green-700">
+                      Lượt mua
+                    </h2>
                     <button
                       onClick={() => setShowPurchasesOptions((v) => !v)}
                       className="inline-flex items-center justify-center w-9 h-9 rounded-full text-green-700 hover:bg-green-100 hover:shadow transition"
-                      aria-label={showPurchasesOptions ? 'Thu gọn lượt mua' : 'Mở rộng lượt mua'}
-                      title={showPurchasesOptions ? 'Thu gọn lượt mua' : 'Mở rộng lượt mua'}
+                      aria-label={
+                        showPurchasesOptions
+                          ? "Thu gọn lượt mua"
+                          : "Mở rộng lượt mua"
+                      }
+                      title={
+                        showPurchasesOptions
+                          ? "Thu gọn lượt mua"
+                          : "Mở rộng lượt mua"
+                      }
                     >
                       {showPurchasesOptions ? <FaMinus /> : <FaPlus />}
                     </button>
@@ -277,17 +414,19 @@ export default function SearchPage() {
                   {showPurchasesOptions ? (
                     <ul className="space-y-3">
                       {[
-                        { label: 'Mặc định', value: '' },
-                        { label: 'Tăng dần', value: 'asc' },
-                        { label: 'Giảm dần', value: 'desc' },
+                        { label: "Mặc định", value: "" },
+                        { label: "Tăng dần", value: "asc" },
+                        { label: "Giảm dần", value: "desc" },
                       ].map((opt) => (
-                        <li key={opt.value || 'default'}>
+                        <li key={opt.value || "default"}>
                           <button
                             onClick={() => setSortByPurchases(opt.value)}
                             className={`w-full text-left px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200
-                              ${sortByPurchases === opt.value
-                                ? 'bg-gradient-to-r from-green-600 to-lime-500 text-white shadow-md'
-                                : 'text-green-700 hover:bg-green-100 hover:shadow'}`}
+                              ${
+                                sortByPurchases === opt.value
+                                  ? "bg-gradient-to-r from-green-600 to-lime-500 text-white shadow-md"
+                                  : "text-green-700 hover:bg-green-100 hover:shadow"
+                              }`}
                           >
                             {opt.label}
                           </button>
@@ -298,9 +437,11 @@ export default function SearchPage() {
                         <button
                           onClick={() => setFilterHot((v) => !v)}
                           className={`w-full flex items-center justify-between px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200
-                            ${filterHot
-                              ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-md'
-                              : 'text-red-600 bg-red-50 hover:bg-red-100 hover:shadow'}`}
+                            ${
+                              filterHot
+                                ? "bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-md"
+                                : "text-red-600 bg-red-50 hover:bg-red-100 hover:shadow"
+                            }`}
                           title="Chỉ hiển thị sản phẩm HOT"
                         >
                           <span className="flex items-center gap-2">
@@ -317,7 +458,11 @@ export default function SearchPage() {
                         onClick={() => setSortByPurchases(sortByPurchases)}
                         className={`w-full text-left px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 bg-gradient-to-r from-green-600 to-lime-500 text-white shadow-md`}
                       >
-                        {sortByPurchases === 'asc' ? 'Tăng dần' : sortByPurchases === 'desc' ? 'Giảm dần' : 'Mặc định'}
+                        {sortByPurchases === "asc"
+                          ? "Tăng dần"
+                          : sortByPurchases === "desc"
+                          ? "Giảm dần"
+                          : "Mặc định"}
                       </button>
                       {filterHot && (
                         <div className="inline-flex items-center gap-1 self-start px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-red-500 to-orange-500 text-white shadow">
@@ -330,7 +475,9 @@ export default function SearchPage() {
 
                 {/* Giá cả (đưa xuống cuối) */}
                 <div className="mt-6">
-                  <h2 className="text-xl font-bold text-green-700 mb-5">Giá cả</h2>
+                  <h2 className="text-xl font-bold text-green-700 mb-5">
+                    Giá cả
+                  </h2>
                   <div className="flex items-center gap-3">
                     <input
                       type="number"
@@ -367,7 +514,16 @@ export default function SearchPage() {
                 {/* Nút xóa lọc */}
                 <div className="mt-6 flex gap-2">
                   <button
-                    onClick={() => { setCategoryFilter(''); setMinPrice(''); setMaxPrice(''); setMinRating(''); setSortByPurchases(''); setFilterHot(false); setDraftMinPrice(''); setDraftMaxPrice(''); }}
+                    onClick={() => {
+                      setCategoryFilter("");
+                      setMinPrice("");
+                      setMaxPrice("");
+                      setMinRating("");
+                      setSortByPurchases("");
+                      setFilterHot(false);
+                      setDraftMinPrice("");
+                      setDraftMaxPrice("");
+                    }}
                     className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
                   >
                     Xóa lọc
@@ -378,8 +534,18 @@ export default function SearchPage() {
           )}
 
           {/* === Product Grid === */}
-          <main className={`${hasQuery ? 'w-full' : 'lg:w-3/4'}`}>
-            {currentItems.length ? (
+          <main className={`${hasQuery ? "w-full" : "lg:w-3/4"}`}>
+            {loading ? (
+              <div className="text-center py-20">
+                <FaLeaf className="mx-auto text-7xl text-green-200 mb-4 animate-pulse" />
+                <p className="text-xl text-gray-500">Đang tải sản phẩm...</p>
+              </div>
+            ) : error ? (
+              <div className="text-center py-20">
+                <FaLeaf className="mx-auto text-7xl text-red-200 mb-4" />
+                <p className="text-xl text-red-500">{error}</p>
+              </div>
+            ) : currentItems.length ? (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                   {currentItems.map((p) => (
@@ -417,17 +583,23 @@ export default function SearchPage() {
                           {p.name}
                         </h3>
                         {p.description && (
-                          <p className="text-xs text-gray-500 mt-1 mb-2 truncate">{p.description}</p>
+                          <p className="text-xs text-gray-500 mt-1 mb-2 truncate">
+                            {p.description}
+                          </p>
                         )}
-                        <p className="text-sm text-green-600 font-medium">{p.category}</p>
+                        <p className="text-sm text-green-600 font-medium">
+                          {p.category}
+                        </p>
 
                         <div className="mt-3 mb-3">{renderStars(p.rating)}</div>
 
-                        <p className="text-sm text-gray-500">Đã bán: {p.purchases}</p>
+                        <p className="text-sm text-gray-500">
+                          Đã bán: {p.purchases}
+                        </p>
 
                         <div className="flex justify-between items-center mt-4">
                           <span className="text-2xl font-bold text-green-800">
-                            {p.price.toLocaleString('vi-VN')}₫
+                            {p.price.toLocaleString("vi-VN")}₫
                           </span>
 
                           <button
@@ -445,7 +617,7 @@ export default function SearchPage() {
                 </div>
 
                 {/* Pagination */}
-                {totalPages > 1 && (
+                {totalPages > 0 && (
                   <nav className="flex justify-center items-center gap-2 mt-12">
                     <button
                       onClick={() => setCurrentPage((x) => Math.max(x - 1, 1))}
@@ -462,16 +634,20 @@ export default function SearchPage() {
                         key={i}
                         onClick={() => setCurrentPage(i + 1)}
                         className={`w-9 h-9 rounded-full text-sm font-bold transition
-                          ${currentPage === i + 1
-                            ? 'bg-green-700 text-white scale-110 shadow-md'
-                            : 'bg-white text-green-700 border border-green-300 hover:bg-green-100'}`}
+                          ${
+                            currentPage === i + 1
+                              ? "bg-green-700 text-white scale-110 shadow-md"
+                              : "bg-white text-green-700 border border-green-300 hover:bg-green-100"
+                          }`}
                       >
                         {i + 1}
                       </button>
                     ))}
 
                     <button
-                      onClick={() => setCurrentPage((x) => Math.min(x + 1, totalPages))}
+                      onClick={() =>
+                        setCurrentPage((x) => Math.min(x + 1, totalPages))
+                      }
                       disabled={currentPage === totalPages}
                       className="px-4 py-2 rounded-full text-sm font-semibold transition
                         disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed
@@ -485,7 +661,9 @@ export default function SearchPage() {
             ) : (
               <div className="text-center py-20">
                 <FaLeaf className="mx-auto text-7xl text-green-200 mb-4" />
-                <p className="text-xl text-gray-500">Không tìm thấy sản phẩm nào phù hợp.</p>
+                <p className="text-xl text-gray-500">
+                  Không tìm thấy sản phẩm nào phù hợp.
+                </p>
               </div>
             )}
           </main>
