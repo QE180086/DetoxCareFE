@@ -62,7 +62,7 @@ const ProductGrid = () => {
 
   useEffect(() => {
     fetchProduct();
-  }, [products, page, size]);
+  }, []);
 
   return (
     <section className="py-12 bg-gradient-to-b from-white to-green-50">
