@@ -3,9 +3,9 @@ import { useEffect, useState } from 'react';
 import { FaLeaf, FaStar, FaRegStar, FaStarHalfAlt, FaFire } from 'react-icons/fa';
 import { FiShoppingCart } from 'react-icons/fi';
 import { useDispatch } from 'react-redux';
-import { addToCart } from '../../state/Cart/Action';
+import { addToCart, addToCartFromServer } from '../../state/Cart/Action';
 import Notification from '../common/Nontification';
-import { allProducts } from '../../data/products';
+import { productApi } from '../../utils/api/product.api';
 
 // Giả lập danh sách bình luận và đánh giá
 const initialComments = {
@@ -31,26 +31,52 @@ export default function ProductDetail() {
   const [showNotification, setShowNotification] = useState(false);
   const [notificationType, setNotificationType] = useState('info');
   const [notificationMessage, setNotificationMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    const foundProduct = allProducts.find((p) => p.id === parseInt(id));
-    if (!foundProduct) navigate('/');
-    else {
-      setProduct(foundProduct);
-      setComments(initialComments[id] || []);
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
+        setError('');
+        const response = await productApi.getById(id);
+        if (response?.data) {
+          setProduct(response.data);
+          setComments(initialComments[id] || []);
+        } else {
+          setError('Sản phẩm không tồn tại');
+          setTimeout(() => navigate('/'), 2000);
+        }
+      } catch (apiError) {
+        console.error('Failed to fetch product:', apiError);
+        setError('Không thể tải thông tin sản phẩm');
+        setTimeout(() => navigate('/'), 2000);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchProduct();
     }
   }, [id, navigate]);
 
   const renderStars = (rating) => {
-    const full = Math.floor(rating);
-    const half = rating % 1 >= 0.5;
+    // Validate and sanitize rating value
+    const numericRating = Number(rating);
+    const safeRating = Number.isFinite(numericRating) 
+      ? Math.max(0, Math.min(5, numericRating)) 
+      : 0;
+    
+    const full = Math.floor(safeRating);
+    const half = safeRating % 1 >= 0.5;
     const empty = 5 - full - (half ? 1 : 0);
+    
     return (
       <div className="flex items-center gap-0.5">
-        {Array(full).fill().map((_, i) => <FaStar key={`f-${i}`} className="w-5 h-5 text-yellow-400" />)}
+        {full > 0 && Array(full).fill().map((_, i) => <FaStar key={`f-${i}`} className="w-5 h-5 text-yellow-400" />)}
         {half && <FaStarHalfAlt className="w-5 h-5 text-yellow-400" />}
-        {Array(empty).fill().map((_, i) => <FaRegStar key={`e-${i}`} className="w-5 h-5 text-yellow-400" />)}
-        <span className="ml-2 text-sm text-gray-500">({rating})</span>
+        {empty > 0 && Array(empty).fill().map((_, i) => <FaRegStar key={`e-${i}`} className="w-5 h-5 text-yellow-400" />)}
       </div>
     );
   };
@@ -72,7 +98,7 @@ export default function ProductDetail() {
       setNotificationType('error');
       setNotificationMessage('Sản phẩm đã hết hàng!');
     } else {
-      dispatch(addToCart(product));
+      dispatch(addToCartFromServer(product));
       setNotificationType('success');
       setNotificationMessage(`Đã thêm “${product.name}” vào giỏ hàng!`);
     }
@@ -85,7 +111,7 @@ export default function ProductDetail() {
       setNotificationType('error');
       setNotificationMessage('Sản phẩm đã hết hàng!');
     } else {
-      dispatch(addToCart(item));
+      dispatch(addToCartFromServer(item));
       setNotificationType('success');
       setNotificationMessage(`Đã thêm “${item.name}” vào giỏ hàng!`);
     }
@@ -117,9 +143,53 @@ export default function ProductDetail() {
     setNotificationMessage('Đã gửi bình luận và đánh giá thành công!');
   };
 
-  const relatedProducts = allProducts
-    .filter((p) => p.category === product?.category && p.id !== product?.id)
-    .slice(0, 4);
+  const [relatedProducts, setRelatedProducts] = useState([]);
+
+  // Fetch related products from API
+  useEffect(() => {
+    const fetchRelatedProducts = async () => {
+      if (product?.category) {
+        try {
+          const response = await productApi.getAll(1, 8, 'createdDate', 'desc');
+          if (response?.data?.content) {
+            const related = response.data.content
+              .filter((p) => p.category === product.category && p.id !== product.id)
+              .slice(0, 4);
+            setRelatedProducts(related);
+          }
+        } catch (error) {
+          console.error('Failed to fetch related products:', error);
+          setRelatedProducts([]);
+        }
+      }
+    };
+
+    fetchRelatedProducts();
+  }, [product]);
+
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-white">
+      <div className="text-center">
+        <FaLeaf className="animate-spin text-green-600 text-4xl mx-auto mb-4" />
+        <p className="text-lg text-gray-600">Đang tải thông tin sản phẩm...</p>
+      </div>
+    </div>
+  );
+
+  if (error) return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-white">
+      <div className="text-center">
+        <FaLeaf className="text-red-500 text-4xl mx-auto mb-4" />
+        <p className="text-lg text-red-600 mb-4">{error}</p>
+        <button 
+          onClick={() => navigate('/')}
+          className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+        >
+          Về trang chủ
+        </button>
+      </div>
+    </div>
+  );
 
   if (!product) return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-white">
@@ -157,7 +227,7 @@ export default function ProductDetail() {
 
             <div className="flex items-baseline gap-3">
               <span className="text-4xl font-bold text-green-700">{product.price.toLocaleString('vi-VN')}₫</span>
-              <span className="text-gray-400 line-through">{(product.price * 1.3).toLocaleString('vi-VN')}₫</span>
+              <span className="text-2xl text-red-500 line-through font-medium">{(product.price * 1.3).toLocaleString('vi-VN')}₫</span>
             </div>
 
             <p className="text-sm text-gray-500">Tồn kho: <span className="font-medium text-gray-800">{product.stock}</span></p>
@@ -232,9 +302,14 @@ export default function ProductDetail() {
                     <p className="text-sm text-gray-500">Đã bán: {rp.purchases}</p>
 
                     <div className="flex justify-between items-center mt-4">
-                      <span className="text-2xl font-bold text-green-800">
-                        {rp.price.toLocaleString('vi-VN')}₫
-                      </span>
+                      <div className="flex flex-col">
+                        <span className="text-lg text-red-500 line-through font-medium">
+                          {(rp.price * 1.3).toLocaleString('vi-VN')}₫
+                        </span>
+                        <span className="text-2xl font-bold text-green-800">
+                          {rp.price.toLocaleString('vi-VN')}₫
+                        </span>
+                      </div>
 
                       <button
                         onClick={() => handleAddRelatedToCart(rp)}

@@ -1,27 +1,22 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   FaLeaf,
-  FaStar,
-  FaRegStar,
-  FaStarHalfAlt,
   FaFire,
 } from "react-icons/fa";
 import { FiShoppingCart } from "react-icons/fi";
-import { getHotProducts } from "../../data/products";
 import { useDispatch } from "react-redux";
-import { addToCart } from "../../state/Cart/Action";
+import { addToCartFromServer } from "../../state/Cart/Action";
 import { useEffect, useState } from "react";
 import { productApi } from "../../utils/api/product.api";
 
 const ProductGrid = () => {
   const dispatch = useDispatch();
-  // Lấy tất cả sản phẩm hot
-  // const products = getHotProducts();
+  const navigate = useNavigate();
 
   const [products, setProducts] = useState([]);
-  const [page, setPage] = useState(1);
-  const [size, setSize] = useState(8);
+  const [page] = useState(1);
+  const [size] = useState(8);
 
   // Hàm render sao đánh giá
   // const renderStars = (rating) => {
@@ -47,7 +42,7 @@ const ProductGrid = () => {
   // };
 
   const handleAddToCart = (product) => {
-    dispatch(addToCart(product));
+    dispatch(addToCartFromServer(product));
     alert(`Đã thêm "${product.name}" vào giỏ hàng!`);
   };
 
@@ -100,9 +95,7 @@ const ProductGrid = () => {
               {/* Thông tin */}
               <div className="p-5">
                 <h3
-                  onClick={() =>
-                    (window.location.href = `/product/${product.id}`)
-                  }
+                  onClick={() => navigate(`/product/${product.id}`)}
                   className="text-lg font-bold text-green-800 truncate cursor-pointer hover:text-green-600 transition"
                 >
                   {product.name}
@@ -123,9 +116,14 @@ const ProductGrid = () => {
                 </p>
 
                 <div className="flex justify-between items-center mt-4">
-                  <span className="text-2xl font-bold text-green-800">
-                    {product.price.toLocaleString("vi-VN")}₫
-                  </span>
+                  <div className="flex flex-col">
+                    <span className="text-lg text-red-500 line-through font-medium">
+                      {(product.price * 1.3).toLocaleString("vi-VN")}₫
+                    </span>
+                    <span className="text-2xl font-bold text-green-800">
+                      {product.price.toLocaleString("vi-VN")}₫
+                    </span>
+                  </div>
 
                   <button
                     onClick={() => handleAddToCart(product)}

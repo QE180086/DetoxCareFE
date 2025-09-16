@@ -1,7 +1,7 @@
 import {
     ADD_TO_FAVOURITE_REQUEST, FORGET_PASSWORD_FAILURE, FORGET_PASSWORD_REQUEST, FORGET_PASSWORD_SUCCESS, GET_USER_REQUEST, GET_USER_SUCCESS, LOGIN_FAILURE,
     LOGIN_REQUEST, LOGIN_SUCCESS, LOGOUT, REGISTER_FAILURE, REGISTER_REQUEST, REGISTER_SUCCESS, RESET_PASSWORD_FAILURE, RESET_PASSWORD_SUCCESS, SEND_OTP_FAILURE, SEND_OTP_SUCCESS, VERIFY_OTP_FAILURE, VERIFY_OTP_REQUEST,
-    VERIFY_OTP_SUCCESS
+    VERIFY_OTP_SUCCESS, SET_ACCESS_TOKEN
 } from "./ActionType";
 
 const initialState = {
@@ -65,9 +65,15 @@ export const authReducer = (state = initialState, action) => {
                 user: action.payload,
                 isLoading: false,
             }
-        case LOGOUT:
+        case SET_ACCESS_TOKEN:
             return {
-                initialState
+                ...state,
+                accessToken: action.payload,
+            }
+        case LOGOUT:
+            // Reset to initial state when logging out
+            return {
+                ...initialState
             }
 
 

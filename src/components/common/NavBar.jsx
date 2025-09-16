@@ -17,21 +17,23 @@ import {
   AiOutlineDelete,
 } from "react-icons/ai";
 import { useSelector, useDispatch } from "react-redux";
-import { increaseQuantity, decreaseQuantity, removeFromCart } from "../../state/Cart/Action";
+import { increaseQuantity, decreaseQuantity, removeFromCart, fetchCartFromServer, increaseQuantityFromServer, decreaseQuantityFromServer, deleteCartItemFromServer } from "../../state/Cart/Action";
+import { logout } from "../../state/Authentication/Action"; // Import the logout action
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
-  const [searchFocused, setSearchFocused] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false); // Add this missing state
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const user = { name: "Thuong Nguyen" };
   
-  const cartItems = useSelector(state => state.cart.cartItems);
-  const totalCartItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  const getTotalPrice = () => cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const cartState = useSelector(state => state.cart);
+  const cartItems = cartState.cartItems;
+  const cartError = cartState.error;
+  const auth = useSelector(state => state.auth); // Get auth state
+  const totalCartItems = cartItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+  const getTotalPrice = () => cartItems.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
 
   // Handle click outside to close dropdowns
   useEffect(() => {
@@ -51,11 +53,20 @@ export default function Navbar() {
     };
   }, [isCartOpen, isUserMenuOpen]);
 
+  // Fetch cart items when component mounts or when auth state changes
+  useEffect(() => {
+    // Only fetch cart if user is authenticated
+    if (auth?.accessToken) {
+      dispatch(fetchCartFromServer());
+    }
+  }, [dispatch, auth?.accessToken]);
+
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   const handleLogout = () => {
-    // localStorage.removeItem('accessToken');
-    setIsLoggedIn(false);
+    console.log("Logout initiated");
+    // Dispatch the logout action which will clear localStorage and Redux state
+    dispatch(logout());
     navigate("/login");
   };
 
@@ -223,7 +234,21 @@ export default function Navbar() {
                       </span>
                     </div>
 
-                    {cartItems.length > 0 ? (
+                    {cartError ? (
+                      <div className="text-center py-4">
+                        <p className="text-red-500 font-medium">
+                          {typeof cartError === 'object' && cartError !== null ? 
+                            (cartError.messageDetail || cartError.messageCode || JSON.stringify(cartError)) : 
+                            cartError}
+                        </p>
+                        <button
+                          onClick={() => dispatch(fetchCartFromServer())}
+                          className="mt-2 px-3 py-1 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition text-sm"
+                        >
+                          Thử lại
+                        </button>
+                      </div>
+                    ) : cartItems.length > 0 ? (
                       <>
                         <div className="space-y-4 max-h-60 overflow-y-auto">
                           {cartItems.map((item) => (
@@ -247,7 +272,7 @@ export default function Navbar() {
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        dispatch(decreaseQuantity(item.id));
+                                        dispatch(decreaseQuantityFromServer(item.id, item.quantity - 1));
                                       }}
                                       className="w-7 h-7 rounded-full bg-gray-100 hover:bg-red-100 
                                                flex items-center justify-center transition-colors duration-200
@@ -262,7 +287,7 @@ export default function Navbar() {
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        dispatch(increaseQuantity(item.id));
+                                        dispatch(increaseQuantityFromServer(item.id, item.quantity + 1));
                                       }}
                                       className="w-7 h-7 rounded-full bg-gray-100 hover:bg-green-100 
                                                flex items-center justify-center transition-colors duration-200
@@ -273,8 +298,10 @@ export default function Navbar() {
                                   </div>
                                   <button
                                     onClick={(e) => {
+                                      e.preventDefault();
                                       e.stopPropagation();
-                                      dispatch(removeFromCart(item.id));
+                                      console.log("Delete button clicked for item:", item.id);
+                                      dispatch(deleteCartItemFromServer(item.id));
                                     }}
                                     className="w-7 h-7 rounded-full bg-gray-100 hover:bg-red-100 
                                              flex items-center justify-center transition-colors duration-200
@@ -337,7 +364,7 @@ export default function Navbar() {
 
               {/* Enhanced User Menu - Hidden on mobile */}
               <div className="hidden md:block">
-                {isLoggedIn ? (
+                {auth?.accessToken ? ( // Check if user is authenticated
                   <div className="relative">
                     <button
                       onClick={(e) => {
@@ -371,7 +398,7 @@ export default function Navbar() {
                           />
                           <div>
                             <p className="font-semibold text-gray-800">
-                              {user.name}
+                              {auth?.user?.username || "User"}
                             </p>
                             <p className="text-sm text-gray-500">
                               Thành viên VIP
@@ -463,7 +490,8 @@ export default function Navbar() {
         >
           <div className="bg-white/95 backdrop-blur-md border-t border-gray-200 px-4 py-6 max-h-[40rem] overflow-y-auto">
             {/* Mobile User Profile */}
-            {isLoggedIn ? (
+            {
+              auth?.accessToken ? ( // Check if user is authenticated
               <div className="mb-6 pb-4 border-b border-gray-200">
                 <div className="flex items-center space-x-3">
                   <img
@@ -472,7 +500,7 @@ export default function Navbar() {
                     className="w-12 h-12 rounded-full object-cover"
                   />
                   <div>
-                    <p className="font-semibold text-gray-800">{user.name}</p>
+                    <p className="font-semibold text-gray-800">{auth?.user?.username || "User"}</p>
                     <p className="text-sm text-gray-500">Thành viên VIP</p>
                   </div>
                 </div>

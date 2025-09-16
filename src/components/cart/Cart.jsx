@@ -1,5 +1,5 @@
 import { useNavigate, Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import { FaLeaf, FaTrash, FaMinus, FaPlus } from "react-icons/fa";
 import Notification from "../common/Nontification";
@@ -9,11 +9,20 @@ import {
   decreaseQuantity,
   removeFromCart,
   clearCart,
+  fetchCartFromServer,
+  increaseQuantityFromServer, 
+  decreaseQuantityFromServer, 
+  deleteCartItemFromServer
 } from "../../state/Cart/Action";
 
 export default function Cart() {
   const dispatch = useDispatch();
-  const cartItems = useSelector((state) => state.cart.cartItems);
+  const cartState = useSelector((state) => state.cart);
+  const authState = useSelector((state) => state.auth);
+  
+  const cartItems = cartState.cartItems;
+  const isLoading = cartState.isLoading;
+  const error = cartState.error;
 
   /* ---------- States ---------- */
   const [voucherCode, setVoucherCode] = useState("");
@@ -32,6 +41,14 @@ export default function Cart() {
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [isFiltering, setIsFiltering] = useState(false);
 
+  // Fetch cart items from server when component mounts
+  useEffect(() => {
+    // Only fetch cart if user is authenticated
+    if (authState?.accessToken) {
+      dispatch(fetchCartFromServer());
+    }
+  }, [dispatch, authState?.accessToken]);
+
   // Thêm mảng các mã giảm giá mẫu
   const voucherOptions = [
     { code: "", label: "Không sử dụng mã giảm giá" },
@@ -46,7 +63,7 @@ export default function Cart() {
   /* ---------- Handlers ---------- */
   const removeItem = (id) => {
     const item = cartItems.find((i) => i.id === id);
-    dispatch(removeFromCart(id));
+    dispatch(deleteCartItemFromServer(id));
     setNotificationType("success");
     setNotificationMessage(`Đã xóa “${item.name}” khỏi giỏ hàng!`);
     setShowNotification(true);
@@ -105,6 +122,65 @@ export default function Cart() {
 
   const handleCloseNotification = () => setShowNotification(false);
 
+  // Show message when user is not logged in
+  if (!authState?.accessToken) {
+    return (
+      <div className="min-h-screen bg-white py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-xl text-gray-600">
+            Vui lòng đăng nhập để xem giỏ hàng.
+          </p>
+          <Link
+            to="/login"
+            className="mt-6 inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 shadow-lg"
+          >
+            <FaLeaf />
+            Đăng nhập
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
+          <p className="mt-4 text-emerald-700 font-medium">Đang tải giỏ hàng...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+        <div className="text-center">
+          {/* Check if error is an object and extract the message */}
+          <p className="text-red-500 font-medium">
+            Lỗi: {typeof error === 'object' && error !== null ? 
+              (error.messageDetail || error.messageCode || JSON.stringify(error)) : 
+              error}
+          </p>
+          <p className="text-gray-600 mt-2">
+            {error && error.includes("Query did not return a unique result") 
+              ? "There's an issue with your cart data. Please contact support for assistance." 
+              : "Please try again or contact support if the problem persists."}
+          </p>
+          <button
+            onClick={() => dispatch(fetchCartFromServer())}
+            className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
+          >
+            Thử lại
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
@@ -150,7 +226,7 @@ export default function Cart() {
                       <td className="p-4 text-center">
                         <div className="inline-flex items-center gap-2">
                           <button
-                            onClick={() => dispatch(decreaseQuantity(item.id))}
+                            onClick={() => dispatch(decreaseQuantityFromServer(item.id, item.quantity - 1))}
                             className="p-1.5 bg-emerald-200 rounded-full hover:bg-emerald-300 transition"
                           >
                             <FaMinus size={12} />
@@ -159,7 +235,7 @@ export default function Cart() {
                             {item.quantity}
                           </span>
                           <button
-                            onClick={() => dispatch(increaseQuantity(item.id))}
+                            onClick={() => dispatch(increaseQuantityFromServer(item.id, item.quantity + 1))}
                             className="p-1.5 bg-emerald-200 rounded-full hover:bg-emerald-300 transition"
                           >
                             <FaPlus size={12} />

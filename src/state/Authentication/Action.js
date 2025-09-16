@@ -19,22 +19,27 @@ import {
   VERIFY_OTP_FAILURE,
   VERIFY_OTP_REQUEST,
   VERIFY_OTP_SUCCESS,
+  SET_ACCESS_TOKEN,
 } from "./ActionType";
-import axios from "axios";
-import { API_URL } from "../../api/Api";
-// registerregister
+import { authApi } from "../../utils/api/auth.api";
+import { api } from "../../api/Api";
+
+// Action to set access token directly
+export const setAccessToken = (token) => ({
+  type: SET_ACCESS_TOKEN,
+  payload: token,
+});
+
+// register
 export const registerUser = (reqData) => async (dispatch) => {
   dispatch({ type: REGISTER_REQUEST });
   try {
     // Bước 1: Gửi yêu cầu đăng ký
-    const { data: registerData } = await axios.post(
-      `${API_URL}/api/auth/register`,
-      reqData.userData
-    );
+    const registerData = await authApi.register(reqData.userData);
 
     // Bước 2: Gửi OTP
     dispatch({ type: SEND_OTP_REQUEST });
-    const { data: otpData } = await axios.post(`${API_URL}/api/auth/sendOTP`, {
+    const otpData = await authApi.sendOTP({
       email: reqData.userData.email,
     });
 
@@ -50,7 +55,6 @@ export const registerUser = (reqData) => async (dispatch) => {
       throw new Error("Không thể gửi OTP");
     }
   } catch (error) {
-    //   const errorMessage = error.response?.message?.messageDetail || 'Đăng ký thất bại';
     const errorMessage =
       error.response?.data?.message?.messageDetail || "Đăng ký thất bại";
     dispatch({ type: REGISTER_FAILURE, payload: errorMessage });
@@ -67,13 +71,10 @@ export const verifyOtp =
     dispatch({ type: VERIFY_OTP_REQUEST });
     try {
       // Bước 3: Xác thực OTP
-      const { data: verifyData } = await axios.post(
-        `${API_URL}/api/auth/verifyOTP`,
-        {
-          email,
-          otp,
-        }
-      );
+      const verifyData = await authApi.verifyOTP({
+        email,
+        otp,
+      });
 
       if (verifyData.success) {
         if (registerData.role === "ADMIN") {
@@ -97,7 +98,7 @@ export const verifyOtp =
 export const resendOtp = (email) => async (dispatch) => {
   dispatch({ type: SEND_OTP_REQUEST });
   try {
-    const { data: otpData } = await axios.post(`${API_URL}/api/auth/sendOTP`, {
+    const otpData = await authApi.sendOTP({
       email,
     });
     console.log("Phản hồi gửi lại OTP:", otpData); // Debug
@@ -121,10 +122,7 @@ export const resendOtp = (email) => async (dispatch) => {
 export const loginUser = (reqData) => async (dispatch) => {
   dispatch({ type: LOGIN_REQUEST });
   try {
-    const { data } = await axios.post(
-      `${API_URL}/api/auth/login`,
-      reqData.userData
-    );
+    const data = await authApi.login(reqData.userData);
 
     const accessToken = data?.data?.accessToken;
 
@@ -143,8 +141,22 @@ export const loginUser = (reqData) => async (dispatch) => {
 
     dispatch({ type: LOGIN_SUCCESS, payload: accessToken });
   } catch (error) {
-    const errorMessage =
-      error?.response?.data?.message?.messageDetail || "Đăng nhập thất bại";
+    // Better error handling for the specific error you're seeing
+    let errorMessage = "Đăng nhập thất bại";
+    if (error?.response?.data?.message) {
+      if (typeof error.response.data.message === 'object') {
+        if (error.response.data.message.messageDetail) {
+          errorMessage = error.response.data.message.messageDetail;
+        } else if (error.response.data.message.messageCode) {
+          errorMessage = `Error code: ${error.response.data.message.messageCode}`;
+        } else {
+          errorMessage = JSON.stringify(error.response.data.message);
+        }
+      } else {
+        errorMessage = error.response.data.message;
+      }
+    }
+    
     dispatch({ type: LOGIN_FAILURE, payload: errorMessage });
     throw error;
   }
@@ -156,7 +168,7 @@ export const forgetPassword =
   async (dispatch) => {
     dispatch({ type: FORGET_PASSWORD_REQUEST });
     try {
-      const { data } = await axios.post(`${API_URL}/api/user/forget-password`, {
+      const { data } = await api.post("/api/user/forget-password", {
         email,
         username,
       });
@@ -172,14 +184,10 @@ export const forgetPassword =
   };
 
 // reset password
-
 export const resetPassword = (reqData) => async (dispatch) => {
   dispatch({ type: RESET_PASSWORD_REQUEST });
   try {
-    const { data } = await axios.post(
-      `${API_URL}/api/user/reset-password`,
-      reqData
-    );
+    const { data } = await api.post("/api/user/reset-password", reqData);
 
     dispatch({ type: RESET_PASSWORD_SUCCESS, payload: data });
   } catch (error) {
@@ -194,7 +202,7 @@ export const resetPassword = (reqData) => async (dispatch) => {
 export const getUser = (jwt) => async (dispatch) => {
   dispatch({ type: GET_USER_REQUEST });
   try {
-    const { data } = await axios.get(`${API_URL}/api/users/profile`, {
+    const { data } = await api.get("/api/users/profile", {
       headers: {
         Authorization: `Bearer ${jwt}`,
       },
@@ -202,15 +210,38 @@ export const getUser = (jwt) => async (dispatch) => {
 
     dispatch({ type: GET_USER_SUCCESS, payload: data });
   } catch (error) {
-    console.log("getUser: " + error);
+    // Better error handling
+    let errorMessage = "Failed to fetch user profile";
+    if (error?.response?.data?.message) {
+      if (typeof error.response.data.message === 'object') {
+        if (error.response.data.message.messageDetail) {
+          errorMessage = error.response.data.message.messageDetail;
+        } else if (error.response.data.message.messageCode) {
+          errorMessage = `Error code: ${error.response.data.message.messageCode}`;
+        } else {
+          errorMessage = JSON.stringify(error.response.data.message);
+        }
+      } else {
+        errorMessage = error.response.data.message;
+      }
+    }
+    
+    console.log("getUser: " + errorMessage);
   }
 };
-export const logout = () => async (dispatch) => {
-  dispatch({ type: LOGOUT });
+
+export const logout = () => (dispatch) => {
   try {
+    // Clear all localStorage items
     localStorage.clear();
+    
+    // Dispatch LOGOUT to reset Redux state
     dispatch({ type: LOGOUT });
-    console.log("logout suscess");
+    
+    // Also dispatch SET_ACCESS_TOKEN with null to ensure state is cleared
+    dispatch(setAccessToken(null));
+    
+    console.log("logout success");
   } catch (error) {
     console.log("Logout: " + error);
   }

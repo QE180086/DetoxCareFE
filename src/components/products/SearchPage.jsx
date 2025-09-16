@@ -11,9 +11,8 @@ import {
 } from "react-icons/fa";
 import { AiOutlineSearch } from "react-icons/ai";
 import { FiShoppingCart } from "react-icons/fi";
-// import { allProducts } from "../../data/products";
 import { useDispatch } from "react-redux";
-import { addToCart } from "../../state/Cart/Action";
+import { addToCart, addToCartFromServer } from "../../state/Cart/Action";
 import { productApi } from "../../utils/api/product.api";
 
 export default function SearchPage() {
@@ -140,7 +139,7 @@ export default function SearchPage() {
   ];
 
   const handleAddToCart = (product) => {
-    dispatch(addToCart(product));
+    dispatch(addToCartFromServer(product));
     alert(`Đã thêm "${product.name}" vào giỏ hàng!`);
   };
 
@@ -155,18 +154,18 @@ export default function SearchPage() {
     const empty = 5 - full - (half ? 1 : 0);
     return (
       <div className="flex items-center space-x-0.5">
-        {Array(full)
+        {full > 0 && Array(full)
           .fill()
           .map((_, i) => (
             <FaStar key={`f-${i}`} className="text-yellow-400" />
           ))}
         {half && <FaStarHalfAlt className="text-yellow-400" />}
-        {Array(empty)
+        {empty > 0 && Array(empty)
           .fill()
           .map((_, i) => (
             <FaRegStar key={`e-${i}`} className="text-yellow-400" />
           ))}
-        <span className="ml-1 text-sm text-gray-500">({rating})</span>
+        <span className="ml-1 text-sm text-gray-500">({safeRating})</span>
       </div>
     );
   };
@@ -598,9 +597,14 @@ export default function SearchPage() {
                         </p>
 
                         <div className="flex justify-between items-center mt-4">
-                          <span className="text-2xl font-bold text-green-800">
-                            {p.price.toLocaleString("vi-VN")}₫
-                          </span>
+                          <div className="flex flex-col">
+                            <span className="text-lg text-red-500 line-through font-medium">
+                              {(p.price * 1.3).toLocaleString("vi-VN")}₫
+                            </span>
+                            <span className="text-2xl font-bold text-green-800">
+                              {p.price.toLocaleString("vi-VN")}₫
+                            </span>
+                          </div>
 
                           <button
                             onClick={() => handleAddToCart(p)}

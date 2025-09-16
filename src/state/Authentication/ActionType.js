@@ -32,3 +32,5 @@ export const RESET_PASSWORD_REQUEST = "RESET_PASSWORD_REQUEST";
 export const RESET_PASSWORD_SUCCESS = "RESET_PASSWORD_SUCCESS";
 export const RESET_PASSWORD_FAILURE = "RESET_PASSWORD_FAILURE";
 
+// New action type for setting access token directly
+export const SET_ACCESS_TOKEN = "SET_ACCESS_TOKEN";
