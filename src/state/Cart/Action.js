@@ -12,7 +12,9 @@ import {
   UPDATE_QUANTITY_REQUEST,
   UPDATE_QUANTITY_FAILURE,
   DELETE_CART_ITEM_REQUEST,
-  DELETE_CART_ITEM_FAILURE
+  DELETE_CART_ITEM_FAILURE,
+  UPDATE_QUANTITY_SUCCESS,
+  DELETE_CART_ITEM_SUCCESS,
 } from "./ActionType";
 import { cartItemApi } from "../../utils/api/cart-item.api.js";
 
@@ -67,6 +69,10 @@ export const increaseQuantityFromServer = (itemId, quantity) => async (dispatch,
     // After successfully updating quantity, fetch the updated cart
     dispatch(fetchCartFromServer());
     
+    dispatch({
+      type: UPDATE_QUANTITY_SUCCESS,
+    });
+    
     return response;
   } catch (error) {
     console.error("Failed to update item quantity in cart on server:", error);
@@ -120,6 +126,10 @@ export const decreaseQuantityFromServer = (itemId, quantity) => async (dispatch,
     
     // After successfully updating quantity, fetch the updated cart
     dispatch(fetchCartFromServer());
+    
+    dispatch({
+      type: UPDATE_QUANTITY_SUCCESS,
+    });
     
     return response;
   } catch (error) {
@@ -226,11 +236,63 @@ export const deleteCartItemFromServer = (cartItemId) => async (dispatch, getStat
     // After successfully deleting, fetch the updated cart
     dispatch(fetchCartFromServer());
     
+    dispatch({
+      type: DELETE_CART_ITEM_SUCCESS,
+    });
+    
     return response;
   } catch (error) {
     console.error("Failed to delete cart item on server:", error);
     
     let errorMessage = "Failed to delete cart item";
+    if (error.response?.data?.message) {
+      if (typeof error.response.data.message === 'object') {
+        if (error.response.data.message.messageDetail) {
+          errorMessage = error.response.data.message.messageDetail;
+        } else {
+          errorMessage = JSON.stringify(error.response.data.message);
+        }
+      } else {
+        errorMessage = error.response.data.message;
+      }
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    dispatch({
+      type: DELETE_CART_ITEM_FAILURE,
+      payload: errorMessage,
+    });
+    
+    throw error;
+  }
+};
+
+export const deleteAllFromServer = () => async (dispatch, getState) => {
+  const { auth } = getState();
+  
+  // Check if user is authenticated
+  if (!auth?.accessToken) {
+    console.log("User not authenticated, cannot delete all cart items on server");
+    // Fallback to local cart action
+    dispatch(clearCart());
+    return;
+  }
+
+  dispatch({ type: DELETE_CART_ITEM_REQUEST });
+  
+  try {
+    // Call the API to delete all items from cart
+    const response = await cartItemApi.deleteAll(auth.accessToken);
+    
+    // After successfully deleting all items, clear the local cart
+    dispatch(clearCart());
+    
+    return response;
+  } catch (error) {
+    console.error("Failed to delete all cart items on server:", error);
+    
+    let errorMessage = "Failed to delete all cart items";
     if (error.response?.data?.message) {
       if (typeof error.response.data.message === 'object') {
         if (error.response.data.message.messageDetail) {

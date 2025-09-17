@@ -33,4 +33,17 @@ export const productApi = {
     const response = await api.delete(`/api/product/${productId}`);
     return response.data;
   },
+
+  getTypeProducts: async (
+    page = 1,
+    size = 8,
+    field = "createdDate",
+    direction = "desc",
+    searchText
+  ) => {
+    const response = await api.get("/api/type-product", {
+      params: { page, size, field, direction, searchText },
+    });
+    return response.data;
+  },
 };

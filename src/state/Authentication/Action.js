@@ -23,12 +23,83 @@ import {
 } from "./ActionType";
 import { authApi } from "../../utils/api/auth.api";
 import { api } from "../../api/Api";
+import { fetchCartFromServer } from "../Cart/Action";
+import { profileApi } from "../../utils/api/profile.api";
 
 // Action to set access token directly
 export const setAccessToken = (token) => ({
   type: SET_ACCESS_TOKEN,
   payload: token,
 });
+
+// Helper function to load cart from localStorage
+const loadCartFromLocalStorage = () => {
+  try {
+    const cart = localStorage.getItem('guestCart');
+    return cart ? JSON.parse(cart) : [];
+  } catch (error) {
+    console.error('Failed to load cart from localStorage:', error);
+    return [];
+  }
+};
+
+// Helper function to clear local cart
+const clearLocalCart = () => {
+  try {
+    localStorage.removeItem('guestCart');
+  } catch (error) {
+    console.error('Failed to clear cart from localStorage:', error);
+  }
+};
+
+// Function to synchronize local cart with server cart
+const syncLocalCartToServer = (accessToken, dispatch) => async () => {
+  try {
+    // Load local cart items
+    const localCartItems = loadCartFromLocalStorage();
+    
+    if (localCartItems.length === 0) {
+      // No items in local cart, nothing to sync
+      return;
+    }
+    
+    console.log("Syncing local cart items to server:", localCartItems);
+    
+    // For each item in local cart, add it to server cart
+    // In a more sophisticated implementation, we would check if items already exist
+    // and update quantities accordingly, but for now we'll just add them
+    for (const item of localCartItems) {
+      try {
+        // Prepare cart item data
+        const cartItemData = {
+          productId: item.productId || item.id,
+          quantity: item.quantity || 1
+        };
+        
+        // Add item to server cart
+        await api.post("/api/cart-item", cartItemData, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+      } catch (error) {
+        console.error("Failed to sync item to server:", item, error);
+        // Continue with other items even if one fails
+      }
+    }
+    
+    // Clear local cart after successful sync
+    clearLocalCart();
+    
+    // Fetch updated cart from server
+    dispatch(fetchCartFromServer());
+    
+    console.log("Local cart sync completed successfully");
+  } catch (error) {
+    console.error("Failed to sync local cart to server:", error);
+    // Don't throw error to avoid breaking the login flow
+  }
+};
 
 // register
 export const registerUser = (reqData) => async (dispatch) => {
@@ -131,6 +202,19 @@ export const loginUser = (reqData) => async (dispatch) => {
       localStorage.setItem("userId", data?.data?.userId);
       localStorage.setItem("username", data?.data?.username);
       localStorage.setItem("email", data?.data?.email);
+      
+      // Fetch user profile to get avatar and store it in localStorage
+      try {
+        const profileResponse = await profileApi.getUserById(data?.data?.userId, accessToken);
+        if (profileResponse?.data?.avatar) {
+          localStorage.setItem("userAvatar", profileResponse.data.avatar);
+        }
+      } catch (profileError) {
+        console.error("Failed to fetch user profile for avatar:", profileError);
+      }
+      
+      // Sync local cart to server after successful login
+      await syncLocalCartToServer(accessToken, dispatch)();
     }
 
     if (data.role === "ADMIN") {
@@ -232,8 +316,13 @@ export const getUser = (jwt) => async (dispatch) => {
 
 export const logout = () => (dispatch) => {
   try {
-    // Clear all localStorage items
-    localStorage.clear();
+    // Instead of clearing all localStorage, selectively remove items
+    // This preserves guestCart and other non-auth related items
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('username');
+    localStorage.removeItem('email');
+    localStorage.removeItem('userAvatar');
     
     // Dispatch LOGOUT to reset Redux state
     dispatch({ type: LOGOUT });

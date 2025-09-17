@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { FaLeaf, FaStar, FaRegStar, FaStarHalfAlt, FaFire } from 'react-icons/fa';
 import { FiShoppingCart } from 'react-icons/fi';
 import { useDispatch } from 'react-redux';
-import { addToCart, addToCartFromServer } from '../../state/Cart/Action';
+import { addToCartFromServer } from '../../state/Cart/Action';
 import Notification from '../common/Nontification';
 import { productApi } from '../../utils/api/product.api';
 
@@ -61,7 +61,7 @@ export default function ProductDetail() {
     }
   }, [id, navigate]);
 
-  const renderStars = (rating) => {
+  const renderStars = (rating, totalRate) => {
     // Validate and sanitize rating value
     const numericRating = Number(rating);
     const safeRating = Number.isFinite(numericRating) 
@@ -77,6 +77,10 @@ export default function ProductDetail() {
         {full > 0 && Array(full).fill().map((_, i) => <FaStar key={`f-${i}`} className="w-5 h-5 text-yellow-400" />)}
         {half && <FaStarHalfAlt className="w-5 h-5 text-yellow-400" />}
         {empty > 0 && Array(empty).fill().map((_, i) => <FaRegStar key={`e-${i}`} className="w-5 h-5 text-yellow-400" />)}
+        <span className="ml-1 text-sm text-gray-500">({safeRating})</span>
+        {totalRate !== undefined && (
+          <span className="ml-1 text-sm text-gray-400">[{totalRate}]</span>
+        )}
       </div>
     );
   };
@@ -148,12 +152,12 @@ export default function ProductDetail() {
   // Fetch related products from API
   useEffect(() => {
     const fetchRelatedProducts = async () => {
-      if (product?.category) {
+      if (product?.typeProduct?.name) {
         try {
           const response = await productApi.getAll(1, 8, 'createdDate', 'desc');
           if (response?.data?.content) {
             const related = response.data.content
-              .filter((p) => p.category === product.category && p.id !== product.id)
+              .filter((p) => p.typeProduct?.name === product.typeProduct.name && p.id !== product.id)
               .slice(0, 4);
             setRelatedProducts(related);
           }
@@ -214,23 +218,21 @@ export default function ProductDetail() {
 
           {/* Nội dung */}
           <div className="flex flex-col justify-center gap-5">
-            <span className="text-sm font-semibold text-green-600 tracking-widest uppercase">{product.category}</span>
+            <span className="text-sm font-semibold text-green-600 tracking-widest uppercase">{product.typeProduct?.name}</span>
             <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">{product.name}</h1>
 
             <div className="flex items-center gap-3">
-              {renderStars(product.rating)}
+              {renderStars(product.statisticsRate?.averageRate, product.statisticsRate?.totalRate)}
               <span className="text-gray-500">·</span>
-              <span className="text-sm text-gray-500">{product.purchases} đã bán</span>
+              <span className="text-sm text-gray-500">{product.statisticsRate?.totalSale || 0} đã bán</span>
             </div>
 
             <p className="text-gray-600 text-base leading-relaxed max-w-lg">{product.description}</p>
 
             <div className="flex items-baseline gap-3">
-              <span className="text-4xl font-bold text-green-700">{product.price.toLocaleString('vi-VN')}₫</span>
-              <span className="text-2xl text-red-500 line-through font-medium">{(product.price * 1.3).toLocaleString('vi-VN')}₫</span>
+              <span className="text-4xl font-bold text-green-700">{(product.salePrice || product.price || 0).toLocaleString('vi-VN')}₫</span>
+              <span className="text-2xl text-red-500 line-through font-medium">{(product.price || 0).toLocaleString('vi-VN')}₫</span>
             </div>
-
-            <p className="text-sm text-gray-500">Tồn kho: <span className="font-medium text-gray-800">{product.stock}</span></p>
 
             <div className="flex flex-col sm:flex-row gap-4 mt-3">
               <button
@@ -266,7 +268,7 @@ export default function ProductDetail() {
                   className="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden group relative"
                 >
                   {/* Badge HOT */}
-                  {rp.hot && (
+                  {rp.active && (
                     <div className="absolute top-3 left-3 z-10">
                       <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg">
                         <FaFire className="text-sm" />
@@ -295,19 +297,19 @@ export default function ProductDetail() {
                     {rp.description && (
                       <p className="text-xs text-gray-500 mt-1 mb-2 truncate">{rp.description}</p>
                     )}
-                    <p className="text-sm text-green-600 font-medium">{rp.category}</p>
+                    <p className="text-sm text-green-600 font-medium">{rp.typeProduct?.name}</p>
 
-                    <div className="mt-3 mb-3">{renderStars(rp.rating)}</div>
+                    <div className="mt-3 mb-3">{renderStars(rp.statisticsRate?.averageRate, rp.statisticsRate?.totalRate)}</div>
 
-                    <p className="text-sm text-gray-500">Đã bán: {rp.purchases}</p>
+                    <p className="text-sm text-gray-500">Đã bán: {rp.statisticsRate?.totalSale || 0}</p>
 
                     <div className="flex justify-between items-center mt-4">
                       <div className="flex flex-col">
                         <span className="text-lg text-red-500 line-through font-medium">
-                          {(rp.price * 1.3).toLocaleString('vi-VN')}₫
+                          {(rp.price || 0).toLocaleString('vi-VN')}₫
                         </span>
                         <span className="text-2xl font-bold text-green-800">
-                          {rp.price.toLocaleString('vi-VN')}₫
+                          {(rp.salePrice || rp.price || 0).toLocaleString('vi-VN')}₫
                         </span>
                       </div>
 

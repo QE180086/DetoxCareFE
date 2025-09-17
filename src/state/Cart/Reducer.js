@@ -13,6 +13,7 @@ import {
   FETCH_CART_SUCCESS,
   FETCH_CART_FAILURE,
   DELETE_CART_ITEM_REQUEST,
+  DELETE_CART_ITEM_SUCCESS,
   DELETE_CART_ITEM_FAILURE
 } from "./ActionType";
 
@@ -22,7 +23,23 @@ const initialState = {
   error: null,
 };
 
+// Helper function to save guest cart to localStorage
+const saveGuestCartToLocalStorage = (cartItems) => {
+  try {
+    // Only save to localStorage if user is not authenticated
+    // We can check this by looking for accessToken in localStorage
+    const accessToken = localStorage.getItem('accessToken');
+    if (!accessToken) {
+      localStorage.setItem('guestCart', JSON.stringify(cartItems));
+    }
+  } catch (error) {
+    console.error('Failed to save guest cart to localStorage:', error);
+  }
+};
+
 const cartReducer = (state = initialState, action) => {
+  let newState;
+  
   switch (action.type) {
     case ADD_TO_CART_REQUEST:
     case UPDATE_QUANTITY_REQUEST:
@@ -48,7 +65,7 @@ const cartReducer = (state = initialState, action) => {
         (item) => item.productId === cartItem.productId
       );
       if (existingItem) {
-        return {
+        newState = {
           ...state,
           cartItems: state.cartItems.map((item) =>
             item.productId === cartItem.productId
@@ -57,19 +74,28 @@ const cartReducer = (state = initialState, action) => {
           ),
         };
       } else {
-        return {
+        newState = {
           ...state,
           cartItems: [...state.cartItems, cartItem],
         };
       }
+      
+      // Save guest cart to localStorage
+      saveGuestCartToLocalStorage(newState.cartItems);
+      return newState;
     }
-    case REMOVE_FROM_CART:
-      return {
+    case REMOVE_FROM_CART: {
+      newState = {
         ...state,
         cartItems: state.cartItems.filter((item) => item.id !== action.payload),
       };
-    case INCREASE_QUANTITY:
-      return {
+      
+      // Save guest cart to localStorage
+      saveGuestCartToLocalStorage(newState.cartItems);
+      return newState;
+    }
+    case INCREASE_QUANTITY: {
+      newState = {
         ...state,
         cartItems: state.cartItems.map((item) =>
           item.id === action.payload
@@ -77,8 +103,13 @@ const cartReducer = (state = initialState, action) => {
             : item
         ),
       };
-    case DECREASE_QUANTITY:
-      return {
+      
+      // Save guest cart to localStorage
+      saveGuestCartToLocalStorage(newState.cartItems);
+      return newState;
+    }
+    case DECREASE_QUANTITY: {
+      newState = {
         ...state,
         cartItems: state.cartItems.flatMap((item) => {
           if (item.id === action.payload) {
@@ -91,11 +122,21 @@ const cartReducer = (state = initialState, action) => {
           return item;
         }),
       };
-    case CLEAR_CART:
-      return {
+      
+      // Save guest cart to localStorage
+      saveGuestCartToLocalStorage(newState.cartItems);
+      return newState;
+    }
+    case CLEAR_CART: {
+      newState = {
         ...state,
         cartItems: [],
       };
+      
+      // Save guest cart to localStorage
+      saveGuestCartToLocalStorage(newState.cartItems);
+      return newState;
+    }
     case ADD_TO_CART_FAILURE:
     case UPDATE_QUANTITY_FAILURE:
     case DELETE_CART_ITEM_FAILURE:
@@ -105,6 +146,7 @@ const cartReducer = (state = initialState, action) => {
         error: typeof action.payload === 'string' ? action.payload : JSON.stringify(action.payload),
       };
     case UPDATE_QUANTITY_SUCCESS:
+    case DELETE_CART_ITEM_SUCCESS:
       return {
         ...state,
         isLoading: false,
@@ -129,12 +171,16 @@ const cartReducer = (state = initialState, action) => {
           }))
         : [];
         
-      return {
+      newState = {
         ...state,
         isLoading: false,
         cartItems: transformedItems,
         error: null,
       };
+      
+      // Save guest cart to localStorage (will only save if user is not authenticated)
+      saveGuestCartToLocalStorage(newState.cartItems);
+      return newState;
     case FETCH_CART_FAILURE:
       // Ensure error is a string
       return {
