@@ -1262,7 +1262,7 @@ export default function Profile() {
                                             Giảm giá:
                                           </span>
                                           <span className="font-bold">
-                                            {voucher.discountValue?.toLocaleString("vi-VN") || 0} ₫
+                                            {voucher.discountValue?.toLocaleString("vi-VN") || 0}{voucher.percentage ? '%' : '₫'}
                                           </span>
                                         </div>
                                         <div className="flex items-center gap-2">
