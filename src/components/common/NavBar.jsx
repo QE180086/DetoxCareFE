@@ -17,21 +17,30 @@ import {
   AiOutlineDelete,
 } from "react-icons/ai";
 import { useSelector, useDispatch } from "react-redux";
-import { increaseQuantity, decreaseQuantity, removeFromCart } from "../../state/Cart/Action";
+import { increaseQuantity, decreaseQuantity, removeFromCart, fetchCartFromServer, increaseQuantityFromServer, decreaseQuantityFromServer, deleteCartItemFromServer } from "../../state/Cart/Action";
+import { logout } from "../../state/Authentication/Action"; // Import the logout action
+import { getProfileByUserId } from "../../state/Profile/Action"; // Import getProfileByUserId action
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
   const [searchFocused, setSearchFocused] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const user = { name: "Thuong Nguyen" };
   
-  const cartItems = useSelector(state => state.cart.cartItems);
-  const totalCartItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  const getTotalPrice = () => cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const cartState = useSelector(state => state.cart);
+  const cartItems = cartState.cartItems;
+  const cartError = cartState.error;
+  const auth = useSelector(state => state.auth);
+  const profileState = useSelector(state => state.profile); // Get profile state
+  const totalCartItems = cartItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+  const getTotalPrice = () => cartItems.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
+
+  // Get user data from profile or fallback to auth
+  const userData = profileState?.profile?.data || {};
+  const userAvatar = userData.avatar || "https://i.pinimg.com/736x/3e/ef/7a/3eef7adafb89a18819b0c3d3b9c93da8.jpg";
+  const username = userData.username || auth?.user?.username || "User";
 
   // Handle click outside to close dropdowns
   useEffect(() => {
@@ -51,11 +60,68 @@ export default function Navbar() {
     };
   }, [isCartOpen, isUserMenuOpen]);
 
+  // Fetch cart items and profile when component mounts or when auth state changes
+  useEffect(() => {
+    // Fetch cart items - from server if authenticated, from localStorage if guest
+    if (auth?.accessToken) {
+      dispatch(fetchCartFromServer());
+      
+      // Fetch user profile
+      const userId = localStorage.getItem("userId") || "currentUserId";
+      if (userId) {
+        dispatch(getProfileByUserId(userId, auth.accessToken));
+      }
+    } else {
+      // For guest users, fetch cart from localStorage
+      dispatch(fetchCartFromServer());
+    }
+  }, [dispatch, auth?.accessToken]);
+
+  // Listen for localStorage changes to sync guest cart
+  useEffect(() => {
+    // Only for guest users (not authenticated)
+    if (!auth?.accessToken) {
+      const handleStorageChange = (e) => {
+        if (e.key === 'guestCart') {
+          // When guestCart in localStorage changes, fetch updated cart
+          dispatch(fetchCartFromServer());
+        }
+      };
+
+      // Add event listener for localStorage changes
+      window.addEventListener('storage', handleStorageChange);
+      
+      // Cleanup event listener
+      return () => {
+        window.removeEventListener('storage', handleStorageChange);
+      };
+    }
+  }, [dispatch, auth?.accessToken]);
+
+  // NEW: Custom event listener for localStorage changes within the same tab
+  useEffect(() => {
+    if (!auth?.accessToken) {
+      const handleCartChange = () => {
+        // Fetch updated cart from localStorage when cart changes
+        dispatch(fetchCartFromServer());
+      };
+
+      // Listen for custom cart change events
+      window.addEventListener('cartChange', handleCartChange);
+      
+      // Cleanup event listener
+      return () => {
+        window.removeEventListener('cartChange', handleCartChange);
+      };
+    }
+  }, [dispatch, auth?.accessToken]);
+
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   const handleLogout = () => {
-    // localStorage.removeItem('accessToken');
-    setIsLoggedIn(false);
+    console.log("Logout initiated");
+    // Dispatch the logout action which will clear localStorage and Redux state
+    dispatch(logout());
     navigate("/login");
   };
 
@@ -77,7 +143,7 @@ export default function Navbar() {
   return (
     <>
       <nav
-        className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600"
+        className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-gradient-to-r from-gray-900 to-black"
       >
         <div className="container mx-auto px-3 md:px-4 lg:px-6">
           <div className="flex items-center justify-between h-16 lg:h-20">
@@ -103,7 +169,7 @@ export default function Navbar() {
                     DetoxCare
                   </span>
                   <span
-                    className="text-xs md:text-sm font-medium opacity-75 transition-colors duration-300 text-green-100"
+                    className="text-xs md:text-sm font-medium opacity-75 transition-colors duration-300 text-green-400"
                   >
                     Natural & Healthy
                   </span>
@@ -131,7 +197,7 @@ export default function Navbar() {
                   }`}
                 >
                   <AiOutlineSearch
-                    className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 transition-colors duration-300 text-green-500"
+                    className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 transition-colors duration-300 text-green-400"
                   />
                   <input
                     type="text"
@@ -140,8 +206,8 @@ export default function Navbar() {
                     onFocus={() => setSearchFocused(true)}
                     onBlur={() => setSearchFocused(false)}
                     className="w-full pl-4 pr-16 py-3 rounded-2xl border-2 border-transparent
-                              bg-white/90 backdrop-blur-sm text-gray-800 placeholder-gray-500
-                              focus:outline-none focus:border-green-400 focus:bg-white focus:shadow-lg
+                              bg-white/10 backdrop-blur-sm text-white placeholder-gray-300
+                              focus:outline-none focus:border-green-400 focus:bg-white/20 focus:shadow-lg
                               transition-all duration-300 text-sm font-medium text-left
                               placeholder:text-left"
                   />
@@ -164,7 +230,7 @@ export default function Navbar() {
                   key={link.to}
                   to={link.to}
                   className="relative px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-300
-                    text-white/90 hover:text-white hover:bg-white/20
+                    text-white/90 hover:text-white hover:bg-white/10
                     before:absolute before:inset-0 before:rounded-xl before:bg-gradient-to-r 
                     before:from-green-400 before:to-emerald-400 before:opacity-0 
                     hover:before:opacity-20 before:transition-opacity before:duration-300
@@ -187,7 +253,7 @@ export default function Navbar() {
                     e.stopPropagation();
                     setIsCartOpen(!isCartOpen);
                   }}
-                  className="relative p-2.5 rounded-xl transition-all duration-300 hover:scale-110 text-white/80 hover:text-white hover:bg-white/20"
+                  className="relative p-2.5 rounded-xl transition-all duration-300 hover:scale-110 text-white/80 hover:text-white hover:bg-white/10"
                 >
                   <AiOutlineShoppingCart className="w-7 h-7" />
                   {totalCartItems > 0 && (
@@ -203,7 +269,7 @@ export default function Navbar() {
 
                 {/* Enhanced Cart Dropdown */}
                 <div
-                  className={`absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100
+                  className={`absolute right-0 mt-3 w-80 bg-gray-800 rounded-2xl shadow-2xl border border-gray-700
                   transition-all duration-300 z-50 overflow-hidden ${
                     isCartOpen 
                       ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto' 
@@ -213,91 +279,107 @@ export default function Navbar() {
                   <div className="p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h3
-                        className="text-lg font-bold bg-gradient-to-r from-green-600 to-emerald-600 
+                        className="text-lg font-bold bg-gradient-to-r from-green-400 to-emerald-400 
                                    bg-clip-text text-transparent"
                       >
                         Giỏ hàng của bạn
                       </h3>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-gray-300">
                         {totalCartItems} sản phẩm
                       </span>
                     </div>
 
-                    {cartItems.length > 0 ? (
+                    {cartError ? (
+                      <div className="text-center py-4">
+                        <p className="text-red-400 font-medium">
+                          {typeof cartError === 'object' && cartError !== null ? 
+                            (cartError.messageDetail || cartError.messageCode || JSON.stringify(cartError)) : 
+                            cartError}
+                        </p>
+                        <button
+                          onClick={() => dispatch(fetchCartFromServer())}
+                          className="mt-2 px-3 py-1 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition text-sm"
+                        >
+                          Thử lại
+                        </button>
+                      </div>
+                    ) : cartItems.length > 0 ? (
                       <>
                         <div className="space-y-4 max-h-60 overflow-y-auto">
                           {cartItems.map((item) => (
                             <div
                               key={item.id}
                               className="flex items-center gap-3 p-3 rounded-xl 
-                                          hover:bg-gray-50 transition-colors duration-200 group/item"
+                                          hover:bg-gray-700 transition-colors duration-200 group/item"
                             >
                               <img
-                                src={item.image}
-                                alt={item.name}
+                                src={item.image || "https://i.pinimg.com/736x/3e/ef/7a/3eef7adafb89a18819b0c3d3b9c93da8.jpg"}
+                                alt={item.name || "Sản phẩm"}
                                 className="w-14 h-14 object-cover rounded-xl shadow-md 
                                          group-hover/item:scale-105 transition-transform duration-200"
                               />
                               <div className="flex-1 min-w-0">
-                                <h4 className="font-medium text-gray-800 truncate">
-                                  {item.name}
+                                <h4 className="font-medium text-white truncate">
+                                  {item.name || "Sản phẩm"}
                                 </h4>
                                 <div className="flex items-center justify-between mt-2">
                                   <div className="flex items-center gap-2">
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        dispatch(decreaseQuantity(item.id));
+                                        dispatch(decreaseQuantityFromServer(item.id, item.quantity - 1));
                                       }}
-                                      className="w-7 h-7 rounded-full bg-gray-100 hover:bg-red-100 
+                                      className="w-7 h-7 rounded-full bg-gray-700 hover:bg-red-500 
                                                flex items-center justify-center transition-colors duration-200
-                                               text-gray-600 hover:text-red-600"
+                                               text-white hover:text-white"
                                       disabled={item.quantity <= 1}
                                     >
                                       <AiOutlineMinus className="w-3 h-3" />
                                     </button>
-                                    <span className="min-w-[2rem] text-center font-medium text-gray-700">
+                                    <span className="min-w-[2rem] text-center font-medium text-white">
                                       {item.quantity}
                                     </span>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        dispatch(increaseQuantity(item.id));
+                                        dispatch(increaseQuantityFromServer(item.id, item.quantity + 1));
                                       }}
-                                      className="w-7 h-7 rounded-full bg-gray-100 hover:bg-green-100 
+                                      className="w-7 h-7 rounded-full bg-gray-700 hover:bg-green-500 
                                                flex items-center justify-center transition-colors duration-200
-                                               text-gray-600 hover:text-green-600"
+                                               text-white hover:text-white"
                                     >
                                       <AiOutlinePlus className="w-3 h-3" />
                                     </button>
                                   </div>
                                   <button
                                     onClick={(e) => {
+                                      e.preventDefault();
                                       e.stopPropagation();
-                                      dispatch(removeFromCart(item.id));
+                                      console.log("Delete button clicked for item:", item.id);
+                                      dispatch(deleteCartItemFromServer(item.id));
                                     }}
-                                    className="w-7 h-7 rounded-full bg-gray-100 hover:bg-red-100 
+                                    className="w-7 h-7 rounded-full bg-gray-700 hover:bg-red-500 
                                              flex items-center justify-center transition-colors duration-200
-                                             text-gray-600 hover:text-red-600"
+                                             text-white hover:text-white"
                                     title="Xóa sản phẩm"
                                   >
                                     <AiOutlineDelete className="w-3 h-3" />
                                   </button>
                                 </div>
-                                <p className="font-semibold text-green-600 mt-1">
-                                  {formatPrice(item.price * item.quantity)}
+                                <p className="font-semibold text-green-400 mt-1">
+                                  {formatPrice((item.price || 0) * (item.quantity || 0))}
                                 </p>
                               </div>
                             </div>
                           ))}
                         </div>
 
-                        <div className="mt-6 pt-4 border-t border-gray-100">
+                        <div className="mt-6 pt-4 border-t border-gray-700">
                           <div className="flex justify-between items-center mb-4">
-                            <span className="font-semibold text-gray-800">
+                            <span className="font-semibold text-white">
                               Tổng cộng:
                             </span>
-                            <span className="text-lg font-bold text-green-600">
+                            <span className="text-lg font-bold text-green-400">
                               {formatPrice(getTotalPrice())}
                             </span>
                           </div>
@@ -316,8 +398,8 @@ export default function Navbar() {
                       </>
                     ) : (
                       <div className="text-center py-8">
-                        <AiOutlineShoppingCart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                        <p className="text-gray-500 mb-4">
+                        <AiOutlineShoppingCart className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+                        <p className="text-gray-400 mb-4">
                           Giỏ hàng của bạn đang trống
                         </p>
                         <Link
@@ -337,7 +419,7 @@ export default function Navbar() {
 
               {/* Enhanced User Menu - Hidden on mobile */}
               <div className="hidden md:block">
-                {isLoggedIn ? (
+                {auth?.accessToken ? (
                   <div className="relative">
                     <button
                       onClick={(e) => {
@@ -348,14 +430,14 @@ export default function Navbar() {
                                  ring-2 ring-white/20 hover:ring-green-300"
                     >
                       <img
-                        src="https://i.pinimg.com/736x/3e/ef/7a/3eef7adafb89a18819b0c3d3b9c93da8.jpg"
+                        src={userAvatar}
                         alt="avatar"
                         className="w-10 h-10 rounded-full object-cover"
                       />
                     </button>
 
                     <div
-                      className={`absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100
+                      className={`absolute right-0 mt-3 w-56 bg-gray-800 rounded-2xl shadow-2xl border border-gray-700
                            transition-all duration-300 z-50 overflow-hidden ${
                              isUserMenuOpen 
                                ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto' 
@@ -363,18 +445,15 @@ export default function Navbar() {
                            }`}
                     >
                       <div className="p-4">
-                        <div className="flex items-center space-x-3 pb-4 border-b border-gray-100">
+                        <div className="flex items-center space-x-3 pb-4 border-b border-gray-700">
                           <img
-                            src="https://i.pinimg.com/736x/3e/ef/7a/3eef7adafb89a18819b0c3d3b9c93da8.jpg"
+                            src={userAvatar}
                             alt="avatar"
                             className="w-12 h-12 rounded-full object-cover"
                           />
                           <div>
-                            <p className="font-semibold text-gray-800">
-                              {user.name}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              Thành viên VIP
+                            <p className="font-semibold text-white">
+                              {username}
                             </p>
                           </div>
                         </div>
@@ -385,29 +464,29 @@ export default function Navbar() {
                               icon: AiOutlineSetting,
                               label: "Hồ sơ cá nhân",
                               action: () => navigate("/profile"),
-                              color: "text-blue-600",
+                              color: "text-blue-400",
                             },
                             {
                               icon: AiOutlineLock,
                               label: "Lịch sử đơn hàng",
                               action: () => navigate("/history-order"),
-                              color: "text-purple-600",
+                              color: "text-purple-400",
                             },
                             {
                               icon: AiOutlineLogout,
                               label: "Đăng xuất",
                               action: handleLogout,
-                              color: "text-red-600",
+                              color: "text-red-400",
                             },
                           ].map((item, index) => (
                             <button
                               key={index}
                               onClick={item.action}
-                              className={`w-full flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 
+                              className={`w-full flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-700 
                                          transition-all duration-200 ${item.color} hover:scale-105`}
                             >
                               <item.icon className="w-5 h-5" />
-                              <span className="font-medium">{item.label}</span>
+                              <span className="font-medium text-white">{item.label}</span>
                             </button>
                           ))}
                         </div>
@@ -417,10 +496,9 @@ export default function Navbar() {
                 ) : (
                   <Link
                     to="/login"
-                    className="flex items-center space-x-2 px-6 py-2.5 bg-white text-green-700 
-                               rounded-xl font-semibold hover:bg-gray-50 hover:text-green-800 
-                               transition-all duration-300 transform hover:scale-105 hover:shadow-lg 
-                               border border-green-200"
+                    className="flex items-center space-x-2 px-6 py-2.5 bg-gradient-to-r from-green-500 to-emerald-500 
+                               text-white rounded-xl font-semibold hover:from-green-600 hover:to-emerald-600 
+                               transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
                   >
                     <AiOutlineUser className="w-5 h-5" />
                     <span>Đăng nhập</span>
@@ -461,19 +539,19 @@ export default function Navbar() {
             isMenuOpen ? "max-h-[40rem] opacity-100" : "max-h-0 opacity-0"
           }`}
         >
-          <div className="bg-white/95 backdrop-blur-md border-t border-gray-200 px-4 py-6 max-h-[40rem] overflow-y-auto">
+          <div className="bg-gray-800/95 backdrop-blur-md border-t border-gray-700 px-4 py-6 max-h-[40rem] overflow-y-auto">
             {/* Mobile User Profile */}
-            {isLoggedIn ? (
-              <div className="mb-6 pb-4 border-b border-gray-200">
+            {
+              auth?.accessToken ? (
+              <div className="mb-6 pb-4 border-b border-gray-700">
                 <div className="flex items-center space-x-3">
                   <img
-                    src="https://i.pinimg.com/736x/3e/ef/7a/3eef7adafb89a18819b0c3d3b9c93da8.jpg"
+                    src={userAvatar}
                     alt="avatar"
                     className="w-12 h-12 rounded-full object-cover"
                   />
                   <div>
-                    <p className="font-semibold text-gray-800">{user.name}</p>
-                    <p className="text-sm text-gray-500">Thành viên VIP</p>
+                    <p className="font-semibold text-white">{username}</p>
                   </div>
                 </div>
 
@@ -484,19 +562,19 @@ export default function Navbar() {
                       icon: AiOutlineSetting,
                       label: "Cập nhật hồ sơ",
                       action: () => navigate("/profile"),
-                      color: "text-blue-600",
+                      color: "text-blue-400",
                     },
                     {
                       icon: AiOutlineLock,
                       label: "Đổi mật khẩu",
                       action: () => navigate("/change-password"),
-                      color: "text-purple-600",
+                      color: "text-purple-400",
                     },
                     {
                       icon: AiOutlineLogout,
                       label: "Đăng xuất",
                       action: handleLogout,
-                      color: "text-red-600",
+                      color: "text-red-400",
                     },
                   ].map((item, index) => (
                     <button
@@ -505,22 +583,22 @@ export default function Navbar() {
                         item.action();
                         setIsMenuOpen(false);
                       }}
-                      className={`w-full flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 
+                      className={`w-full flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-700 
                                  transition-all duration-200 ${item.color} hover:scale-105`}
                     >
                       <item.icon className="w-5 h-5" />
-                      <span className="font-medium">{item.label}</span>
+                      <span className="font-medium text-white">{item.label}</span>
                     </button>
                   ))}
                 </div>
               </div>
             ) : (
-              <div className="mb-6 pb-4 border-b border-gray-200">
+              <div className="mb-6 pb-4 border-b border-gray-700">
                 <Link
                   to="/login"
                   onClick={() => setIsMenuOpen(false)}
-                  className="flex items-center space-x-3 p-3 rounded-xl text-gray-700 
-                            hover:bg-green-50 hover:text-green-700 transition-all duration-200 
+                  className="flex items-center space-x-3 p-3 rounded-xl text-white 
+                            hover:bg-green-500 hover:text-white transition-all duration-200 
                             font-medium"
                 >
                   <AiOutlineUser className="w-6 h-6" />
@@ -548,9 +626,9 @@ export default function Navbar() {
                   type="text"
                   name="search"
                   placeholder="Tìm kiếm sản phẩm..."
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 
-                            focus:outline-none focus:border-green-400 focus:ring-2 focus:ring-green-100
-                            bg-white text-gray-800 text-left placeholder:text-left"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-700 
+                            focus:outline-none focus:border-green-400 focus:ring-2 focus:ring-green-500
+                            bg-gray-700 text-white text-left placeholder:text-gray-400"
                 />
               </form>
             </div>
@@ -562,8 +640,8 @@ export default function Navbar() {
                   key={link.to}
                   to={link.to}
                   onClick={() => setIsMenuOpen(false)}
-                  className="flex items-center space-x-3 p-3 rounded-xl text-gray-700 
-                            hover:bg-green-50 hover:text-green-700 transition-all duration-200 
+                  className="flex items-center space-x-3 p-3 rounded-xl text-white 
+                            hover:bg-green-500 hover:text-white transition-all duration-200 
                             font-medium"
                 >
                   <link.icon className="w-5 h-5" />

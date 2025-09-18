@@ -1,53 +1,58 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   FaLeaf,
+  FaFire,
   FaStar,
   FaRegStar,
   FaStarHalfAlt,
-  FaFire,
 } from "react-icons/fa";
 import { FiShoppingCart } from "react-icons/fi";
-import { getHotProducts } from "../../data/products";
 import { useDispatch } from "react-redux";
-import { addToCart } from "../../state/Cart/Action";
+import { addToCartFromServer } from "../../state/Cart/Action";
 import { useEffect, useState } from "react";
 import { productApi } from "../../utils/api/product.api";
 
 const ProductGrid = () => {
   const dispatch = useDispatch();
-  // Lấy tất cả sản phẩm hot
-  // const products = getHotProducts();
+  const navigate = useNavigate();
 
   const [products, setProducts] = useState([]);
-  const [page, setPage] = useState(1);
-  const [size, setSize] = useState(8);
+  const [page] = useState(1);
+  const [size] = useState(8);
 
   // Hàm render sao đánh giá
-  // const renderStars = (rating) => {
-  //   const full = Math.floor(rating);
-  //   const half = rating % 1 >= 0.5;
-  //   const empty = 5 - full - (half ? 1 : 0);
-  //   return (
-  //     <div className="flex items-center space-x-0.5">
-  //       {Array(full)
-  //         .fill()
-  //         .map((_, i) => (
-  //           <FaStar key={`f-${i}`} className="w-5 h-5 text-yellow-400" />
-  //         ))}
-  //       {half && <FaStarHalfAlt className="w-5 h-5 text-yellow-400" />}
-  //       {Array(empty)
-  //         .fill()
-  //         .map((_, i) => (
-  //           <FaRegStar key={`e-${i}`} className="w-5 h-5 text-yellow-400" />
-  //         ))}
-  //       <span className="ml-2 text-sm text-gray-500">({rating})</span>
-  //     </div>
-  //   );
-  // };
+  const renderStars = (rating, totalRate) => {
+    const numericRating = Number(rating);
+    const safeRating = Number.isFinite(numericRating)
+      ? Math.max(0, Math.min(5, numericRating))
+      : 0;
+    const full = Math.floor(safeRating);
+    const half = safeRating % 1 >= 0.5;
+    const empty = 5 - full - (half ? 1 : 0);
+    return (
+      <div className="flex items-center space-x-0.5">
+        {full > 0 && Array(full)
+          .fill()
+          .map((_, i) => (
+            <FaStar key={`f-${i}`} className="text-yellow-400" />
+          ))}
+        {half && <FaStarHalfAlt className="text-yellow-400" />}
+        {empty > 0 && Array(empty)
+          .fill()
+          .map((_, i) => (
+            <FaRegStar key={`e-${i}`} className="text-yellow-400" />
+          ))}
+        <span className="ml-1 text-sm text-gray-500">({safeRating})</span>
+        {totalRate !== undefined && (
+          <span className="ml-1 text-sm text-gray-400">[{totalRate}]</span>
+        )}
+      </div>
+    );
+  };
 
   const handleAddToCart = (product) => {
-    dispatch(addToCart(product));
+    dispatch(addToCartFromServer(product));
     alert(`Đã thêm "${product.name}" vào giỏ hàng!`);
   };
 
@@ -65,7 +70,7 @@ const ProductGrid = () => {
   }, []);
 
   return (
-    <section className="py-12 bg-gradient-to-b from-white to-green-50">
+    <section className="py-12 bg-white">
       <div className="max-w-7xl mx-auto px-4 py-12">
         <h2 className="text-3xl font-bold text-gray-800 mb-8 flex items-center gap-3">
           <FaLeaf className="text-green-600" /> Sản Phẩm Nổi Bật
@@ -78,7 +83,7 @@ const ProductGrid = () => {
               className="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden group relative"
             >
               {/* Badge HOT */}
-              {product.hot && (
+              {product.active && (
                 <div className="absolute top-3 left-3 z-10">
                   <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg">
                     <FaFire className="text-sm" />
@@ -100,9 +105,7 @@ const ProductGrid = () => {
               {/* Thông tin */}
               <div className="p-5">
                 <h3
-                  onClick={() =>
-                    (window.location.href = `/product/${product.id}`)
-                  }
+                  onClick={() => navigate(`/product/${product.id}`)}
                   className="text-lg font-bold text-green-800 truncate cursor-pointer hover:text-green-600 transition"
                 >
                   {product.name}
@@ -113,19 +116,24 @@ const ProductGrid = () => {
                   </p>
                 )}
                 <p className="text-sm text-green-600 font-medium">
-                  {product.category}
+                  {product.typeProduct?.name}
                 </p>
 
-                {/* <div className="mt-3 mb-3">{renderStars(product.rating)}</div> */}
+                <div className="mt-3 mb-3">{renderStars(product.statisticsRate?.averageRate, product.statisticsRate?.totalRate)}</div>
 
                 <p className="text-sm text-gray-500">
-                  Đã bán: {product.purchases}
+                  Đã bán: {product.statisticsRate?.totalSale || 0}
                 </p>
 
                 <div className="flex justify-between items-center mt-4">
-                  <span className="text-2xl font-bold text-green-800">
-                    {product.price.toLocaleString("vi-VN")}₫
-                  </span>
+                  <div className="flex flex-col">
+                    <span className="text-lg text-red-500 line-through font-medium">
+                      {(product.price || 0).toLocaleString("vi-VN")}₫
+                    </span>
+                    <span className="text-2xl font-bold text-green-800">
+                      {(product.salePrice || product.price || 0).toLocaleString("vi-VN")}₫
+                    </span>
+                  </div>
 
                   <button
                     onClick={() => handleAddToCart(product)}

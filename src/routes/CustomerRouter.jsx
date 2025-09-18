@@ -4,6 +4,8 @@ import Footer from "../components/common/Footer"
 import Home from "../components/home/Home"
 import Login from "../components/auth/Login"
 import Register from "../components/auth/Register"
+import SendOTP from "../components/auth/SendOTP"
+import VerifyOTP from "../components/auth/VerifyOTP"
 import Contact from "../components/aboutus/Contact"
 import AboutUs from "../components/aboutus/AboutUs"
 import AIChat from "../components/common/AIChat"
@@ -18,7 +20,7 @@ import HistoryOrders from "../components/order/HistoryOrder"
 
 export const CustomerRouter = () => {
     const location = useLocation();
-    const hideLayout = location.pathname === "/login" || location.pathname === "/register";
+    const hideLayout = location.pathname === "/login" || location.pathname === "/register" || location.pathname === "/send-otp" || location.pathname === "/verify-otp";
 
     return (
         <div>
@@ -39,6 +41,8 @@ export const CustomerRouter = () => {
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/send-otp" element={<SendOTP />} />
+                <Route path="/verify-otp" element={<VerifyOTP />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/about" element={<AboutUs />} />
                 <Route path="/blog" element={<Blog />} />

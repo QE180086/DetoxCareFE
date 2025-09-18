@@ -10,7 +10,8 @@ import {
   UPDATE_PROFILE_FAILURE,
   SET_DEFAULT_ADDRESS_REQUEST,
   SET_DEFAULT_ADDRESS_SUCCESS,
-  SET_DEFAULT_ADDRESS_FAILURE
+  SET_DEFAULT_ADDRESS_FAILURE,
+  CLEAR_PROFILE_ERROR
 } from "./ActionType";
 
 const initialState = {
@@ -61,6 +62,13 @@ export const profileReducer = (state = initialState, action) => {
         ...state,
         isLoading: false,
         error: action.payload,
+        message: null,
+      };
+    
+    case CLEAR_PROFILE_ERROR:
+      return {
+        ...state,
+        error: null,
         message: null,
       };
 

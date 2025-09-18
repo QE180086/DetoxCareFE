@@ -11,9 +11,8 @@ import {
 } from "react-icons/fa";
 import { AiOutlineSearch } from "react-icons/ai";
 import { FiShoppingCart } from "react-icons/fi";
-// import { allProducts } from "../../data/products";
 import { useDispatch } from "react-redux";
-import { addToCart } from "../../state/Cart/Action";
+import { addToCartFromServer } from "../../state/Cart/Action";
 import { productApi } from "../../utils/api/product.api";
 
 export default function SearchPage() {
@@ -25,7 +24,8 @@ export default function SearchPage() {
   const hasQuery = query.trim().length > 0;
 
   const [categoryFilter, setCategoryFilter] = useState("");
-  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState(["Tất cả"]); // Initialize with "Tất cả"
+  const [allProducts, setAllProducts] = useState([]); // Store all products
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
@@ -46,75 +46,111 @@ export default function SearchPage() {
   const [showRatingOptions, setShowRatingOptions] = useState(false);
   const [showPurchasesOptions, setShowPurchasesOptions] = useState(false);
 
+  // Fetch categories from API
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchCategories = async () => {
+      try {
+        const res = await productApi.getTypeProducts(1, 100, "createdDate", "desc");
+        if (res?.data?.content) {
+          // Map API response to category names and prepend "Tất cả"
+          const categoryNames = ["Tất cả", ...res.data.content.map(cat => cat.name)];
+          setCategories(categoryNames);
+        }
+      } catch (e) {
+        console.error("Failed to fetch categories:", e);
+        // Fallback to default categories if API fails
+        setCategories([
+          "Tất cả",
+          "Detox",
+          "Combo 3 ngày",
+          "Combo 5 ngày",
+          "Combo 7 ngày",
+        ]);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  // Fetch all products (without pagination) to handle client-side filtering correctly
+  useEffect(() => {
+    const fetchAllProducts = async () => {
       try {
         setLoading(true);
         setError("");
+        
+        // Fetch all products without pagination for proper filtering
+        // We'll fetch a larger number to ensure we get all products
         const res = await productApi.getAll(
-          currentPage,
-          itemsPerPage,
+          1,
+          1000, // Fetch a large number to get all products
           "createdDate",
           "desc",
           hasQuery ? query : undefined
         );
-        const pageData = res?.data || {};
-        setProducts(pageData.content || []);
-        const apiTotalPages =
-          pageData.totalPages ||
-          (pageData.totalElements && itemsPerPage
-            ? Math.ceil(pageData.totalElements / itemsPerPage)
-            : 1);
-        setTotalPages(apiTotalPages || 1);
+        
+        const allProductsData = res?.data?.content || [];
+        setAllProducts(allProductsData);
       } catch (e) {
         setError(e?.message || "Có lỗi xảy ra khi tải sản phẩm");
-        setProducts([]);
-        setTotalPages(1);
+        setAllProducts([]);
       } finally {
         setLoading(false);
       }
     };
-    fetchProducts();
-  }, [query, hasQuery, currentPage, itemsPerPage]);
+    fetchAllProducts();
+  }, [query, hasQuery]);
 
-  // Reset to first page when query changes
+  // Reset to first page when query or filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [query]);
+  }, [query, categoryFilter, minPrice, maxPrice, minRating, sortByPurchases, filterHot]);
 
-  // Apply client-side filters on the fetched page
+  // Apply client-side filters and pagination
   useEffect(() => {
-    let result = [...products];
-    if (categoryFilter) {
-      result = result.filter((p) => p.category === categoryFilter);
+    let result = [...allProducts];
+    
+    // Apply category filter
+    if (categoryFilter && categoryFilter !== "Tất cả") {
+      result = result.filter((p) => p.typeProduct?.name === categoryFilter);
     }
+    
+    // Apply price filters
     const minP = parseInt(minPrice, 10);
     const maxP = parseInt(maxPrice, 10);
-    const minR = parseFloat(minRating);
     if (!isNaN(minP)) {
-      result = result.filter((p) => p.price >= minP);
+      result = result.filter((p) => (p.salePrice || p.price) >= minP);
     }
     if (!isNaN(maxP)) {
-      result = result.filter((p) => p.price <= maxP);
+      result = result.filter((p) => (p.salePrice || p.price) <= maxP);
     }
+    
+    // Apply rating filter
+    const minR = parseFloat(minRating);
     if (!isNaN(minR)) {
-      result = result.filter((p) => p.rating >= minR);
+      result = result.filter((p) => (p.statisticsRate?.averageRate || 0) >= minR);
     }
+    
+    // Apply HOT filter
     if (filterHot) {
-      result = result.filter((p) => p.hot === true);
+      result = result.filter((p) => p.active === true);
     }
+    
+    // Apply sorting
     if (sortByPurchases === "asc") {
       result = [...result].sort(
-        (a, b) => (a.purchases ?? 0) - (b.purchases ?? 0)
+        (a, b) => (a.statisticsRate?.totalSale ?? 0) - (b.statisticsRate?.totalSale ?? 0)
       );
     } else if (sortByPurchases === "desc") {
       result = [...result].sort(
-        (a, b) => (b.purchases ?? 0) - (a.purchases ?? 0)
+        (a, b) => (b.statisticsRate?.totalSale ?? 0) - (a.statisticsRate?.totalSale ?? 0)
       );
     }
+    
+    // Update filtered products and calculate pagination
     setFilteredProducts(result);
+    setTotalPages(Math.ceil(result.length / itemsPerPage) || 1);
   }, [
-    products,
+    allProducts,
     categoryFilter,
     minPrice,
     maxPrice,
@@ -128,24 +164,19 @@ export default function SearchPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [query]);
 
-  const currentItems = filteredProducts;
-
-  const categories = [
-    "Tất cả",
-    "Detox",
-    "Combo 3 ngày",
-    "Combo 5 ngày",
-    "Combo 7 ngày",
-    "Nước ép mix",
-  ];
+  // Get current page items
+  const currentItems = filteredProducts.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const handleAddToCart = (product) => {
-    dispatch(addToCart(product));
+    dispatch(addToCartFromServer(product));
     alert(`Đã thêm "${product.name}" vào giỏ hàng!`);
   };
 
   /* ======= Render sao ======= */
-  const renderStars = (rating) => {
+  const renderStars = (rating, totalRate) => {
     const numericRating = Number(rating);
     const safeRating = Number.isFinite(numericRating)
       ? Math.max(0, Math.min(5, numericRating))
@@ -155,18 +186,21 @@ export default function SearchPage() {
     const empty = 5 - full - (half ? 1 : 0);
     return (
       <div className="flex items-center space-x-0.5">
-        {Array(full)
+        {full > 0 && Array(full)
           .fill()
           .map((_, i) => (
             <FaStar key={`f-${i}`} className="text-yellow-400" />
           ))}
         {half && <FaStarHalfAlt className="text-yellow-400" />}
-        {Array(empty)
+        {empty > 0 && Array(empty)
           .fill()
           .map((_, i) => (
             <FaRegStar key={`e-${i}`} className="text-yellow-400" />
           ))}
-        <span className="ml-1 text-sm text-gray-500">({rating})</span>
+        <span className="ml-1 text-sm text-gray-500">({safeRating})</span>
+        {totalRate !== undefined && (
+          <span className="ml-1 text-sm text-gray-400">[{totalRate}]</span>
+        )}
       </div>
     );
   };
@@ -555,7 +589,7 @@ export default function SearchPage() {
                                  transform hover:-translate-y-2 overflow-hidden group relative"
                     >
                       {/* Badge HOT */}
-                      {p.hot && (
+                      {p.active && (
                         <div className="absolute top-3 left-3 z-10">
                           <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg">
                             <FaFire className="text-sm" />
@@ -588,19 +622,24 @@ export default function SearchPage() {
                           </p>
                         )}
                         <p className="text-sm text-green-600 font-medium">
-                          {p.category}
+                          {p.typeProduct?.name}
                         </p>
 
-                        <div className="mt-3 mb-3">{renderStars(p.rating)}</div>
+                        <div className="mt-3 mb-3">{renderStars(p.statisticsRate?.averageRate, p.statisticsRate?.totalRate)}</div>
 
                         <p className="text-sm text-gray-500">
-                          Đã bán: {p.purchases}
+                          Đã bán: {p.statisticsRate?.totalSale || 0}
                         </p>
 
                         <div className="flex justify-between items-center mt-4">
-                          <span className="text-2xl font-bold text-green-800">
-                            {p.price.toLocaleString("vi-VN")}₫
-                          </span>
+                          <div className="flex flex-col">
+                            <span className="text-lg text-red-500 line-through font-medium">
+                              {(p.price || 0).toLocaleString("vi-VN")}₫
+                            </span>
+                            <span className="text-2xl font-bold text-green-800">
+                              {(p.salePrice || p.price || 0).toLocaleString("vi-VN")}₫
+                            </span>
+                          </div>
 
                           <button
                             onClick={() => handleAddToCart(p)}

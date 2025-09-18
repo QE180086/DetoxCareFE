@@ -6,8 +6,38 @@ export const profileApi = {
     return response.data;
   },
 
-  updateProfile: async (profileData) => {
-    const response = await api.put("/api/profile", profileData);
+  updateProfile: async (profileData, accessToken) => {
+    const config = {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    };
+    const response = await api.put("/api/profile", profileData, config);
+    return response.data;
+  },
+  
+  uploadAvatar: async (file, accessToken) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    
+    const config = {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        Authorization: `Bearer ${accessToken}`
+      }
+    };
+    
+    const response = await api.post("/api/images/upload", formData, config);
+    return response.data;
+  },
+
+  getPointDetail: async (accessToken) => {
+    const config = {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    };
+    const response = await api.get("/api/point/detail", config);
     return response.data;
   },
 
@@ -21,8 +51,23 @@ export const profileApi = {
     return response.data;
   },
 
-  getUserById: async (userId) => {
-    const response = await api.get(`/api/profile/user/${userId}`);
+  getUserById: async (userId, accessToken) => {
+    const config = {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    };
+    const response = await api.get(`/api/profile/user/${userId}`, config);
+    return response.data;
+  },
+
+  changePassword: async (passwordData, accessToken) => {
+    const config = {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    };
+    const response = await api.post("/api/user/change-password", passwordData, config);
     return response.data;
   },
 };

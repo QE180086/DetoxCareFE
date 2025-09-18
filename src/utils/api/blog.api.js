@@ -77,4 +77,31 @@ export const blogApi = {
     const response = await api.delete(`/api/blogs/${blogId}`);
     return response.data;
   },
+
+  // New API endpoint for posting comments on blogs with token authentication
+  postComment: async (blogId, commentData, accessToken) => {
+    const response = await api.post(`/api/comments/${blogId}`, commentData, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    return response.data;
+  },
+
+  
+  getComments: async (blogId, accessToken, page = 1, size = 10, field = "createdDate", direction = "desc") => {
+    const response = await api.get(`/api/comments/${blogId}`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      params: {
+        page,
+        size,
+        field,
+        direction
+      },
+    });
+    return response.data;
+  },
 };
+

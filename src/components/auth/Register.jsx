@@ -1,16 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { registerUser, resendOtp, verifyOtp } from '../../state/Authentication/Action';
+import { registerUser } from '../../state/Authentication/Action';
+import { AiOutlineUser, AiOutlineMail, AiOutlineLock } from 'react-icons/ai';
 
 export default function Register() {
   const [form, setForm] = useState({ username: '', password: '', confirmPassword: '', email: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showOtpModal, setShowOtpModal] = useState(false);
-  const [otp, setOtp] = useState('');
-  const [registerData, setRegisterData] = useState(null);
-  const [resendMessage, setResendMessage] = useState('');
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const authState = useSelector((state) => state.auth);
@@ -39,9 +36,10 @@ export default function Register() {
         navigate,
       };
       const result = await dispatch(registerUser(reqData));
-      setRegisterData(result.registerData);
       setLoading(false);
-      setShowOtpModal(true);
+      
+      // Navigate to VerifyOTP page with email parameter
+      navigate(`/verify-otp?email=${encodeURIComponent(form.email)}`);
     } catch (err) {
       setLoading(false);
       console.log("loi :" + authState.error)
@@ -49,189 +47,139 @@ export default function Register() {
     }
   };
 
-  const handleResendOtp = async () => {
-    setLoading(true);
-    setError('');
-    setResendMessage('');
-    try {
-      const result = await dispatch(resendOtp(form.email));
-      setResendMessage(result.message); // Hiển thị thông báo thành công
-      setLoading(false);
-    } catch (err) {
-      setLoading(false);
-      const errorMessage =
-        typeof authState.error === 'object'
-          ? authState.error.messageDetail || authState.error.message || 'Gửi lại OTP thất bại!'
-          : authState.error || 'Gửi lại OTP thất bại!';
-      setError(errorMessage);
-      console.error('Lỗi trong handleResendOtp:', { err, authStateError: authState.error }); // Debug
-    }
-  };
 
-  const handleVerifyOtp = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await dispatch(
-        verifyOtp({
-          email: form.email,
-          otp,
-          registerData,
-          navigate,
-        })
-      );
-      setShowOtpModal(false);
-      setLoading(false);
-      setError('');
-    } catch (err) {
-      setLoading(false);
-      setError(authState.error || 'Mã OTP không đúng!');
-    }
-  };
 
   return (
     <>
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-100 to-blue-200">
-        <div className="flex w-[850px] rounded-2xl overflow-hidden shadow-2xl bg-white">
-          {/* Left image */}
-          <div className="w-1/2 hidden md:block">
-            <img
-              src="https://scontent.fdad1-3.fna.fbcdn.net/v/t39.30808-6/482328756_1188534186262618_1234921397253898750_n.jpg?stp=dst-jpg_p600x600_tt6&_nc_cat=111&ccb=1-7&_nc_sid=f727a1&_nc_eui2=AeGA0YXJXX4pAAi5r5G4wOhLlr3W-Wv0fYSWvdb5a_R9hLa3OqkfIegorgzDdJt6wWVFa2VJnt00C0uWWQ0h-Znj&_nc_ohc=hMzu8FgATaEQ7kNvwGfpo6A&_nc_oc=Adlkk2vxX-15BKr5nX6liE7vykAZRZa-KAqmNOSCaCpJDiQvgugZLXPtEG4FLgPcVvjef1oHXcrukKAOgiKyt1nk&_nc_zt=23&_nc_ht=scontent.fdad1-3.fna&_nc_gid=UJppXayVJ4w--iqMssqQ8Q&oh=00_AfJ9OyGOXhTB0PUIKTFagzZMgCxUbl29o8uRG9UKsLs51Q&oe=6822A4C6"
-              alt="Register Illustration"
-              className="w-full h-full object-cover object-center rounded-l-2xl"
-            />
-          </div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-white to-emerald-50">
+        <div className="flex w-[500px] rounded-2xl overflow-hidden shadow-2xl bg-white">
+          {/* Register form */}
+          <div className="w-full p-10">
+            {/* Header */}
+            <div className="text-center mb-8">
+              <div className="mx-auto w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mb-4">
+                <AiOutlineUser className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-3xl font-bold text-gray-800 mb-2">Tạo tài khoản mới</h2>
+              <p className="text-gray-600">Đăng ký để trải nghiệm dịch vụ detox</p>
+            </div>
 
-          {/* Right form */}
-          <div className="w-full md:w-1/2 p-10">
-            <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">Tạo tài khoản mới</h2>
-
+            {/* Error message */}
             {error && (
-              <div className="mb-4 text-sm text-red-700 bg-red-100 p-3 rounded-md">{error}</div>
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+                <p className="text-sm text-red-700 text-center">{error}</p>
+              </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  className="w-full mt-1 px-4 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-purple-400 focus:outline-none"
-                  placeholder="Nhập email"
-                />
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Tên đăng nhập</label>
+                <div className="relative">
+                  <AiOutlineUser className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    name="username"
+                    value={form.username}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl 
+                             focus:ring-2 focus:ring-green-500 focus:border-green-500 
+                             transition-all duration-200 text-gray-800 bg-gray-50 
+                             hover:bg-white focus:bg-white"
+                    placeholder="Nhập tên đăng nhập"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Tài khoản</label>
-                <input
-                  type="text"
-                  name="username"
-                  value={form.username}
-                  onChange={handleChange}
-                  className="w-full mt-1 px-4 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-purple-400 focus:outline-none"
-                  placeholder="Nhập tài khoản"
-                />
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+                <div className="relative">
+                  <AiOutlineMail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="email"
+                    name="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl 
+                             focus:ring-2 focus:ring-green-500 focus:border-green-500 
+                             transition-all duration-200 text-gray-800 bg-gray-50 
+                             hover:bg-white focus:bg-white"
+                    placeholder="example@email.com"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Mật khẩu</label>
-                <input
-                  type="password"
-                  name="password"
-                  value={form.password}
-                  onChange={handleChange}
-                  className="w-full mt-1 px-4 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-purple-400 focus:outline-none"
-                  placeholder="Nhập mật khẩu"
-                />
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Mật khẩu</label>
+                <div className="relative">
+                  <AiOutlineLock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="password"
+                    name="password"
+                    value={form.password}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl 
+                             focus:ring-2 focus:ring-green-500 focus:border-green-500 
+                             transition-all duration-200 text-gray-800 bg-gray-50 
+                             hover:bg-white focus:bg-white"
+                    placeholder="Nhập mật khẩu"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Xác nhận mật khẩu</label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={form.confirmPassword}
-                  onChange={handleChange}
-                  className="w-full mt-1 px-4 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-purple-400 focus:outline-none"
-                  placeholder="Nhập lại mật khẩu"
-                />
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Xác nhận mật khẩu</label>
+                <div className="relative">
+                  <AiOutlineLock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    value={form.confirmPassword}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl 
+                             focus:ring-2 focus:ring-green-500 focus:border-green-500 
+                             transition-all duration-200 text-gray-800 bg-gray-50 
+                             hover:bg-white focus:bg-white"
+                    placeholder="Nhập lại mật khẩu"
+                  />
+                </div>
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className={`w-full py-3 rounded-lg font-semibold text-white transition-all duration-300 ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'
-                  }`}
+                className={`w-full py-3 rounded-xl font-semibold text-white 
+                          transition-all duration-300 transform hover:scale-105 
+                          shadow-lg hover:shadow-xl ${
+                  loading 
+                    ? 'bg-gray-400 cursor-not-allowed scale-100' 
+                    : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700'
+                }`}
               >
-                {loading ? 'Loading...' : 'Đăng ký'}
+                {loading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    Đang đăng ký...
+                  </div>
+                ) : (
+                  'Đăng ký'
+                )}
               </button>
             </form>
 
-            <p className="mt-6 text-center text-sm text-gray-600">
-              Đã có tài khoản?{' '}
-              <Link to="/login" className="text-blue-600 hover:underline font-medium">
-                Đăng nhập ngay
-              </Link>
-            </p>
+            {/* Navigation links */}
+            <div className="mt-8">
+              <p className="text-center text-sm text-gray-600">
+                Đã có tài khoản?{' '}
+                <Link to="/login" className="text-green-600 hover:text-green-700 font-semibold hover:underline">
+                  Đăng nhập ngay
+                </Link>
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Modal OTP */}
-      {showOtpModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-            <h3 className="text-xl font-semibold mb-4 text-center">Xác minh mã OTP</h3>
 
-            {resendMessage && (
-              <div className="mb-4 text-sm text-green-700 bg-green-100 p-3 rounded-md">{resendMessage}</div>
-            )}
-            {error && (
-              <div className="mb-4 text-sm text-red-700 bg-red-100 p-3 rounded-md">{error}</div>
-            )}
-
-            <form onSubmit={handleVerifyOtp} className="space-y-4">
-              <input
-                type="text"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                placeholder="Nhập mã OTP"
-                className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400"
-              />
-              <div className="flex justify-between items-center">
-                <button
-                  type="button"
-                  onClick={handleResendOtp}
-                  disabled={loading}
-                  className={`px-4 py-2 rounded-md text-white ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-                    }`}
-                >
-                  {loading ? 'Đang gửi...' : 'Gửi lại OTP'}
-                </button>
-                <div className="flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowOtpModal(false)}
-                    className="px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-400"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className={`px-4 py-2 rounded-md text-white ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'
-                      }`}
-                  >
-                    {loading ? 'Đang xác nhận...' : 'Xác nhận'}
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </>
   );
 }

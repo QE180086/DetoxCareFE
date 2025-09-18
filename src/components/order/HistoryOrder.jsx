@@ -83,25 +83,8 @@ export default function HistoryOrders() {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
   };
 
-  const handleCancelOrder = (orderId) => {
-    const confirmCancel = window.confirm(`Bạn có chắc chắn muốn hủy đơn hàng #${orderId} không?`);
-    if (confirmCancel) {
-      // Cập nhật trạng thái đơn hàng thành 'Đã hủy'
-      setOrders(prevOrders => 
-        prevOrders.map(order => 
-          order.id === orderId 
-            ? { ...order, status: 'Đã hủy' }
-            : order
-        )
-      );
-      alert(`Đơn hàng #${orderId} đã được hủy thành công!`);
-      // Trong ứng dụng thật, bạn sẽ gọi API call để cập nhật trạng thái
-      console.log(`Order ${orderId} cancelled and status updated to 'Đã hủy'`);
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
@@ -116,63 +99,6 @@ export default function HistoryOrders() {
           <p className="text-gray-600 text-lg max-w-2xl mx-auto">
             Theo dõi và quản lý tất cả đơn hàng detox của bạn một cách dễ dàng
           </p>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-100 rounded-full">
-                <FaBox className="w-5 h-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-800">{orders.length}</p>
-                <p className="text-gray-600">Tổng đơn hàng</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-green-100 rounded-full">
-                <FaCheckCircle className="w-5 h-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-800">
-                  {orders.filter(order => order.status === 'Đã giao').length}
-                </p>
-                <p className="text-gray-600">Đã giao</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-red-100 rounded-full">
-                <FaTimes className="w-5 h-5 text-red-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-800">
-                  {orders.filter(order => order.status === 'Đã hủy').length}
-                </p>
-                <p className="text-gray-600">Đã hủy</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-emerald-100 rounded-full">
-                <FaDollarSign className="w-5 h-5 text-emerald-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-800">
-                  {orders.filter(order => order.status !== 'Đã hủy').reduce((sum, order) => sum + order.total, 0).toLocaleString('vi-VN')}đ
-                </p>
-                <p className="text-gray-600">Tổng chi tiêu</p>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Orders Table */}
@@ -243,15 +169,6 @@ export default function HistoryOrders() {
                               <FaEye className="w-4 h-4" />
                               {expandedOrder === order.id ? 'Ẩn' : 'Xem'}
                             </button>
-                            {order.status === 'Đang xử lý' && (
-                              <button
-                                onClick={() => handleCancelOrder(order.id)}
-                                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2 text-sm"
-                              >
-                                <FaTimes className="w-4 h-4" />
-                                Hủy đơn
-                              </button>
-                            )}
                           </div>
                         </td>
                       </tr>
