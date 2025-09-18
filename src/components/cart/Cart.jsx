@@ -12,6 +12,7 @@ import {
 } from "../../state/Cart/Action";
 import { cartItemApi } from "../../utils/api/cart-item.api";
 import { getProfileByUserId } from "../../state/Profile/Action";
+import { useOrderStatus } from "../../hooks/useOrderStatus"; // Import the new hook
 
 export default function Cart() {
   const dispatch = useDispatch();
@@ -44,11 +45,18 @@ export default function Cart() {
   const [showQRCodeModal, setShowQRCodeModal] = useState(false);
   const [qrCodeData, setQRCodeData] = useState("");
   const [paymentOrderId, setPaymentOrderId] = useState("");
-  
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [isFiltering, setIsFiltering] = useState(false);
+
+  // Use the order status hook
+  const { status: orderStatus, checkStatus, startPolling, stopPolling } = useOrderStatus(
+    paymentOrderId, 
+    authState?.accessToken
+  );
 
   // Get profile data
   const profile = profileState?.profile?.data;
@@ -68,9 +76,11 @@ export default function Cart() {
 
   // Fetch cart items directly from API when component mounts
   useEffect(() => {
-    // Only fetch cart if user is authenticated
+    // Fetch cart items - from API if authenticated, from localStorage if guest
     if (authState?.accessToken) {
       fetchCartFromAPI();
+    } else {
+      fetchCartFromLocalStorage();
     }
   }, [authState?.accessToken]);
 
@@ -100,6 +110,41 @@ export default function Cart() {
     } catch (err) {
       console.error("Failed to fetch cart:", err);
       setError(err.message || "Failed to load cart items");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch cart data from localStorage for guest users
+  const fetchCartFromLocalStorage = () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const guestCart = localStorage.getItem('guestCart');
+      const cartItems = guestCart ? JSON.parse(guestCart) : [];
+      
+      // Ensure items have the correct structure
+      const formattedCartItems = cartItems.map(item => ({
+        id: item.id || item.cartItemId,
+        productId: item.productId || item.id,
+        productName: item.name || item.productName || "Sản phẩm",
+        productImage: item.image || item.productImage || "https://i.pinimg.com/736x/3e/ef/7a/3eef7adafb89a18819b0c3d3b9c93da8.jpg",
+        unitPrice: item.price || item.unitPrice || 0,
+        price: item.price || item.unitPrice || 0,
+        quantity: item.quantity || 1
+      }));
+      
+      setCartItems(formattedCartItems);
+      
+      // Calculate totals for guest cart
+      const subtotal = formattedCartItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
+      setTotalPrice(subtotal);
+      setDiscountedPrice(subtotal * (1 - discount)); // Apply any discount
+      
+    } catch (err) {
+      console.error("Failed to fetch guest cart:", err);
+      setError("Failed to load cart items");
     } finally {
       setIsLoading(false);
     }
@@ -186,52 +231,108 @@ export default function Cart() {
 
   // Apply voucher to cart
   const applyVoucherToCart = async (voucherCode) => {
-    if (!authState?.accessToken) return;
-    
-    try {
-      const response = await cartItemApi.applyVoucher(voucherCode, authState.accessToken);
-      
-      // Update cart with the response data
-      if (response?.data) {
-        setCartItems(response.data.cartItems || []);
-        setTotalPrice(response.data.totalPrice || 0);
-        setDiscountedPrice(response.data.discountedPrice || 0);
-        setAppliedVoucher(response.data.appliedVoucher || false);
-        setVoucherResponse(response.data.voucherResponse || null);
+    if (authState?.accessToken) {
+      // For authenticated users, use the API
+      try {
+        const response = await cartItemApi.applyVoucher(voucherCode, authState.accessToken);
+        
+        // Update cart with the response data
+        if (response?.data) {
+          setCartItems(response.data.cartItems || []);
+          setTotalPrice(response.data.totalPrice || 0);
+          setDiscountedPrice(response.data.discountedPrice || 0);
+          setAppliedVoucher(response.data.appliedVoucher || false);
+          setVoucherResponse(response.data.voucherResponse || null);
+        }
+        
+        return response;
+      } catch (error) {
+        setNotificationType("error");
+        setNotificationMessage("Không thể áp dụng mã giảm giá. Vui lòng thử lại sau.");
+        setShowNotification(true);
+        throw error;
       }
-      
-      return response;
-    } catch (error) {
-      setNotificationType("error");
-      setNotificationMessage("Không thể áp dụng mã giảm giá. Vui lòng thử lại sau.");
-      setShowNotification(true);
-      throw error;
+    } else {
+      // For guest users, apply discount locally
+      try {
+        const voucher = voucherOptions.find(v => v.code === voucherCode);
+        if (voucher) {
+          setSelectedVoucher(voucher);
+          setDiscount(voucher.discountPercentage || 0);
+          
+          // Recalculate discounted price
+          const subtotal = cartItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
+          const discountAmount = subtotal * (voucher.discountPercentage || 0);
+          setDiscountedPrice(subtotal - discountAmount);
+          
+          setVoucherMessage(`Áp dụng thành công mã ${voucherCode}!`);
+          
+          // Hide the message after 2 seconds
+          setTimeout(() => {
+            setVoucherMessage("");
+          }, 2000);
+          
+          return { success: true };
+        } else {
+          throw new Error("Voucher not found");
+        }
+      } catch (error) {
+        setNotificationType("error");
+        setNotificationMessage("Không thể áp dụng mã giảm giá. Vui lòng thử lại sau.");
+        setShowNotification(true);
+        throw error;
+      }
     }
   };
 
   // Remove voucher from cart
   const removeVoucherFromCart = async (voucherCode) => {
-    if (!authState?.accessToken) return;
-    
-    try {
-      const response = await cartItemApi.removeVoucher(voucherCode, authState.accessToken);
-      
-      // Update cart with the response data
-      if (response?.data) {
-        setCartItems(response.data.cartItems || []);
-        setTotalPrice(response.data.totalPrice || 0);
-        setDiscountedPrice(response.data.discountedPrice || 0);
-        setAppliedVoucher(response.data.appliedVoucher || false);
-        setVoucherResponse(response.data.voucherResponse || null);
-        setSelectedVoucher(null);
+    if (authState?.accessToken) {
+      // For authenticated users, use the API
+      try {
+        const response = await cartItemApi.removeVoucher(voucherCode, authState.accessToken);
+        
+        // Update cart with the response data
+        if (response?.data) {
+          setCartItems(response.data.cartItems || []);
+          setTotalPrice(response.data.totalPrice || 0);
+          setDiscountedPrice(response.data.discountedPrice || 0);
+          setAppliedVoucher(response.data.appliedVoucher || false);
+          setVoucherResponse(response.data.voucherResponse || null);
+          setSelectedVoucher(null);
+        }
+        
+        return response;
+      } catch (error) {
+        setNotificationType("error");
+        setNotificationMessage("Không thể hủy mã giảm giá. Vui lòng thử lại sau.");
+        setShowNotification(true);
+        throw error;
       }
-      
-      return response;
-    } catch (error) {
-      setNotificationType("error");
-      setNotificationMessage("Không thể hủy mã giảm giá. Vui lòng thử lại sau.");
-      setShowNotification(true);
-      throw error;
+    } else {
+      // For guest users, remove discount locally
+      try {
+        setSelectedVoucher(null);
+        setDiscount(0);
+        
+        // Recalculate discounted price (no discount)
+        const subtotal = cartItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
+        setDiscountedPrice(subtotal);
+        
+        setVoucherMessage(`Đã hủy áp dụng mã ${voucherCode}!`);
+        
+        // Hide the message after 2 seconds
+        setTimeout(() => {
+          setVoucherMessage("");
+        }, 2000);
+        
+        return { success: true };
+      } catch (error) {
+        setNotificationType("error");
+        setNotificationMessage("Không thể hủy mã giảm giá. Vui lòng thử lại sau.");
+        setShowNotification(true);
+        throw error;
+      }
     }
   };
 
@@ -260,23 +361,52 @@ export default function Cart() {
 
   /* ---------- Handlers ---------- */
   const removeItem = (id) => {
-    const item = cartItems.find((i) => i.id === id);
-    
-    // Use Redux action for consistency with increase/decrease functions
-    dispatch(deleteCartItemFromServer(id))
-      .then(() => {
-        // Refresh cart data after item deletion
-        fetchCartFromAPI();
+    // Handle removal for both authenticated and guest users
+    if (authState?.accessToken) {
+      const item = cartItems.find((i) => i.id === id);
+      
+      // Use Redux action for consistency with increase/decrease functions
+      dispatch(deleteCartItemFromServer(id))
+        .then(() => {
+          // Refresh cart data after item deletion
+          fetchCartFromAPI();
+          setNotificationType("success");
+          setNotificationMessage(`Đã xóa “${item.productName}” khỏi giỏ hàng!`);
+          setShowNotification(true);
+        })
+        .catch((error) => {
+          console.error("Failed to delete item:", error);
+          setNotificationType("error");
+          setNotificationMessage("Không thể xóa sản phẩm. Vui lòng thử lại sau.");
+          setShowNotification(true);
+        });
+    } else {
+      // Handle guest user cart item removal
+      try {
+        const updatedCartItems = cartItems.filter(item => item.id !== id);
+        setCartItems(updatedCartItems);
+        
+        // Update localStorage
+        localStorage.setItem('guestCart', JSON.stringify(updatedCartItems));
+        
+        // Dispatch custom event to notify other components (like navbar) of cart change
+        window.dispatchEvent(new Event('cartChange'));
+        
+        // Recalculate totals
+        const subtotal = updatedCartItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
+        setTotalPrice(subtotal);
+        setDiscountedPrice(subtotal * (1 - discount));
+        
         setNotificationType("success");
-        setNotificationMessage(`Đã xóa “${item.productName}” khỏi giỏ hàng!`);
+        setNotificationMessage("Đã xóa sản phẩm khỏi giỏ hàng!");
         setShowNotification(true);
-      })
-      .catch((error) => {
-        console.error("Failed to delete item:", error);
+      } catch (error) {
+        console.error("Failed to remove item from guest cart:", error);
         setNotificationType("error");
         setNotificationMessage("Không thể xóa sản phẩm. Vui lòng thử lại sau.");
         setShowNotification(true);
-      });
+      }
+    }
   };
 
   const handlePaymentPreview = () => {
@@ -292,6 +422,14 @@ export default function Cart() {
 
   const handlePayment = async () => {
     setShowPreview(false);
+    
+    // Check if user is authenticated before proceeding with payment
+    if (!authState?.accessToken) {
+      setNotificationType("error");
+      setNotificationMessage("Vui lòng đăng nhập để thanh toán.");
+      setShowNotification(true);
+      return;
+    }
     
     try {
       // Prepare payment data
@@ -318,6 +456,8 @@ export default function Cart() {
           setShowQRCodeModal(true);
           setQRCodeData(paymentInfo.qrCode);
           setPaymentOrderId(paymentInfo.ordersId);
+          // Start auto-checking immediately
+          startPolling();
         }
       } else {
         // Handle API error messages
@@ -333,6 +473,19 @@ export default function Cart() {
       setShowNotification(true);
     }
   };
+
+  // Effect to handle automatic status updates
+  useEffect(() => {
+    if (orderStatus === "SUCCESS") {
+      stopPolling();
+      setNotificationType("success");
+      setNotificationMessage(`Đơn hàng ${paymentOrderId} đã được xác nhận!`);
+      setShowNotification(true);
+      setShowQRCodeModal(false);
+      dispatch(deleteAllFromServer());
+      navigate("/history-order");
+    }
+  }, [orderStatus, paymentOrderId, dispatch, navigate, stopPolling]);
 
   const paymentInfo = {
     orderId: "ORD" + Date.now(),
@@ -350,10 +503,13 @@ export default function Cart() {
   // Show loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
-          <p className="mt-4 text-emerald-700 font-medium">Đang tải giỏ hàng...</p>
+      <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-white py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+        <div className="text-center bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
+          <div className="flex justify-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-emerald-500 border-opacity-50"></div>
+          </div>
+          <p className="mt-6 text-emerald-700 font-semibold text-lg">Đang tải giỏ hàng...</p>
+          <p className="mt-2 text-gray-500">Vui lòng chờ trong giây lát</p>
         </div>
       </div>
     );
@@ -362,22 +518,27 @@ export default function Cart() {
   // Show error state
   if (error) {
     return (
-      <div className="min-h-screen bg-white py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-white py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+        <div className="text-center bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
+          <div className="mx-auto bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mb-6">
+            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
           {/* Check if error is an object and extract the message */}
-          <p className="text-red-500 font-medium">
+          <p className="text-red-600 font-semibold text-lg">
             Lỗi: {typeof error === 'object' && error !== null ? 
               (error.messageDetail || error.messageCode || JSON.stringify(error)) : 
               error}
           </p>
-          <p className="text-gray-600 mt-2">
+          <p className="text-gray-600 mt-3">
             {error && error.includes("Query did not return a unique result") 
               ? "There's an issue with your cart data. Please contact support for assistance." 
               : "Please try again or contact support if the problem persists."}
           </p>
           <button
             onClick={() => fetchCartFromAPI()}
-            className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
+            className="mt-6 px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 shadow-md hover:shadow-lg font-medium"
           >
             Thử lại
           </button>
@@ -432,22 +593,58 @@ export default function Cart() {
                         <div className="inline-flex items-center gap-2">
                           <button
                             onClick={() => {
-                              if (item.quantity <= 1) {
-                                // If quantity is 1 or less, remove the item
-                                removeItem(item.id);
+                              if (authState?.accessToken) {
+                                if (item.quantity <= 1) {
+                                  // If quantity is 1 or less, remove the item
+                                  removeItem(item.id);
+                                } else {
+                                  // Otherwise, decrease the quantity
+                                  dispatch(decreaseQuantityFromServer(item.id, item.quantity - 1))
+                                    .then(() => {
+                                      // Refresh cart data after quantity change
+                                      fetchCartFromAPI();
+                                    })
+                                    .catch((error) => {
+                                      console.error("Failed to decrease quantity:", error);
+                                      setNotificationType("error");
+                                      setNotificationMessage("Không thể cập nhật số lượng. Vui lòng thử lại sau.");
+                                      setShowNotification(true);
+                                    });
+                                }
                               } else {
-                                // Otherwise, decrease the quantity
-                                dispatch(decreaseQuantityFromServer(item.id, item.quantity - 1))
-                                  .then(() => {
-                                    // Refresh cart data after quantity change
-                                    fetchCartFromAPI();
-                                  })
-                                  .catch((error) => {
-                                    console.error("Failed to decrease quantity:", error);
-                                    setNotificationType("error");
-                                    setNotificationMessage("Không thể cập nhật số lượng. Vui lòng thử lại sau.");
-                                    setShowNotification(true);
-                                  });
+                                // Handle guest user quantity decrease
+                                try {
+                                  if (item.quantity <= 1) {
+                                    // If quantity is 1 or less, remove the item
+                                    removeItem(item.id);
+                                  } else {
+                                    // Otherwise, decrease the quantity
+                                    const updatedCartItems = cartItems.map(cartItem => {
+                                      if (cartItem.id === item.id) {
+                                        return { ...cartItem, quantity: cartItem.quantity - 1 };
+                                      }
+                                      return cartItem;
+                                    });
+                                    
+                                    setCartItems(updatedCartItems);
+                                    
+                                    // Update localStorage
+                                    localStorage.setItem('guestCart', JSON.stringify(updatedCartItems));
+                                    
+                                    // Dispatch custom event to notify other components (like navbar) of cart change
+                                    window.dispatchEvent(new Event('cartChange'));
+                                    
+                                    // Recalculate totals
+                                    const subtotal = updatedCartItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
+                                    setTotalPrice(subtotal);
+                                    setDiscountedPrice(subtotal * (1 - discount));
+                                  }
+                                } catch (error) {
+                                  console.error("Failed to decrease quantity for guest user:", error);
+                                  setNotificationType("error");
+                                  setNotificationMessage("Không thể cập nhật số lượng. Vui lòng thử lại sau.");
+                                  setShowNotification(true);
+                                }
                               }
                             }}
                             className="p-1.5 bg-emerald-200 rounded-full hover:bg-emerald-300 transition"
@@ -459,17 +656,47 @@ export default function Cart() {
                           </span>
                           <button
                             onClick={() => {
-                              dispatch(increaseQuantityFromServer(item.id, item.quantity + 1))
-                                .then(() => {
-                                  // Refresh cart data after quantity change
-                                  fetchCartFromAPI();
-                                })
-                                .catch((error) => {
-                                  console.error("Failed to increase quantity:", error);
+                              if (authState?.accessToken) {
+                                dispatch(increaseQuantityFromServer(item.id, item.quantity + 1))
+                                  .then(() => {
+                                    // Refresh cart data after quantity change
+                                    fetchCartFromAPI();
+                                  })
+                                  .catch((error) => {
+                                    console.error("Failed to increase quantity:", error);
+                                    setNotificationType("error");
+                                    setNotificationMessage("Không thể cập nhật số lượng. Vui lòng thử lại sau.");
+                                    setShowNotification(true);
+                                  });
+                              } else {
+                                // Handle guest user quantity increase
+                                try {
+                                  const updatedCartItems = cartItems.map(cartItem => {
+                                    if (cartItem.id === item.id) {
+                                      return { ...cartItem, quantity: cartItem.quantity + 1 };
+                                    }
+                                    return cartItem;
+                                  });
+                                  
+                                  setCartItems(updatedCartItems);
+                                  
+                                  // Update localStorage
+                                  localStorage.setItem('guestCart', JSON.stringify(updatedCartItems));
+                                  
+                                  // Dispatch custom event to notify other components (like navbar) of cart change
+                                  window.dispatchEvent(new Event('cartChange'));
+                                  
+                                  // Recalculate totals
+                                  const subtotal = updatedCartItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
+                                  setTotalPrice(subtotal);
+                                  setDiscountedPrice(subtotal * (1 - discount));
+                                } catch (error) {
+                                  console.error("Failed to increase quantity for guest user:", error);
                                   setNotificationType("error");
                                   setNotificationMessage("Không thể cập nhật số lượng. Vui lòng thử lại sau.");
                                   setShowNotification(true);
-                                });
+                                }
+                              }
                             }}
                             className="p-1.5 bg-emerald-200 rounded-full hover:bg-emerald-300 transition"
                           >
@@ -587,7 +814,8 @@ export default function Cart() {
                     </span>
                   </div>
 
-                  {/* ===== VOUCHER SELECTION ===== */}
+                  {/* ===== VOUCHER SELECTION ===== */
+                  }
                   <div className="relative w-full">
                     <label className="text-sm font-semibold text-emerald-700">
                       Mã giảm giá
@@ -680,7 +908,8 @@ export default function Cart() {
                       </ul>
                     )}
                     
-                    {/* Apply/Remove buttons */}
+                    {/* Apply/Remove buttons */
+                    }
                     <div className="flex gap-2 mt-2">
                       {tempSelectedVoucher && !selectedVoucher && (
                         <button
@@ -708,7 +937,8 @@ export default function Cart() {
                         </button>
                       )}
                       
-                      {/* Always show the remove button when a voucher is applied */}
+                      {/* Always show the remove button when a voucher is applied */
+                      }
                       {selectedVoucher && (
                         <button
                           onClick={async () => {
@@ -737,21 +967,24 @@ export default function Cart() {
                       )}
                     </div>
                     
-                    {/* Voucher message */}
+                    {/* Voucher message */
+                    }
                     {voucherMessage && (
                       <div className="text-sm mt-2 text-green-600">
                         {voucherMessage}
                       </div>
                     )}
                     
-                    {/* Message when no vouchers available */}
+                    {/* Message when no vouchers available */
+                    }
                     {!loadingVouchers && isVoucherDropdownOpen && voucherOptions.length === 0 && authState?.accessToken && (
                       <div className="text-sm text-gray-500 mt-1">
                         Không có mã giảm giá khả dụng
                       </div>
                     )}
                     
-                    {/* Message when user is not logged in */}
+                    {/* Message when user is not logged in */
+                    }
                     {!authState?.accessToken && (
                       <div className="text-sm text-gray-500 mt-1">
                         Vui lòng đăng nhập để xem mã giảm giá
@@ -759,7 +992,8 @@ export default function Cart() {
                     )}
                   </div>
 
-                  {/* Phương thức thanh toán – radio cards */}
+                  {/* Phương thức thanh toán – radio cards */
+                  }
                   <div className="mt-6">
                     <h4 className="text-base font-semibold text-emerald-700 mb-3">
                       Phương thức thanh toán
@@ -849,7 +1083,8 @@ export default function Cart() {
           </div>
         )}
 
-        {/* Notification */}
+        {/* Notification */
+        }
         <Notification
           isOpen={showNotification}
           type={notificationType}
@@ -859,41 +1094,58 @@ export default function Cart() {
         />
       </div>
 
-      {/* Preview Modal */}
+      {/* Preview Modal */
+      }
       {showPreview && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 space-y-4">
-            <h2 className="text-2xl font-bold text-emerald-700">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
+          <div className="bg-gradient-to-br from-white to-emerald-50 rounded-2xl shadow-2xl w-full max-w-lg p-8 space-y-6 transform transition-all duration-300 scale-100">
+            <h2 className="text-2xl font-bold text-emerald-800 text-center mb-2">
               Xác nhận đơn hàng
             </h2>
-            <p>
-              <strong>Họ tên:</strong> {shippingInfo.fullName}
-            </p>
-            <p>
-              <strong>Địa chỉ:</strong> {shippingInfo.address}
-            </p>
-            <p>
-              <strong>SDT:</strong> {shippingInfo.phoneNumber}
-            </p>
-            <p>
-              <strong>Thanh toán:</strong>{" "}
-              {paymentMethod === "cod"
-                ? "Thanh toán khi nhận hàng"
-                : "Thanh toán bằng mã QR"}
-            </p>
-            <p className="text-lg font-bold text-emerald-700">
-              Tổng tiền: {total.toLocaleString("vi-VN")} ₫
-            </p>
-            <div className="flex justify-end gap-4">
+            
+            <div className="space-y-4">
+              <div className="flex justify-between items-center pb-3 border-b border-emerald-100">
+                <span className="text-gray-700 font-medium">Họ tên:</span>
+                <span className="font-semibold text-emerald-700">{shippingInfo.fullName}</span>
+              </div>
+              
+              <div className="flex justify-between items-center pb-3 border-b border-emerald-100">
+                <span className="text-gray-700 font-medium">Địa chỉ:</span>
+                <span className="font-semibold text-emerald-700">{shippingInfo.address}</span>
+              </div>
+              
+              <div className="flex justify-between items-center pb-3 border-b border-emerald-100">
+                <span className="text-gray-700 font-medium">SDT:</span>
+                <span className="font-semibold text-emerald-700">{shippingInfo.phoneNumber}</span>
+              </div>
+              
+              <div className="flex justify-between items-center pb-3 border-b border-emerald-100">
+                <span className="text-gray-700 font-medium">Thanh toán:</span>
+                <span className="font-semibold text-emerald-700">
+                  {paymentMethod === "cod"
+                    ? "Thanh toán khi nhận hàng"
+                    : "Thanh toán bằng mã QR"}
+                </span>
+              </div>
+              
+              <div className="flex justify-between items-center pt-3">
+                <span className="text-lg font-bold text-emerald-800">Tổng tiền:</span>
+                <span className="text-xl font-bold text-emerald-700">
+                  {total.toLocaleString("vi-VN")} ₫
+                </span>
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-4 pt-4">
               <button
                 onClick={() => setShowPreview(false)}
-                className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition"
+                className="px-6 py-3 bg-gradient-to-r from-gray-300 to-gray-400 text-gray-800 rounded-xl hover:from-gray-400 hover:to-gray-500 transition-all duration-300 shadow-md hover:shadow-lg font-medium"
               >
                 Hủy
               </button>
               <button
                 onClick={handlePayment}
-                className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
+                className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 shadow-md hover:shadow-lg font-medium"
               >
                 Đồng ý
               </button>
@@ -902,32 +1154,83 @@ export default function Cart() {
         </div>
       )}
 
-      {/* QR Code Modal */}
+      {/* QR Code Modal */
+      }
       {showQRCodeModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
-            <h2 className="text-2xl font-bold text-emerald-700 text-center">
-              Thanh toán bằng QR Code
-            </h2>
-            <p className="text-center text-gray-700">
-              Mã đơn hàng: <strong>{paymentOrderId}</strong>
-            </p>
-            <div className="flex justify-center py-4">
-              <QRCodeCanvas value={qrCodeData} size={200} />
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
+          <div className="bg-gradient-to-br from-white to-emerald-50 rounded-2xl shadow-2xl w-full max-w-md p-8 space-y-6 transform transition-all duration-300 scale-100">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-emerald-800 mb-2">
+                Thanh toán bằng QR Code
+              </h2>
+              <p className="text-gray-600">
+                Mã đơn hàng: <span className="font-semibold text-emerald-700">{paymentOrderId}</span>
+              </p>
             </div>
-            <p className="text-center text-gray-600 text-sm">
-              Quét mã QR bằng ứng dụng ngân hàng để hoàn tất thanh toán
-            </p>
+            
+            <div className="flex justify-center py-2">
+              <div className="p-4 bg-white rounded-xl shadow-lg border-2 border-emerald-100">
+                <QRCodeCanvas value={qrCodeData} size={200} />
+              </div>
+            </div>
+            
+            <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-100">
+              <p className="text-center text-emerald-800 text-sm font-medium">
+                Quét mã QR bằng ứng dụng ngân hàng để hoàn tất thanh toán
+              </p>
+            </div>
+            
+            <div className="flex justify-center pt-2">
+              <button
+                onClick={() => {
+                  setShowCancelConfirm(true);
+                }}
+                className="px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-xl hover:from-gray-600 hover:to-gray-700 transition-all duration-300 shadow-md hover:shadow-lg font-medium"
+              >
+                Hủy thanh toán
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Confirmation Modal */
+      }
+      {showCancelConfirm && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
+          <div className="bg-gradient-to-br from-white to-red-50 rounded-2xl shadow-2xl w-full max-w-md p-8 space-y-6 transform transition-all duration-300 scale-100">
+            <div className="text-center">
+              <div className="mx-auto bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-red-800 mb-2">
+                Xác nhận hủy thanh toán
+              </h2>
+              <p className="text-gray-700">
+                Bạn có chắc chắn muốn hủy thanh toán đơn hàng này không?
+              </p>
+            </div>
+            
             <div className="flex justify-center gap-4 pt-4">
               <button
                 onClick={() => {
-                  setShowQRCodeModal(false);
-                  dispatch(deleteAllFromServer());
-                  navigate("/history-order");
+                  setShowCancelConfirm(false);
                 }}
-                className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
+                className="px-6 py-3 bg-gradient-to-r from-gray-300 to-gray-400 text-gray-800 rounded-xl hover:from-gray-400 hover:to-gray-500 transition-all duration-300 shadow-md hover:shadow-lg font-medium"
               >
-                Đã thanh toán
+                Không
+              </button>
+              <button
+                onClick={() => {
+                  setShowQRCodeModal(false);
+                  setShowCancelConfirm(false);
+                  stopPolling(); // Stop any ongoing polling
+                }}
+                className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-300 shadow-md hover:shadow-lg font-medium"
+              >
+                Có, hủy thanh toán
               </button>
             </div>
           </div>

@@ -11,6 +11,15 @@ import { FaLeaf, FaHeart, FaStar } from "react-icons/fa";
 // import { allBlogs } from "../../data/blogs";
 import { blogApi } from "../../utils/api/blog.api";
 
+// Format date function
+const formatDate = (dateString) => {
+  const date = new Date(dateString);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
 export default function Blog() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
@@ -24,15 +33,17 @@ export default function Blog() {
   const maxVisibleCategories = 7;
 
   // Blog list from API
-  const [blogList, setBlogList] = useState([]);
+  const [allBlogs, setAllBlogs] = useState([]); // Store all blogs
+  const [blogList, setBlogList] = useState([]); // Store filtered blogs
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [serverTotalPages, setServerTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
 
   // Get unique categories from current list
   const categories = [
     "all",
-    ...new Set((blogList || []).map((blog) => blog.category).filter(Boolean)),
+    ...new Set((blogList || []).map((blog) => blog.categoryName).filter(Boolean)),
   ];
 
   // Category display logic
@@ -42,30 +53,16 @@ export default function Blog() {
   const hiddenCategoriesCount = categories.length - maxVisibleCategories;
   const hasHiddenCategories = hiddenCategoriesCount > 0;
 
-  // Sort and filter blogs
-  const sortedBlogs = [...blogList].sort((a, b) => {
-    if (sortOption === "created_at_desc") {
-      return new Date(b.created_at) - new Date(a.created_at);
-    } else if (sortOption === "created_at_asc") {
-      return new Date(a.created_at) - new Date(b.created_at);
-    } else if (sortOption === "title_asc") {
-      return a.title.localeCompare(b.title);
-    } else if (sortOption === "title_desc") {
-      return b.title.localeCompare(a.title);
-    }
-    return 0;
-  });
-
   // Featured articles - always visible, get first 2 blogs
-  const featuredBlogs = (blogList || []).slice(0, 2);
+  const featuredBlogs = (allBlogs || []).slice(0, 2);
 
   // Regular articles - affected by search, category, and sorting
-  const filteredRegularBlogs = sortedBlogs.filter((blog) => {
+  const filteredRegularBlogs = blogList.filter((blog) => {
     const matchesSearch = blog.title
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
     const matchesCategory =
-      selectedCategory === "all" || blog.category === selectedCategory;
+      selectedCategory === "all" || blog.categoryName === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -97,53 +94,62 @@ export default function Blog() {
     setIsDropdownOpen(false);
   };
 
-  // Fetch blogs from API
+  // Fetch all blogs (without pagination) to handle client-side filtering correctly
   useEffect(() => {
-    const fetchBlogs = async () => {
+    const fetchAllBlogs = async () => {
       try {
         setLoading(true);
         setError("");
-        // Map sort option to API field/direction
-        let field = "createdDate";
-        let direction = "desc";
-        if (sortOption === "created_at_asc") {
-          field = "createdDate";
-          direction = "asc";
-        } else if (sortOption === "title_asc") {
-          field = "title";
-          direction = "asc";
-        } else if (sortOption === "title_desc") {
-          field = "title";
-          direction = "desc";
-        }
-
-        const searchText = searchTerm.trim() || undefined;
+        
+        // Fetch all blogs without pagination for proper filtering
+        // We'll fetch a larger number to ensure we get all blogs
         const res = await blogApi.getAll(
-          currentPage,
-          blogsPerPage,
-          field,
-          direction,
-          searchText
+          1,
+          1000, // Fetch a large number to get all blogs
+          "createdDate",
+          "desc"
         );
-        const pageData = res?.data || {};
-        const content = pageData.content || [];
-        setBlogList(Array.isArray(content) ? content : []);
-        const apiTotalPages =
-          pageData.totalPages ||
-          (pageData.totalElements && blogsPerPage
-            ? Math.ceil(pageData.totalElements / blogsPerPage)
-            : 0);
-        setServerTotalPages(apiTotalPages || 0);
+        
+        const allBlogsData = res?.data?.content || [];
+        setAllBlogs(Array.isArray(allBlogsData) ? allBlogsData : []);
+        setServerTotalPages(0); // We're fetching all data, so we should use client-side pagination
+        setTotalElements(res?.data?.totalElements || allBlogsData.length || 0);
       } catch (e) {
         setError(e?.message || "Không tải được danh sách blog");
-        setBlogList([]);
+        setAllBlogs([]);
         setServerTotalPages(0);
       } finally {
         setLoading(false);
       }
     };
-    fetchBlogs();
-  }, [currentPage, blogsPerPage, sortOption, searchTerm]);
+    fetchAllBlogs();
+  }, []);
+
+  // Apply client-side filters and sorting
+  useEffect(() => {
+    let result = [...allBlogs];
+    
+    // Apply sorting
+    result = [...result].sort((a, b) => {
+      if (sortOption === "created_at_desc") {
+        return new Date(b.createdDate) - new Date(a.createdDate);
+      } else if (sortOption === "created_at_asc") {
+        return new Date(a.createdDate) - new Date(b.createdDate);
+      } else if (sortOption === "title_asc") {
+        return a.title.localeCompare(b.title);
+      } else if (sortOption === "title_desc") {
+        return b.title.localeCompare(a.title);
+      }
+      return 0;
+    });
+    
+    setBlogList(result);
+  }, [allBlogs, sortOption]);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -240,7 +246,7 @@ export default function Blog() {
                     />
                     <div className="absolute top-4 left-4">
                       <span className="bg-gradient-to-r from-green-600 to-green-500 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md">
-                        {blog.category}
+                        {blog.categoryName}
                       </span>
                     </div>
                     <div className="absolute top-4 right-4">
@@ -260,7 +266,7 @@ export default function Blog() {
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1">
                           <FiCalendar className="w-4 h-4" />
-                          {blog.created_at}
+                          {formatDate(blog.createdDate)}
                         </div>
                         <span>{blog.readTime}</span>
                       </div>
@@ -413,7 +419,7 @@ export default function Blog() {
                     />
                     <div className="absolute top-4 left-4">
                       <span className="bg-gradient-to-r from-green-600 to-green-500 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md">
-                        {blog.category}
+                        {blog.categoryName}
                       </span>
                     </div>
                   </div>
@@ -427,7 +433,7 @@ export default function Blog() {
                     <div className="flex items-center justify-between text-sm text-gray-500">
                       <div className="flex items-center gap-1">
                         <FiCalendar className="w-4 h-4" />
-                        {blog.created_at}
+                        {formatDate(blog.createdDate)}
                       </div>
                       <span>{blog.readTime}</span>
                     </div>
@@ -451,10 +457,10 @@ export default function Blog() {
         </div>
 
         {/* Pagination */}
-        {effectiveTotalPages > 1 && (
+        {effectiveTotalPages > 0 && (
           <nav className="flex justify-center items-center gap-2 mt-12">
             <button
-              onClick={() => paginate(currentPage - 1)}
+              onClick={() => setCurrentPage((x) => Math.max(x - 1, 1))}
               disabled={currentPage === 1}
               className="px-4 py-2 rounded-full text-sm font-semibold transition
                 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed
@@ -463,39 +469,25 @@ export default function Blog() {
               Trước
             </button>
 
-            {Array.from(
-              { length: Math.min(5, effectiveTotalPages) },
-              (_, i) => {
-                let page;
-                if (effectiveTotalPages <= 5) {
-                  page = i + 1;
-                } else if (currentPage <= 3) {
-                  page = i + 1;
-                } else if (currentPage >= effectiveTotalPages - 2) {
-                  page = effectiveTotalPages - 4 + i;
-                } else {
-                  page = currentPage - 2 + i;
-                }
-
-                return (
-                  <button
-                    key={page}
-                    onClick={() => paginate(page)}
-                    className={`w-9 h-9 rounded-full text-sm font-bold transition
-                    ${
-                      currentPage === page
-                        ? "bg-green-700 text-white scale-110 shadow-md"
-                        : "bg-white text-green-700 border border-green-300 hover:bg-green-100"
-                    }`}
-                  >
-                    {page}
-                  </button>
-                );
-              }
-            )}
+            {Array.from({ length: effectiveTotalPages }).map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentPage(i + 1)}
+                className={`w-9 h-9 rounded-full text-sm font-bold transition
+                  ${
+                    currentPage === i + 1
+                      ? "bg-green-700 text-white scale-110 shadow-md"
+                      : "bg-white text-green-700 border border-green-300 hover:bg-green-100"
+                  }`}
+              >
+                {i + 1}
+              </button>
+            ))}
 
             <button
-              onClick={() => paginate(currentPage + 1)}
+              onClick={() =>
+                setCurrentPage((x) => Math.min(x + 1, effectiveTotalPages))
+              }
               disabled={currentPage === effectiveTotalPages}
               className="px-4 py-2 rounded-full text-sm font-semibold transition
                 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed

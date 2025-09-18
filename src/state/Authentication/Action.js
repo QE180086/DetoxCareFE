@@ -224,6 +224,9 @@ export const loginUser = (reqData) => async (dispatch) => {
     }
 
     dispatch({ type: LOGIN_SUCCESS, payload: accessToken });
+    
+    // Fetch cart to load user's cart from server
+    dispatch(fetchCartFromServer());
   } catch (error) {
     // Better error handling for the specific error you're seeing
     let errorMessage = "Đăng nhập thất bại";
@@ -329,6 +332,9 @@ export const logout = () => (dispatch) => {
     
     // Also dispatch SET_ACCESS_TOKEN with null to ensure state is cleared
     dispatch(setAccessToken(null));
+    
+    // Fetch cart to load guest cart (if any) or initialize empty cart
+    dispatch(fetchCartFromServer());
     
     console.log("logout success");
   } catch (error) {

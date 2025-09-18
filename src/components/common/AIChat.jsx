@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { productApi } from "../../utils/api/product.api";
 
 export default function AIChat() {
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -10,30 +11,227 @@ export default function AIChat() {
     },
   ]);
   const [inputMessage, setInputMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const toggleChat = () => {
     setIsChatOpen((prev) => !prev);
   };
 
-  const sendMessage = () => {
-    if (inputMessage.trim()) {
-      setMessages((prev) => [
-        ...prev,
-        { id: Date.now(), text: inputMessage, sender: "user" },
-      ]);
-      setInputMessage("");
+  // Function to format markdown-like text to JSX
+  const formatMessage = (text) => {
+    if (!text) return text;
 
-      setTimeout(() => {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: Date.now(),
-            text:
-              "Cảm ơn bạn đã hỏi! Tôi sẽ giúp bạn tìm hiểu về sản phẩm detox phù hợp.",
-            sender: "ai",
-          },
-        ]);
-      }, 1000);
+    // Split by lines for processing
+    const lines = text.split('\n');
+    const formattedElements = [];
+    let currentList = [];
+    let isInList = false;
+
+    lines.forEach((line, index) => {
+      const trimmedLine = line.trim();
+      
+      // Skip empty lines
+      if (!trimmedLine && !isInList) {
+        formattedElements.push(<br key={`br-${index}`} />);
+        return;
+      }
+
+      // Handle headers (** text **)
+      if (trimmedLine.match(/^\*\*(.*)\*\*$/)) {
+        if (isInList) {
+          formattedElements.push(
+            <ul key={`list-${formattedElements.length}`} className="list-disc list-inside ml-4 space-y-1">
+              {currentList}
+            </ul>
+          );
+          currentList = [];
+          isInList = false;
+        }
+        
+        const headerText = trimmedLine.replace(/^\*\*(.*)\*\*$/, '$1');
+        formattedElements.push(
+          <h4 key={`header-${index}`} className="font-bold text-gray-800 mt-3 mb-2">
+            {headerText}
+          </h4>
+        );
+        return;
+      }
+
+      // Handle list items (* text)
+      if (trimmedLine.startsWith('*   ')) {
+        const listText = trimmedLine.substring(4);
+        
+        // Check if this is a bold item (**text:**)
+        if (listText.match(/^\*\*(.*?):\*\*/)) {
+          const boldText = listText.replace(/^\*\*(.*?):\*\*(.*)/, '$1:');
+          const normalText = listText.replace(/^\*\*(.*?):\*\*(.*)/, '$2');
+          
+          currentList.push(
+            <li key={`list-item-${index}`} className="mb-2">
+              <span className="font-semibold text-green-600">{boldText}</span>
+              <span>{normalText}</span>
+            </li>
+          );
+        } else {
+          currentList.push(
+            <li key={`list-item-${index}`} className="mb-1">
+              {formatInlineText(listText)}
+            </li>
+          );
+        }
+        isInList = true;
+        return;
+      }
+
+      // If we were in a list and now we're not, close the list
+      if (isInList && !trimmedLine.startsWith('*   ')) {
+        formattedElements.push(
+          <ul key={`list-${formattedElements.length}`} className="list-disc list-inside ml-4 space-y-1 mb-3">
+            {currentList}
+          </ul>
+        );
+        currentList = [];
+        isInList = false;
+      }
+
+      // Handle regular paragraphs
+      if (trimmedLine) {
+        formattedElements.push(
+          <p key={`p-${index}`} className="mb-2 leading-relaxed">
+            {formatInlineText(trimmedLine)}
+          </p>
+        );
+      }
+    });
+
+    // Close any remaining list
+    if (isInList && currentList.length > 0) {
+      formattedElements.push(
+        <ul key={`list-final`} className="list-disc list-inside ml-4 space-y-1">
+          {currentList}
+        </ul>
+      );
+    }
+
+    return <div className="space-y-1">{formattedElements}</div>;
+  };
+
+  // Function to format inline text (bold, links)
+  const formatInlineText = (text) => {
+    if (!text) return text;
+
+    // Split by potential markdown patterns
+    const parts = [];
+    let remainingText = text;
+    let key = 0;
+
+    while (remainingText.length > 0) {
+      // Check for bold text **text**
+      const boldMatch = remainingText.match(/^(.*?)\*\*(.*?)\*\*(.*)/);
+      if (boldMatch) {
+        if (boldMatch[1]) parts.push(<span key={key++}>{boldMatch[1]}</span>);
+        parts.push(<strong key={key++} className="font-semibold text-gray-800">{boldMatch[2]}</strong>);
+        remainingText = boldMatch[3];
+        continue;
+      }
+
+      // Check for links [text](url)
+      const linkMatch = remainingText.match(/^(.*?)\[(.*?)\]\((.*?)\)(.*)/);
+      if (linkMatch) {
+        if (linkMatch[1]) parts.push(<span key={key++}>{linkMatch[1]}</span>);
+        parts.push(
+          <a 
+            key={key++} 
+            href={linkMatch[3]} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-green-600 hover:text-green-700 underline font-medium"
+          >
+            {linkMatch[2]}
+          </a>
+        );
+        remainingText = linkMatch[4];
+        continue;
+      }
+
+      // Check for raw product URLs and convert to clickable links
+      const urlMatch = remainingText.match(/^(.*?)(http:\/\/localhost:3000\/product\/[a-f0-9-]+)(.*)/);
+      if (urlMatch) {
+        if (urlMatch[1]) parts.push(<span key={key++}>{urlMatch[1]}</span>);
+        
+        // Extract product ID from URL for better link text
+        const productId = urlMatch[2].split('/').pop();
+        const linkText = "🔗 Xem sản phẩm";
+        
+        parts.push(
+          <a 
+            key={key++} 
+            href={urlMatch[2]} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 bg-green-100 text-green-700 hover:bg-green-200 hover:text-green-800 px-2 py-1 rounded-md text-xs font-medium transition-colors duration-200"
+          >
+            {linkText}
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </a>
+        );
+        remainingText = urlMatch[3];
+        continue;
+      }
+
+      // No more patterns found, add the rest
+      if (remainingText) {
+        parts.push(<span key={key++}>{remainingText}</span>);
+      }
+      break;
+    }
+
+    return parts.length > 0 ? parts : text;
+  };
+
+  const sendMessage = async () => {
+    if (inputMessage.trim()) {
+      // Add user message to chat
+      const userMessage = { id: Date.now(), text: inputMessage, sender: "user" };
+      setMessages((prev) => [...prev, userMessage]);
+      setInputMessage("");
+      setIsLoading(true);
+
+      try {
+        // Call the askGemini API without access token
+        const response = await productApi.askGemini({ question: inputMessage });
+        
+        // Extract the actual message content from the API response
+        let messageContent = "Xin lỗi, tôi không thể trả lời câu hỏi này lúc này.";
+        
+        if (response.data && response.success) {
+          messageContent = response.data;
+        } else if (response.data && response.data.data) {
+          messageContent = response.data.data;
+        }
+        
+        // Add AI response to chat
+        const aiMessage = {
+          id: Date.now() + 1,
+          text: messageContent,
+          sender: "ai",
+          isFormatted: true // Flag to indicate this message should be formatted
+        };
+        setMessages((prev) => [...prev, aiMessage]);
+      } catch (error) {
+        console.error('API Error:', error);
+        // Handle error case
+        const errorMessage = {
+          id: Date.now() + 1,
+          text: "Xin lỗi, có lỗi xảy ra khi xử lý yêu cầu của bạn. Vui lòng thử lại.",
+          sender: "ai",
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -48,7 +246,7 @@ export default function AIChat() {
       {/* Chat Toggle Button */}
       <button
         onClick={toggleChat}
-        className="fixed bottom-6 right-6 bg-gradient-to-r from-green-500 to-emerald-600 text-white p-4 rounded-full shadow-xl hover:scale-110 transition-all duration-300 z-50 "
+        className="fixed bottom-6 right-6 bg-gradient-to-r from-green-500 to-emerald-600 text-white p-4 rounded-full shadow-xl hover:scale-110 transition-all duration-300 z-50"
       >
         {isChatOpen ? (
           <svg
@@ -124,10 +322,21 @@ export default function AIChat() {
                     : "bg-white text-gray-800 rounded-bl-none border border-gray-200 shadow-sm"
                 }`}
               >
-                {msg.text}
+                {msg.isFormatted ? formatMessage(msg.text) : msg.text}
               </div>
             </div>
           ))}
+          {isLoading && (
+            <div className="flex justify-start">
+              <div className="max-w-xs px-4 py-3 rounded-2xl text-sm bg-white text-gray-800 rounded-bl-none border border-gray-200 shadow-sm">
+                <div className="flex space-x-2">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-75"></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-150"></div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Input */}
@@ -140,13 +349,14 @@ export default function AIChat() {
               onKeyPress={handleKeyPress}
               placeholder="Nhập tin nhắn..."
               className="flex-1 p-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+              disabled={isLoading}
             />
             <button
               onClick={sendMessage}
               className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 disabled:opacity-50"
-              disabled={!inputMessage.trim()}
+              disabled={!inputMessage.trim() || isLoading}
             >
-              Gửi
+              {isLoading ? "Đang gửi..." : "Gửi"}
             </button>
           </div>
         </div>

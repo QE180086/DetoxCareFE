@@ -70,7 +70,7 @@ const ProductGrid = () => {
   }, []);
 
   return (
-    <section className="py-12 bg-gradient-to-b from-white to-green-50">
+    <section className="py-12 bg-white">
       <div className="max-w-7xl mx-auto px-4 py-12">
         <h2 className="text-3xl font-bold text-gray-800 mb-8 flex items-center gap-3">
           <FaLeaf className="text-green-600" /> Sản Phẩm Nổi Bật

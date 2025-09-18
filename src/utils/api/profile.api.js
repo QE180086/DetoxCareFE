@@ -60,4 +60,14 @@ export const profileApi = {
     const response = await api.get(`/api/profile/user/${userId}`, config);
     return response.data;
   },
+
+  changePassword: async (passwordData, accessToken) => {
+    const config = {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    };
+    const response = await api.post("/api/user/change-password", passwordData, config);
+    return response.data;
+  },
 };

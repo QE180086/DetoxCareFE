@@ -321,12 +321,23 @@ export const fetchCartFromServer = () => async (dispatch, getState) => {
 
   // Only fetch if user is authenticated
   if (!auth?.accessToken) {
-    console.log("User not authenticated, skipping cart fetch");
-    // Clear local cart items when user is not authenticated
-    dispatch({
-      type: FETCH_CART_SUCCESS,
-      payload: [],
-    });
+    console.log("User not authenticated, loading guest cart");
+    // Load guest cart from localStorage
+    try {
+      const guestCart = localStorage.getItem('guestCart');
+      const cartItems = guestCart ? JSON.parse(guestCart) : [];
+      
+      dispatch({
+        type: FETCH_CART_SUCCESS,
+        payload: cartItems,
+      });
+    } catch (error) {
+      console.error("Failed to load guest cart:", error);
+      dispatch({
+        type: FETCH_CART_SUCCESS,
+        payload: [],
+      });
+    }
     return;
   }
 

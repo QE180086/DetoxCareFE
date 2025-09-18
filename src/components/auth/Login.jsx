@@ -51,7 +51,7 @@ export default function Login() {
                         <div className="mx-auto w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mb-4">
                             <AiOutlineUser className="w-8 h-8 text-white" />
                         </div>
-                        <h2 className="text-3xl font-bold text-gray-800 mb-2">Chào mừng trở lại 👋</h2>
+                        <h2 className="text-3xl font-bold text-gray-800 mb-2">Chào mừng trở lại</h2>
                         <p className="text-gray-600">Đăng nhập vào tài khoản của bạn</p>
                     </div>
 

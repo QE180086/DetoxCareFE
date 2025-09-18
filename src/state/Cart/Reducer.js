@@ -52,12 +52,12 @@ const cartReducer = (state = initialState, action) => {
     case ADD_TO_CART: {
       // Transform the product data to match the cart item structure
       const cartItem = {
-        id: action.payload.id,
-        productId: action.payload.id,
-        productName: action.payload.name,
-        productImage: action.payload.image,
-        unitPrice: action.payload.price,
-        price: action.payload.price, // Keep both for compatibility
+        id: action.payload.id || action.payload.productId,
+        productId: action.payload.productId || action.payload.id,
+        name: action.payload.name || action.payload.productName || "Sản phẩm",
+        image: action.payload.image || action.payload.productImage || "https://i.pinimg.com/736x/3e/ef/7a/3eef7adafb89a18819b0c3d3b9c93da8.jpg",
+        price: action.payload.price || action.payload.unitPrice || 0,
+        unitPrice: action.payload.unitPrice || action.payload.price || 0,
         quantity: 1
       };
       
@@ -164,9 +164,9 @@ const cartReducer = (state = initialState, action) => {
         ? action.payload.map(item => ({
             id: item.id,
             productId: item.productId,
-            name: item.productName,
-            image: item.productImage,
-            price: item.unitPrice,
+            name: item.productName || item.name,      // Handle both property names
+            image: item.productImage || item.image,   // Handle both property names
+            price: item.unitPrice || item.price,      // Handle both property names
             quantity: item.quantity
           }))
         : [];

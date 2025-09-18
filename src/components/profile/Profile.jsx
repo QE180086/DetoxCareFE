@@ -14,6 +14,8 @@ import {
   AiOutlineEnvironment,
   AiOutlineTrophy,
   AiOutlineExclamationCircle,
+  AiOutlineEye,
+  AiOutlineEyeInvisible
 } from "react-icons/ai";
 import { FaMale, FaFemale } from "react-icons/fa";
 import { updateProfile, getProfileByUserId, clearProfileError } from "../../state/Profile/Action";
@@ -56,6 +58,11 @@ export default function Profile() {
   const [loadingVouchers, setLoadingVouchers] = useState(false);
   const [points, setPoints] = useState(0); // Add state for points
   
+  // Add pagination state for vouchers
+  const [currentVoucherPage, setCurrentVoucherPage] = useState(1);
+  const vouchersPerPage = 4;
+  const [totalVoucherPages, setTotalVoucherPages] = useState(1);
+  
   const lastAddTimeRef = useRef(0);
 
   // Error modal state
@@ -73,6 +80,11 @@ export default function Profile() {
     confirmPassword: "",
   });
   const [passwordSuccess, setPasswordSuccess] = useState("");
+
+  // Password visibility states
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Fetch profile on component mount
   useEffect(() => {
@@ -118,6 +130,13 @@ export default function Profile() {
     }
   }, [authState?.accessToken]);
 
+  // Calculate total voucher pages when userVouchers changes
+  useEffect(() => {
+    setTotalVoucherPages(Math.ceil(userVouchers.length / vouchersPerPage) || 1);
+    // Reset to first page when vouchers change
+    setCurrentVoucherPage(1);
+  }, [userVouchers]);
+
   // Fetch vouchers from API
   const fetchUserVouchers = async () => {
     const userId = localStorage.getItem("userId");
@@ -125,8 +144,9 @@ export default function Profile() {
     if (authState?.accessToken && userId) {
       setLoadingVouchers(true);
       try {
+        // Fetch all vouchers (similar to SearchPage.jsx approach)
         const response = await cartItemApi.getUserVouchers(
-          1, 8, "createdDate", "desc", userId, authState.accessToken
+          1, 1000, "createdDate", "desc", userId, authState.accessToken
         );
         
         // Check if response has content array
@@ -180,6 +200,13 @@ export default function Profile() {
     } catch (error) {
       console.error("Error fetching point details:", error);
     }
+  };
+
+  // Calculate current vouchers to display
+  const getCurrentVouchers = () => {
+    const startIndex = (currentVoucherPage - 1) * vouchersPerPage;
+    const endIndex = startIndex + vouchersPerPage;
+    return userVouchers.slice(startIndex, endIndex);
   };
 
   // Update userData when profile data is fetched
@@ -436,7 +463,7 @@ export default function Profile() {
     setIsEditing(false);
   };
 
-  const handlePasswordSubmit = (e) => {
+  const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     setPasswordSuccess("");
 
@@ -462,15 +489,46 @@ export default function Profile() {
       return;
     }
 
-    // Simulate API call
-    console.log("Changing password:", passwordData);
-    setPasswordSuccess("Đổi mật khẩu thành công!");
-    setPasswordData({ oldPassword: "", newPassword: "", confirmPassword: "" });
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        throw new Error("Không tìm thấy token xác thực");
+      }
+
+      // Use the new changePassword API
+      const passwordPayload = {
+        oldPassword: passwordData.oldPassword,
+        newPassword: passwordData.newPassword
+      };
+
+      await profileApi.changePassword(passwordPayload, token);
+      
+      setPasswordSuccess("Đổi mật khẩu thành công!");
+      setPasswordData({ oldPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (error) {
+      let errorMsg = "Có lỗi xảy ra khi đổi mật khẩu. Vui lòng thử lại.";
+      if (error && typeof error === 'object') {
+        if (error.message) {
+          errorMsg = error.message;
+        } else if (error.messageDetail) {
+          errorMsg = error.messageDetail;
+        } else {
+          errorMsg = JSON.stringify(error);
+        }
+      } else if (typeof error === 'string') {
+        errorMsg = error;
+      }
+      
+      setErrorMessage(errorMsg);
+      setShowErrorModal(true);
+    }
   };
 
   const handleLogout = () => {
     // Use the centralized logout action instead of manually removing items
     dispatch(logout());
+    // Remove user avatar from localStorage on logout
+    localStorage.removeItem('userAvatar');
     navigate("/login");
   };
 
@@ -516,6 +574,11 @@ export default function Profile() {
     </button>
   );
 
+  // Get avatar source with fallback
+  const getAvatarSource = () => {
+    return avatarPreview || userData.avatar || "https://i.pinimg.com/736x/3e/ef/7a/3eef7adafb89a18819b0c3d3b9c93da8.jpg";
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
@@ -547,11 +610,7 @@ export default function Profile() {
                 <div className="bg-gradient-to-r from-green-600 to-blue-600 p-6 text-white text-center">
                   <div className="relative inline-block">
                     <img
-                      src={
-                        avatarPreview || 
-                        userData.avatar ||
-                        "https://i.pinimg.com/736x/3e/ef/7a/3eef7adafb89a18819b0c3d3b9c93da8.jpg"
-                      }
+                      src={getAvatarSource()}
                       alt="Avatar"
                       className="w-20 h-20 rounded-full border-4 border-white shadow-lg object-cover mx-auto mb-4"
                     />
@@ -674,153 +733,107 @@ export default function Profile() {
                         </div>
                       </div>
 
-                      {/* Main Content */}
-                      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                        {/* Basic Information Card */}
-                        <div className="xl:col-span-3">
-                          <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
-                            <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
-                              <div className="w-2 h-6 bg-gradient-to-b from-green-500 to-blue-500 rounded-full"></div>
-                              Thông tin cơ bản
-                            </h3>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                              {/* Username */}
-                              <div className="group md:col-span-2">
-                                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
-                                  <div className="w-5 h-5 bg-blue-100 rounded-lg flex items-center justify-center">
-                                    <AiOutlineUser
-                                      size={14}
-                                      className="text-blue-600"
-                                    />
-                                  </div>
-                                  Tên đăng nhập
-                                </label>
-                                {isEditing ? (
-                                  <input
-                                    type="text"
-                                    name="username"
-                                    value={userData.username || ""}
-                                    onChange={handleInputChange}
-                                    className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-100 focus:outline-none transition-all duration-300 text-gray-900 font-medium placeholder-gray-400"
-                                    placeholder="Nhập tên đăng nhập"
-                                  />
-                                ) : (
-                                  <div className="px-4 py-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl text-gray-900 font-semibold border border-gray-200">
-                                    {userData.username || (
-                                      <span className="text-gray-400 italic">
-                                        Chưa cập nhật
-                                      </span>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Nickname */}
-                              <div className="group md:col-span-2">
-                                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
-                                  <div className="w-5 h-5 bg-purple-100 rounded-lg flex items-center justify-center">
-                                    <AiOutlineUser
-                                      size={14}
-                                      className="text-purple-600"
-                                    />
-                                  </div>
-                                  Biệt danh
-                                </label>
-                                {isEditing ? (
-                                  <input
-                                    type="text"
-                                    name="nickName"
-                                    value={userData.nickName || ""}
-                                    onChange={handleInputChange}
-                                    className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-100 focus:outline-none transition-all duration-300 text-gray-900 font-medium placeholder-gray-400"
-                                    placeholder="Nhập biệt danh"
-                                  />
-                                ) : (
-                                  <div className="px-4 py-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl text-gray-900 font-semibold border border-gray-200">
-                                    {userData.nickName || (
-                                      <span className="text-gray-400 italic">
-                                        Chưa cập nhật
-                                      </span>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Full Name */}
-                              <div className="group md:col-span-2">
-                                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
-                                  <div className="w-5 h-5 bg-emerald-100 rounded-lg flex items-center justify-center">
-                                    <AiOutlineUser
-                                      size={14}
-                                      className="text-emerald-600"
-                                    />
-                                  </div>
-                                  Họ và tên
-                                </label>
-                                {isEditing ? (
-                                  <input
-                                    type="text"
-                                    name="fullName"
-                                    value={userData.fullName || ""}
-                                    onChange={handleInputChange}
-                                    className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-100 focus:outline-none transition-all duration-300 text-gray-900 font-medium placeholder-gray-400"
-                                    placeholder="Nhập họ và tên đầy đủ"
-                                  />
-                                ) : (
-                                  <div className="px-4 py-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl text-gray-900 font-semibold border border-gray-200">
-                                    {userData.fullName || (
-                                      <span className="text-gray-400 italic">
-                                        Chưa cập nhật
-                                      </span>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Phone Number */}
-                              <div className="group md:col-span-2">
-                                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
-                                  <div className="w-5 h-5 bg-green-100 rounded-lg flex items-center justify-center">
-                                    <AiOutlinePhone
-                                      size={14}
-                                      className="text-green-600"
-                                    />
-                                  </div>
-                                  Số điện thoại
-                                </label>
-                                {isEditing ? (
-                                  <input
-                                    type="tel"
-                                    name="phoneNumber"
-                                    value={userData.phoneNumber || ""}
-                                    onChange={handleInputChange}
-                                    className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-100 focus:outline-none transition-all duration-300 text-gray-900 font-medium placeholder-gray-400"
-                                    placeholder="Nhập số điện thoại"
-                                  />
-                                ) : (
-                                  <div className="px-4 py-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl text-gray-900 font-semibold border border-gray-200">
-                                    {userData.phoneNumber || (
-                                      <span className="text-gray-400 italic">
-                                        Chưa cập nhật
-                                      </span>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Personal Details Card */}
-                      <div className="bg-white rounded-2xl shadow-lg p-8 mt-8 border border-gray-100">
+                      {/* Combined Personal Information Card */}
+                      <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
                         <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
-                          <div className="w-2 h-6 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full"></div>
-                          Thông tin chi tiết
+                          <div className="w-2 h-6 bg-gradient-to-b from-green-500 to-blue-500 rounded-full"></div>
+                          Thông tin cá nhân
                         </h3>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                          {/* Nickname */}
+                          <div className="group md:col-span-2">
+                            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+                              <div className="w-5 h-5 bg-purple-100 rounded-lg flex items-center justify-center">
+                                <AiOutlineUser
+                                  size={14}
+                                  className="text-purple-600"
+                                />
+                              </div>
+                              Biệt danh
+                            </label>
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                name="nickName"
+                                value={userData.nickName || ""}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-100 focus:outline-none transition-all duration-300 text-gray-900 font-medium placeholder-gray-400"
+                                placeholder="Nhập biệt danh"
+                              />
+                            ) : (
+                              <div className="px-4 py-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl text-gray-900 font-semibold border border-gray-200">
+                                {userData.nickName || (
+                                  <span className="text-gray-400 italic">
+                                    Chưa cập nhật
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Full Name */}
+                          <div className="group md:col-span-2">
+                            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+                              <div className="w-5 h-5 bg-emerald-100 rounded-lg flex items-center justify-center">
+                                <AiOutlineUser
+                                  size={14}
+                                  className="text-emerald-600"
+                                />
+                              </div>
+                              Họ và tên
+                            </label>
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                name="fullName"
+                                value={userData.fullName || ""}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-100 focus:outline-none transition-all duration-300 text-gray-900 font-medium placeholder-gray-400"
+                                placeholder="Nhập họ và tên đầy đủ"
+                              />
+                            ) : (
+                              <div className="px-4 py-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl text-gray-900 font-semibold border border-gray-200">
+                                {userData.fullName || (
+                                  <span className="text-gray-400 italic">
+                                    Chưa cập nhật
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Phone Number */}
+                          <div className="group md:col-span-2">
+                            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+                              <div className="w-5 h-5 bg-green-100 rounded-lg flex items-center justify-center">
+                                <AiOutlinePhone
+                                  size={14}
+                                  className="text-green-600"
+                                />
+                              </div>
+                              Số điện thoại
+                            </label>
+                            {isEditing ? (
+                              <input
+                                type="tel"
+                                name="phoneNumber"
+                                value={userData.phoneNumber || ""}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-100 focus:outline-none transition-all duration-300 text-gray-900 font-medium placeholder-gray-400"
+                                placeholder="Nhập số điện thoại"
+                              />
+                            ) : (
+                              <div className="px-4 py-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl text-gray-900 font-semibold border border-gray-200">
+                                {userData.phoneNumber || (
+                                  <span className="text-gray-400 italic">
+                                    Chưa cập nhật
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
                           {/* Gender */}
                           <div className="group md:col-span-2">
                             <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
@@ -1065,14 +1078,27 @@ export default function Profile() {
                             <AiOutlineLock size={16} />
                             Mật khẩu cũ
                           </label>
-                          <input
-                            type="password"
-                            name="oldPassword"
-                            value={passwordData.oldPassword}
-                            onChange={handlePasswordChange}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 focus:outline-none transition"
-                            placeholder="Nhập mật khẩu hiện tại"
-                          />
+                          <div className="relative">
+                            <input
+                              type={showOldPassword ? "text" : "password"}
+                              name="oldPassword"
+                              value={passwordData.oldPassword}
+                              onChange={handlePasswordChange}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 focus:outline-none transition pr-12"
+                              placeholder="Nhập mật khẩu hiện tại"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowOldPassword(!showOldPassword)}
+                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700"
+                            >
+                              {showOldPassword ? (
+                                <AiOutlineEyeInvisible size={20} />
+                              ) : (
+                                <AiOutlineEye size={20} />
+                              )}
+                            </button>
+                          </div>
                         </div>
 
                         <div className="space-y-2">
@@ -1080,14 +1106,27 @@ export default function Profile() {
                             <AiOutlineLock size={16} />
                             Mật khẩu mới
                           </label>
-                          <input
-                            type="password"
-                            name="newPassword"
-                            value={passwordData.newPassword}
-                            onChange={handlePasswordChange}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 focus:outline-none transition"
-                            placeholder="Nhập mật khẩu mới (ít nhất 6 ký tự)"
-                          />
+                          <div className="relative">
+                            <input
+                              type={showNewPassword ? "text" : "password"}
+                              name="newPassword"
+                              value={passwordData.newPassword}
+                              onChange={handlePasswordChange}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 focus:outline-none transition pr-12"
+                              placeholder="Nhập mật khẩu mới (ít nhất 6 ký tự)"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowNewPassword(!showNewPassword)}
+                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700"
+                            >
+                              {showNewPassword ? (
+                                <AiOutlineEyeInvisible size={20} />
+                              ) : (
+                                <AiOutlineEye size={20} />
+                              )}
+                            </button>
+                          </div>
                         </div>
 
                         <div className="space-y-2">
@@ -1095,14 +1134,27 @@ export default function Profile() {
                             <AiOutlineLock size={16} />
                             Xác nhận mật khẩu mới
                           </label>
-                          <input
-                            type="password"
-                            name="confirmPassword"
-                            value={passwordData.confirmPassword}
-                            onChange={handlePasswordChange}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 focus:outline-none transition"
-                            placeholder="Nhập lại mật khẩu mới"
-                          />
+                          <div className="relative">
+                            <input
+                              type={showConfirmPassword ? "text" : "password"}
+                              name="confirmPassword"
+                              value={passwordData.confirmPassword}
+                              onChange={handlePasswordChange}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 focus:outline-none transition pr-12"
+                              placeholder="Nhập lại mật khẩu mới"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700"
+                            >
+                              {showConfirmPassword ? (
+                                <AiOutlineEyeInvisible size={20} />
+                              ) : (
+                                <AiOutlineEye size={20} />
+                              )}
+                            </button>
+                          </div>
                         </div>
 
                         <button
@@ -1169,73 +1221,117 @@ export default function Profile() {
                           </p>
                         </div>
                       ) : userVouchers.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {userVouchers.map((voucher, index) => (
-                            <div
-                              key={index}
-                              className="rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden"
-                            >
-                              {/* Background container */}
-                              <div 
-                                className="relative h-full w-full"
-                                style={{
-                                  backgroundImage: voucher.image ? `url(${voucher.image})` : 'none',
-                                  backgroundColor: voucher.image ? 'transparent' : '#9ca3af', // gray-400
-                                  backgroundSize: 'cover',
-                                  backgroundPosition: 'center',
-                                  minHeight: '200px'
-                                }}
+                        <>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {getCurrentVouchers().map((voucher, index) => (
+                              <div
+                                key={(currentVoucherPage - 1) * vouchersPerPage + index}
+                                className="rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden"
                               >
-                                {/* Dark overlay for text readability (only when there's an image) */}
-                                {voucher.image && (
-                                  <div className="absolute inset-0 bg-black bg-opacity-40"></div>
-                                )}
-                                
-                                {/* Voucher content */}
-                                <div className="relative z-10 p-6 text-white h-full flex flex-col justify-between">
-                                  <div>
-                                    <div className="mb-3">
-                                      <div className="font-bold text-lg">
-                                          {voucher.code}
+                                {/* Background container */}
+                                <div 
+                                  className="relative h-full w-full"
+                                  style={{
+                                    backgroundImage: voucher.image ? `url(${voucher.image})` : 'none',
+                                    backgroundColor: voucher.image ? 'transparent' : '#9ca3af', // gray-400
+                                    backgroundSize: 'cover',
+                                    backgroundPosition: 'center',
+                                    minHeight: '200px'
+                                  }}
+                                >
+                                  {/* Dark overlay for text readability (only when there's an image) */}
+                                  {voucher.image && (
+                                    <div className="absolute inset-0 bg-black bg-opacity-40"></div>
+                                  )}
+                                  
+                                  {/* Voucher content */}
+                                  <div className="relative z-10 p-6 text-white h-full flex flex-col justify-between">
+                                    <div>
+                                      <div className="mb-3">
+                                        <div className="font-bold text-lg">
+                                            {voucher.code}
+                                          </div>
+                                          <div className="text-sm opacity-90">
+                                            Mã voucher
+                                          </div>
+                                      </div>
+
+                                      <div className="space-y-2">
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-sm opacity-90">
+                                            Giảm giá:
+                                          </span>
+                                          <span className="font-bold">
+                                            {voucher.discountValue?.toLocaleString("vi-VN") || 0} ₫
+                                          </span>
                                         </div>
-                                        <div className="text-sm opacity-90">
-                                          Mã voucher
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-sm opacity-90">
+                                            Đơn tối thiểu:
+                                          </span>
+                                          <span className="font-bold">
+                                            {voucher.minOrderValue?.toLocaleString("vi-VN") || 0} ₫
+                                          </span>
                                         </div>
+                                      </div>
                                     </div>
 
-                                    <div className="space-y-2">
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-sm opacity-90">
-                                          Giảm giá:
-                                        </span>
-                                        <span className="font-bold">
-                                          {voucher.discountValue?.toLocaleString("vi-VN") || 0} ₫
-                                        </span>
-                                      </div>
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-sm opacity-90">
-                                          Đơn tối thiểu:
-                                        </span>
-                                        <span className="font-bold">
-                                          {voucher.minOrderValue?.toLocaleString("vi-VN") || 0} ₫
-                                        </span>
-                                      </div>
+                                    <div className="mt-4">
+                                      <button 
+                                        className="bg-white text-gray-800 bg-opacity-90 hover:bg-opacity-100 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+                                        onClick={() => navigate("/search")}
+                                      >
+                                        Sử dụng
+                                      </button>
                                     </div>
-                                  </div>
-
-                                  <div className="mt-4">
-                                    <button 
-                                      className="bg-white text-gray-800 bg-opacity-90 hover:bg-opacity-100 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
-                                      onClick={() => navigate("/search")}
-                                    >
-                                      Sử dụng
-                                    </button>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
-                        </div>
+                            ))}
+                          </div>
+                          
+                          {/* Pagination */}
+                          {totalVoucherPages > 1 && (
+                            <nav className="flex justify-center items-center gap-2 mt-8">
+                              <button
+                                onClick={() => setCurrentVoucherPage((x) => Math.max(x - 1, 1))}
+                                disabled={currentVoucherPage === 1}
+                                className="px-4 py-2 rounded-full text-sm font-semibold transition
+                                  disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed
+                                  bg-green-600 text-white hover:bg-green-700 shadow"
+                              >
+                                Trước
+                              </button>
+
+                              {Array.from({ length: totalVoucherPages }).map((_, i) => (
+                                <button
+                                  key={i}
+                                  onClick={() => setCurrentVoucherPage(i + 1)}
+                                  className={`w-9 h-9 rounded-full text-sm font-bold transition
+                                    ${
+                                      currentVoucherPage === i + 1
+                                        ? "bg-green-700 text-white scale-110 shadow-md"
+                                        : "bg-white text-green-700 border border-green-300 hover:bg-green-100"
+                                    }`}
+                                >
+                                  {i + 1}
+                                </button>
+                              ))}
+
+                              <button
+                                onClick={() =>
+                                  setCurrentVoucherPage((x) => Math.min(x + 1, totalVoucherPages))
+                                }
+                                disabled={currentVoucherPage === totalVoucherPages}
+                                className="px-4 py-2 rounded-full text-sm font-semibold transition
+                                  disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed
+                                  bg-green-600 text-white hover:bg-green-700 shadow"
+                              >
+                                Sau
+                              </button>
+                            </nav>
+                          )}
+                        </>
                       ) : (
                         <div className="text-center py-12">
                           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">

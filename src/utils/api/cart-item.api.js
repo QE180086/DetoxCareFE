@@ -123,4 +123,17 @@ export const cartItemApi = {
     });
     return response.data;
   },
+  
+  // New GET /api/orders/status endpoint
+  getOrderStatus: async (orderId, accessToken) => {
+    const response = await api.get("/api/orders/status", {
+      params: { orderId },
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    return response.data;
+  },
 };
+
+export default cartItemApi;
