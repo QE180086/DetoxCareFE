@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginUser } from '../../state/Authentication/Action';
 import { AiOutlineUser, AiOutlineLock, AiOutlineMail } from 'react-icons/ai';
+import { FaGoogle } from 'react-icons/fa';
 
 export default function Login() {
     const [username, setUsername] = useState('');
@@ -38,8 +39,6 @@ export default function Login() {
             console.error('Lỗi trong handleSubmit:', { err, authStateError: authState.error });
         }
     };
-
-
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-white to-emerald-50">
@@ -108,11 +107,10 @@ export default function Login() {
                             disabled={loadingLogin}
                             className={`w-full py-3 rounded-xl font-semibold text-white 
                                       transition-all duration-300 transform hover:scale-105 
-                                      shadow-lg hover:shadow-xl ${
-                                loadingLogin 
-                                  ? 'bg-gray-400 cursor-not-allowed scale-100' 
-                                  : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700'
-                              }`}
+                                      shadow-lg hover:shadow-xl ${loadingLogin
+                                    ? 'bg-gray-400 cursor-not-allowed scale-100'
+                                    : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700'
+                                }`}
                         >
                             {loadingLogin ? (
                                 <div className="flex items-center justify-center">
@@ -124,6 +122,28 @@ export default function Login() {
                             )}
                         </button>
                     </form>
+
+                    {/* Or Divider */}
+                    <div className="my-6 flex items-center justify-center">
+                        <div className="flex-grow h-px bg-gray-300"></div>
+                        <span className="mx-4 text-sm text-gray-500 font-medium">hoặc</span>
+                        <div className="flex-grow h-px bg-gray-300"></div>
+                    </div>
+                    {/* Google Login Button */}
+                    <div className="mt-4">
+                        <a
+                            href="https://dextox-f9ajbedgghgvf7an.malaysiawest-01.azurewebsites.net/oauth2/authorization/google"
+                            className="w-full py-3 rounded-xl font-semibold text-gray-800
+               bg-gradient-to-r from-pink-400 to-rose-500
+               hover:from-pink-500 hover:to-rose-600
+               transition-all duration-300 transform hover:scale-105
+               shadow-md hover:shadow-lg flex items-center justify-center gap-3"
+                        >
+                            <FaGoogle className="w-5 h-5 text-white drop-shadow-sm" />
+                            <span className="text-base text-white">Đăng nhập với Google</span>
+                        </a>
+                    </div>
+
 
                     {/* Navigation links */}
                     <div className="mt-6 space-y-4">
@@ -145,8 +165,6 @@ export default function Login() {
                     </div>
                 </div>
             </div>
-
-
         </div>
     );
 }

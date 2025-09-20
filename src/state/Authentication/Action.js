@@ -341,3 +341,55 @@ export const logout = () => (dispatch) => {
     console.log("Logout: " + error);
   }
 };
+
+// login google
+export const loginGoogle = (accessToken) => async (dispatch) => {
+  dispatch({ type: LOGIN_REQUEST });
+  try {
+    const data = await authApi.getMe();
+
+    if (accessToken) {
+      localStorage.setItem("accessToken", accessToken);
+      localStorage.setItem("userId", data?.data?.id);
+      localStorage.setItem("username", data?.data?.username);
+      localStorage.setItem("email", data?.data?.email);
+      
+      // Fetch user profile to get avatar and store it in localStorage
+      try {
+        const profileResponse = await profileApi.getUserById(data?.data?.userId, accessToken);
+        if (profileResponse?.data?.avatar) {
+          localStorage.setItem("userAvatar", profileResponse.data.avatar);
+        }
+      } catch (profileError) {
+        console.error("Failed to fetch user profile for avatar:", profileError);
+      }
+      
+      // Sync local cart to server after successful login
+      await syncLocalCartToServer(accessToken, dispatch)();
+    }
+
+    dispatch({ type: LOGIN_SUCCESS, payload: accessToken });
+    
+    // Fetch cart to load user's cart from server
+    dispatch(fetchCartFromServer());
+  } catch (error) {
+    // Better error handling for the specific error you're seeing
+    let errorMessage = "Đăng nhập thất bại";
+    if (error?.response?.data?.message) {
+      if (typeof error.response.data.message === 'object') {
+        if (error.response.data.message.messageDetail) {
+          errorMessage = error.response.data.message.messageDetail;
+        } else if (error.response.data.message.messageCode) {
+          errorMessage = `Error code: ${error.response.data.message.messageCode}`;
+        } else {
+          errorMessage = JSON.stringify(error.response.data.message);
+        }
+      } else {
+        errorMessage = error.response.data.message;
+      }
+    }
+    
+    dispatch({ type: LOGIN_FAILURE, payload: errorMessage });
+    throw error;
+  }
+};

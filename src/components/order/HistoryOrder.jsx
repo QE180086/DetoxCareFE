@@ -1,87 +1,75 @@
-import React, { useState } from 'react';
-import { FaEye, FaCalendarAlt, FaShoppingCart, FaBox, FaCheckCircle, FaClock, FaDollarSign, FaLeaf, FaCreditCard, FaMapMarkerAlt, FaTimes } from 'react-icons/fa';
+import React, { useEffect, useState } from 'react';
+import {
+  FaEye, FaShoppingCart, FaCheckCircle,
+  FaClock, FaTimes, FaLeaf,
+  FaBox, FaArrowLeft, FaArrowRight
+} from 'react-icons/fa';
+import { ordersApi } from '../../utils/api/orders.api';
 
 export default function HistoryOrders() {
   const [expandedOrder, setExpandedOrder] = useState(null);
-  const [orders, setOrders] = useState([
-    {
-      id: 'DH001',
-      date: '2025-07-01',
-      total: 85000,
-      status: 'Đã giao',
-      paymentMethod: 'Thanh toán khi nhận hàng',
-      shippingAddress: '123 Đường ABC, Quận 1, TP.HCM',
-      items: [
-        { name: 'Detox Chanh', quantity: 2, price: 30000 },
-        { name: 'Detox Tắc', quantity: 1, price: 25000 },
-      ],
-    },
-    {
-      id: 'DH002',
-      date: '2025-06-15',
-      total: 50000,
-      status: 'Đã giao',
-      paymentMethod: 'Thẻ tín dụng',
-      shippingAddress: '456 Đường XYZ, Quận 3, TP.HCM',
-      items: [
-        { name: 'Detox Chanh Leo', quantity: 1, price: 25000 },
-        { name: 'Detox Táo', quantity: 1, price: 25000 },
-      ],
-    },
-    {
-      id: 'DH003',
-      date: '2025-05-20',
-      total: 30000,
-      status: 'Đang xử lý',
-      paymentMethod: 'Chuyển khoản ngân hàng',
-      shippingAddress: '789 Đường MNP, Quận 7, TP.HCM',
-      items: [
-        { name: 'Detox Chanh + Cà rốt', quantity: 2, price: 30000 },
-      ],
-    },
-    {
-      id: 'DH004',
-      date: '2025-05-10',
-      total: 75000,
-      status: 'Đã giao',
-      paymentMethod: 'Ví điện tử MoMo',
-      shippingAddress: '321 Đường KLM, Quận 2, TP.HCM',
-      items: [
-        { name: 'Detox Dâu tây', quantity: 1, price: 35000 },
-        { name: 'Detox Kiwi', quantity: 2, price: 40000 },
-      ],
-    },
-  ]);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1); // Current page state
+  const [totalPages, setTotalPages] = useState(1); // Total pages from API
+  const pageSize = 8; // Number of orders per page
+
+  // Fetch orders based on current page
+  const fetchOrders = async (page) => {
+    try {
+      setLoading(true);
+      const data = await ordersApi.getAll(page, pageSize, 'createdDate', 'desc');
+      console.log('Đơn hàng nhận được:', data);
+      setOrders(data?.data?.content ?? []);
+      setTotalPages(Math.ceil((data?.data?.totalElement ?? 0) / pageSize));
+    } catch (error) {
+      console.error('Lỗi khi lấy đơn hàng:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch orders when component mounts or currentPage changes
+  useEffect(() => {
+    fetchOrders(currentPage);
+  }, [currentPage]);
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'Đã giao':
-        return <FaCheckCircle className="w-4 h-4 text-green-500" />;
-      case 'Đang xử lý':
-        return <FaClock className="w-4 h-4 text-yellow-500" />;
-      case 'Đã hủy':
-        return <FaTimes className="w-4 h-4 text-red-500" />;
-      default:
-        return <FaClock className="w-4 h-4 text-gray-500" />;
+      case 'COMPLETED': return <FaCheckCircle className="w-4 h-4 text-green-500" />;
+      case 'PENDING': return <FaClock className="w-4 h-4 text-yellow-500" />;
+      case 'CANCELED': return <FaTimes className="w-4 h-4 text-red-500" />;
+      default: return <FaClock className="w-4 h-4 text-gray-500" />;
     }
   };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Đã giao':
-        return 'bg-green-100 text-green-800';
-      case 'Đang xử lý':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'Đã hủy':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+      case 'COMPLETED': return 'bg-green-100 text-green-800';
+      case 'PENDING': return 'bg-yellow-100 text-yellow-800';
+      case 'CANCELED': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   const toggleOrderDetails = (orderId) => {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
   };
+
+  // Handle page navigation
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  // if (loading && orders.length === 0) return <p>Đang tải đơn hàng...</p>;
 
   return (
     <div className="min-h-screen bg-white py-8 px-4 sm:px-6 lg:px-8">
@@ -109,169 +97,143 @@ export default function HistoryOrders() {
             </h2>
           </div>
 
-          {orders.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">
-                      Mã đơn hàng
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">
-                      Ngày đặt
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">
-                      Tổng tiền
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">
-                      Trạng thái
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">
-                      Thao tác
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {orders.map((order, index) => (
-                    <React.Fragment key={order.id}>
-                      <tr className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-8 bg-gradient-to-b from-green-400 to-emerald-500 rounded-full"></div>
-                            <span className="font-semibold text-green-700">#{order.id}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <FaCalendarAlt className="w-4 h-4 text-gray-400" />
-                            {new Date(order.date).toLocaleDateString('vi-VN')}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="font-bold text-lg text-emerald-600">
-                            {order.total.toLocaleString('vi-VN')}đ
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            {getStatusIcon(order.status)}
-                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
-                              {order.status}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex gap-2 flex-wrap">
+          {orders?.length > 0 ? (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-4 text-left">Mã đơn hàng</th>
+                      <th className="px-6 py-4 text-left">Ngày đặt</th>
+                      <th className="px-6 py-4 text-left">Tổng tiền</th>
+                      <th className="px-6 py-4 text-left">Trạng thái</th>
+                      <th className="px-6 py-4 text-left">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {orders.map((order) => (
+                      <React.Fragment key={order.id}>
+                        <tr className="hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-4 font-semibold text-green-700">#{order.id}</td>
+                          <td className="px-6 py-4 text-gray-600">
+                            {order.createdDate
+                              ? new Date(order.createdDate).toLocaleDateString('vi-VN')
+                              : '---'}
+                          </td>
+                          <td className="px-6 py-4 font-bold text-lg text-emerald-600">
+                            {order.totalAmount?.toLocaleString('vi-VN')}đ
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              {getStatusIcon(order.status)}
+                              <span className={`px-3 py-1 rounded-full text-sm ${getStatusColor(order.status)}`}>
+                                {order.status}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
                             <button
                               onClick={() => toggleOrderDetails(order.id)}
-                              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2 text-sm"
+                              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2 text-sm"
                             >
                               <FaEye className="w-4 h-4" />
                               {expandedOrder === order.id ? 'Ẩn' : 'Xem'}
                             </button>
-                          </div>
-                        </td>
-                      </tr>
-                      
-                      {expandedOrder === order.id && (
-                        <tr>
-                          <td colSpan="5" className="px-6 py-4 bg-gray-50">
-                            <div className="bg-white rounded-xl p-6 shadow-inner">
-                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                                {/* Order Information */}
-                                <div>
-                                  <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                                    <FaCreditCard className="w-4 h-4 text-blue-500" />
-                                    Thông tin đơn hàng:
-                                  </h4>
-                                  <div className="space-y-2 text-sm">
-                                    <div className="flex items-center gap-2">
-                                      <FaCreditCard className="w-3 h-3 text-gray-400" />
-                                      <span className="text-gray-600">Thanh toán:</span>
-                                      <span className="font-medium">{order.paymentMethod}</span>
-                                    </div>
-                                    <div className="flex items-start gap-2">
-                                      <FaMapMarkerAlt className="w-3 h-3 text-gray-400 mt-0.5" />
-                                      <span className="text-gray-600">Địa chỉ:</span>
-                                      <span className="font-medium">{order.shippingAddress}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <FaBox className="w-3 h-3 text-gray-400" />
-                                      <span className="text-gray-600">Số sản phẩm:</span>
-                                      <span className="font-medium">{order.items.reduce((sum, item) => sum + item.quantity, 0)} sản phẩm</span>
-                                    </div>
-                                  </div>
-                                </div>
-                                
-                                {/* Quick Stats */}
-                                <div>
-                                  <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                                    <FaDollarSign className="w-4 h-4 text-green-500" />
-                                    Tổng quan:
-                                  </h4>
-                                  <div className="space-y-2 text-sm">
-                                    <div className="flex items-center gap-2">
-                                      <FaCalendarAlt className="w-3 h-3 text-gray-400" />
-                                      <span className="text-gray-600">Ngày đặt:</span>
-                                      <span className="font-medium">{new Date(order.date).toLocaleDateString('vi-VN')}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <FaDollarSign className="w-3 h-3 text-gray-400" />
-                                      <span className="text-gray-600">Tổng tiền:</span>
-                                      <span className="font-bold text-green-600">{order.total.toLocaleString('vi-VN')}đ</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      {getStatusIcon(order.status)}
-                                      <span className="text-gray-600">Trạng thái:</span>
-                                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
-                                        {order.status}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                              
-                              <h4 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                                <FaBox className="w-4 h-4 text-green-500" />
-                                Chi tiết sản phẩm:
-                              </h4>
-                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {order.items.map((item, itemIndex) => (
-                                  <div key={itemIndex} className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 border border-green-200">
-                                    <div className="flex items-center gap-3">
-                                      <div className="w-12 h-12 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
-                                        <FaLeaf className="w-5 h-5 text-white" />
-                                      </div>
-                                      <div className="flex-1">
-                                        <h5 className="font-medium text-gray-800">{item.name}</h5>
-                                        <div className="flex justify-between items-center mt-1">
-                                          <span className="text-sm text-gray-600">SL: {item.quantity}</span>
-                                          <span className="font-semibold text-green-600">
-                                            {(item.price * item.quantity).toLocaleString('vi-VN')}đ
-                                          </span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
                           </td>
                         </tr>
-                      )}
-                    </React.Fragment>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="p-12 text-center">
-              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FaShoppingCart className="w-10 h-10 text-gray-400" />
+
+                        {expandedOrder === order.id && (
+                          <tr>
+                            <td colSpan="5" className="px-6 py-4 bg-gray-50">
+                              <div className="p-6 bg-white rounded-xl shadow-inner border border-gray-100">
+                                <h4 className="font-semibold text-lg text-gray-800 mb-6 flex items-center gap-2">
+                                  <FaBox className="w-5 h-5 text-green-600" /> Chi tiết đơn hàng
+                                </h4>
+                                {order.orderItems?.length > 0 ? (
+                                  <div className="space-y-4">
+                                    {order.orderItems.map((item, idx) => (
+                                      <div
+                                        key={idx}
+                                        className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-all border border-gray-200"
+                                      >
+                                        {/* Hình ảnh sản phẩm */}
+                                        <div className="w-16 h-16 flex-shrink-0">
+                                          <img
+                                            src={item.image}
+                                            alt={item.productName}
+                                            className="w-full h-full object-cover rounded-md border border-gray-200"
+                                            onError={(e) => (e.target.src = 'https://via.placeholder.com/64')} // Hình ảnh dự phòng nếu lỗi
+                                          />
+                                        </div>
+
+                                        {/* Thông tin sản phẩm */}
+                                        <div className="flex-1">
+                                          <p className="font-semibold text-gray-800">{item.productName}</p>
+                                          <p className="text-sm text-gray-500">Loại: {item.typeProductName}</p>
+                                          <p className="text-sm text-gray-500">Số lượng: {item.quantity}</p>
+                                          <div className="flex items-center gap-2 mt-1">
+                                            <p className="text-sm text-gray-500">
+                                              Giá gốc: <span className="line-through">{parseFloat(item.priceProduct).toLocaleString('vi-VN')}đ</span>
+                                            </p>
+                                            <p className="text-sm font-semibold text-green-600">
+                                              Giá khuyến mãi: {parseFloat(item.salePrice).toLocaleString('vi-VN')}đ
+                                            </p>
+                                          </div>
+                                        </div>
+
+                                        {/* Tổng tiền */}
+                                        <div className="text-right">
+                                          <p className="text-green-600 font-semibold">
+                                            {(parseFloat(item.salePrice) * item.quantity).toLocaleString('vi-VN')}đ
+                                          </p>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="text-gray-500 text-center">Không có sản phẩm nào trong đơn hàng.</p>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <p className="text-gray-500 text-lg">Bạn chưa có đơn hàng nào.</p>
-              <p className="text-gray-400 mt-2">Hãy bắt đầu đặt hàng để theo dõi lịch sử mua hàng của bạn!</p>
-            </div>
+
+              {/* Pagination Controls */}
+              <div className="px-8 py-6 flex justify-between items-center border-t border-gray-200">
+                <div className="text-gray-600">
+                  Trang {currentPage} / {totalPages}
+                </div>
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={handlePreviousPage}
+                    disabled={currentPage === 1}
+                    className={`px-4 py-2 rounded-lg flex items-center gap-2 text-sm ${currentPage === 1
+                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        : 'bg-green-500 text-white hover:bg-green-600'
+                      }`}
+                  >
+                    <FaArrowLeft className="w-4 h-4" /> Trước
+                  </button>
+                  <button
+                    onClick={handleNextPage}
+                    disabled={currentPage === totalPages}
+                    className={`px-4 py-2 rounded-lg flex items-center gap-2 text-sm ${currentPage === totalPages
+                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        : 'bg-green-500 text-white hover:bg-green-600'
+                      }`}
+                  >
+                    Tiếp <FaArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="p-12 text-center text-gray-500">Bạn chưa có đơn hàng nào.</div>
           )}
         </div>
       </div>

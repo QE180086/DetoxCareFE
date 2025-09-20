@@ -20,4 +20,8 @@ export const authApi = {
     const response = await api.post("/api/auth/verifyOTP", verifyData);
     return response.data;
   },
+  getMe: async () => {
+    const response = await api.get("/api/user/getme");
+    return response.data;
+  },
 };
