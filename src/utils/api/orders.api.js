@@ -8,8 +8,9 @@ export const ordersApi = {
     direction = "desc"
   ) => {
     const accessToken = localStorage.getItem("accessToken");
+    const userId = localStorage.getItem("userId");
     const response = await api.get("/api/orders/user", {
-      params: { page, size, field, direction },
+      params: { page, size, field, direction, userId },
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },

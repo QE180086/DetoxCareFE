@@ -17,6 +17,7 @@ import Profile from "../components/profile/Profile"
 import SearchPage from "../components/products/SearchPage"
 import ProductDetail from "../components/products/ProductDetail"
 import HistoryOrders from "../components/order/HistoryOrder"
+import LoginSuccess from "../components/auth/LoginSuccess"
 
 export const CustomerRouter = () => {
     const location = useLocation();
@@ -38,6 +39,7 @@ export const CustomerRouter = () => {
 
                     <Route path="/my-profile" element={<MyProfile/>}></Route>
                     <Route path="/my-profile/orders" element={<Order/>}></Route> */}
+                <Route path="/login/success" element={<LoginSuccess />} />
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
