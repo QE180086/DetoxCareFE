@@ -23,17 +23,17 @@ const initialState = {
   error: null,
 };
 
-// Helper function to save guest cart to localStorage
-const saveGuestCartToLocalStorage = (cartItems) => {
+// Helper function to save guest cart to sessionStorage
+const saveGuestCartToSessionStorage = (cartItems) => {
   try {
-    // Only save to localStorage if user is not authenticated
-    // We can check this by looking for accessToken in localStorage
-    const accessToken = localStorage.getItem('accessToken');
+    // Only save to sessionStorage if user is not authenticated
+    // We can check this by looking for accessToken in sessionStorage
+    const accessToken = sessionStorage.getItem('accessToken');
     if (!accessToken) {
-      localStorage.setItem('guestCart', JSON.stringify(cartItems));
+      sessionStorage.setItem('guestCart', JSON.stringify(cartItems));
     }
   } catch (error) {
-    console.error('Failed to save guest cart to localStorage:', error);
+    console.error('Failed to save guest cart to sessionStorage:', error);
   }
 };
 
@@ -80,8 +80,8 @@ const cartReducer = (state = initialState, action) => {
         };
       }
       
-      // Save guest cart to localStorage
-      saveGuestCartToLocalStorage(newState.cartItems);
+      // Save guest cart to sessionStorage
+      saveGuestCartToSessionStorage(newState.cartItems);
       return newState;
     }
     case REMOVE_FROM_CART: {
@@ -90,8 +90,8 @@ const cartReducer = (state = initialState, action) => {
         cartItems: state.cartItems.filter((item) => item.id !== action.payload),
       };
       
-      // Save guest cart to localStorage
-      saveGuestCartToLocalStorage(newState.cartItems);
+      // Save guest cart to sessionStorage
+      saveGuestCartToSessionStorage(newState.cartItems);
       return newState;
     }
     case INCREASE_QUANTITY: {
@@ -104,8 +104,8 @@ const cartReducer = (state = initialState, action) => {
         ),
       };
       
-      // Save guest cart to localStorage
-      saveGuestCartToLocalStorage(newState.cartItems);
+      // Save guest cart to sessionStorage
+      saveGuestCartToSessionStorage(newState.cartItems);
       return newState;
     }
     case DECREASE_QUANTITY: {
@@ -123,8 +123,8 @@ const cartReducer = (state = initialState, action) => {
         }),
       };
       
-      // Save guest cart to localStorage
-      saveGuestCartToLocalStorage(newState.cartItems);
+      // Save guest cart to sessionStorage
+      saveGuestCartToSessionStorage(newState.cartItems);
       return newState;
     }
     case CLEAR_CART: {
@@ -133,8 +133,8 @@ const cartReducer = (state = initialState, action) => {
         cartItems: [],
       };
       
-      // Save guest cart to localStorage
-      saveGuestCartToLocalStorage(newState.cartItems);
+      // Save guest cart to sessionStorage
+      saveGuestCartToSessionStorage(newState.cartItems);
       return newState;
     }
     case ADD_TO_CART_FAILURE:
@@ -178,8 +178,8 @@ const cartReducer = (state = initialState, action) => {
         error: null,
       };
       
-      // Save guest cart to localStorage (will only save if user is not authenticated)
-      saveGuestCartToLocalStorage(newState.cartItems);
+      // Save guest cart to sessionStorage (will only save if user is not authenticated)
+      saveGuestCartToSessionStorage(newState.cartItems);
       return newState;
     case FETCH_CART_FAILURE:
       // Ensure error is a string

@@ -31,7 +31,7 @@ export default function Login() {
             console.log('Gửi yêu cầu đăng nhập:', reqData);
             await dispatch(loginUser(reqData));
             setLoadingLogin(false);
-            console.log('Đăng nhập thành công, kiểm tra localStorage để xác nhận jwt');
+            console.log('Đăng nhập thành công, kiểm tra sessionStorage để xác nhận jwt');
         } catch (err) {
             setLoadingLogin(false);
             const errorMessage = authState.error?.message?.messageDetail || 'Sai tài khoản hoặc mật khẩu!';

@@ -32,13 +32,13 @@ export const setAccessToken = (token) => ({
   payload: token,
 });
 
-// Helper function to load cart from localStorage
+// Helper function to load cart from sessionStorage
 const loadCartFromLocalStorage = () => {
   try {
-    const cart = localStorage.getItem('guestCart');
+    const cart = sessionStorage.getItem('guestCart');
     return cart ? JSON.parse(cart) : [];
   } catch (error) {
-    console.error('Failed to load cart from localStorage:', error);
+    console.error('Failed to load cart from sessionStorage:', error);
     return [];
   }
 };
@@ -46,9 +46,9 @@ const loadCartFromLocalStorage = () => {
 // Helper function to clear local cart
 const clearLocalCart = () => {
   try {
-    localStorage.removeItem('guestCart');
+    sessionStorage.removeItem('guestCart');
   } catch (error) {
-    console.error('Failed to clear cart from localStorage:', error);
+    console.error('Failed to clear cart from sessionStorage:', error);
   }
 };
 
@@ -198,16 +198,16 @@ export const loginUser = (reqData) => async (dispatch) => {
     const accessToken = data?.data?.accessToken;
 
     if (accessToken) {
-      localStorage.setItem("accessToken", accessToken);
-      localStorage.setItem("userId", data?.data?.userId);
-      localStorage.setItem("username", data?.data?.username);
-      localStorage.setItem("email", data?.data?.email);
+      sessionStorage.setItem("accessToken", accessToken);
+      sessionStorage.setItem("userId", data?.data?.userId);
+      sessionStorage.setItem("username", data?.data?.username);
+      sessionStorage.setItem("email", data?.data?.email);
       
-      // Fetch user profile to get avatar and store it in localStorage
+      // Fetch user profile to get avatar and store it in sessionStorage
       try {
         const profileResponse = await profileApi.getUserById(data?.data?.userId, accessToken);
         if (profileResponse?.data?.avatar) {
-          localStorage.setItem("userAvatar", profileResponse.data.avatar);
+          sessionStorage.setItem("userAvatar", profileResponse.data.avatar);
         }
       } catch (profileError) {
         console.error("Failed to fetch user profile for avatar:", profileError);
@@ -319,13 +319,13 @@ export const getUser = (jwt) => async (dispatch) => {
 
 export const logout = () => (dispatch) => {
   try {
-    // Instead of clearing all localStorage, selectively remove items
+    // Instead of clearing all sessionStorage, selectively remove items
     // This preserves guestCart and other non-auth related items
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('username');
-    localStorage.removeItem('email');
-    localStorage.removeItem('userAvatar');
+    sessionStorage.removeItem('accessToken');
+    sessionStorage.removeItem('userId');
+    sessionStorage.removeItem('username');
+    sessionStorage.removeItem('email');
+    sessionStorage.removeItem('userAvatar');
     
     // Dispatch LOGOUT to reset Redux state
     dispatch({ type: LOGOUT });
@@ -349,16 +349,16 @@ export const loginGoogle = (accessToken) => async (dispatch) => {
     const data = await authApi.getMe();
 
     if (accessToken) {
-      localStorage.setItem("accessToken", accessToken);
-      localStorage.setItem("userId", data?.data?.id);
-      localStorage.setItem("username", data?.data?.username);
-      localStorage.setItem("email", data?.data?.email);
+      sessionStorage.setItem("accessToken", accessToken);
+      sessionStorage.setItem("userId", data?.data?.id);
+      sessionStorage.setItem("username", data?.data?.username);
+      sessionStorage.setItem("email", data?.data?.email);
       
-      // Fetch user profile to get avatar and store it in localStorage
+      // Fetch user profile to get avatar and store it in sessionStorage
       try {
         const profileResponse = await profileApi.getUserById(data?.data?.userId, accessToken);
         if (profileResponse?.data?.avatar) {
-          localStorage.setItem("userAvatar", profileResponse.data.avatar);
+          sessionStorage.setItem("userAvatar", profileResponse.data.avatar);
         }
       } catch (profileError) {
         console.error("Failed to fetch user profile for avatar:", profileError);

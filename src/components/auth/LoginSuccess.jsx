@@ -18,7 +18,7 @@ export default function LoginSuccess() {
         if (token) {
             // Dispatch loginGoogle với token và navigate
             console.log("Token from URL:", token);
-            localStorage.setItem("accessToken", token);
+            sessionStorage.setItem("accessToken", token);
             dispatch(loginGoogle(token));
             navigate("/");
         } else {

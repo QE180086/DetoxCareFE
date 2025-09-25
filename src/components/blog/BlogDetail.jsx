@@ -210,13 +210,13 @@ export default function BlogDetail() {
     }
 
     try {
-      // Get userId directly from localStorage
-      const userId = localStorage.getItem('userId');
+      // Get userId directly from sessionStorage
+      const userId = sessionStorage.getItem('userId');
 
-      // Prepare comment data including userId from localStorage
+      // Prepare comment data including userId from sessionStorage
       const commentData = {
         content: comment,
-        userId: userId // Include userId from localStorage
+        userId: userId // Include userId from sessionStorage
       };
 
       // Submit comment using the new postComment API
@@ -300,8 +300,8 @@ export default function BlogDetail() {
     }
 
     try {
-      // Get userId directly from localStorage
-      const userId = localStorage.getItem('userId');
+      // Get userId directly from sessionStorage
+      const userId = sessionStorage.getItem('userId');
 
       // Prepare reply data including userId and parent comment ID
       const replyData = {

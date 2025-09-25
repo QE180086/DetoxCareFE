@@ -76,7 +76,7 @@ export default function Cart() {
 
   // Fetch cart items directly from API when component mounts
   useEffect(() => {
-    // Fetch cart items - from API if authenticated, from localStorage if guest
+    // Fetch cart items - from API if authenticated, from sessionStorage if guest
     if (authState?.accessToken) {
       fetchCartFromAPI();
     } else {
@@ -115,13 +115,13 @@ export default function Cart() {
     }
   };
 
-  // Fetch cart data from localStorage for guest users
+  // Fetch cart data from sessionStorage for guest users
   const fetchCartFromLocalStorage = () => {
     setIsLoading(true);
     setError(null);
     
     try {
-      const guestCart = localStorage.getItem('guestCart');
+      const guestCart = sessionStorage.getItem('guestCart');
       const cartItems = guestCart ? JSON.parse(guestCart) : [];
       
       // Ensure items have the correct structure
@@ -152,8 +152,8 @@ export default function Cart() {
 
   // Fetch profile data when component mounts and user is authenticated
   useEffect(() => {
-    const userId = localStorage.getItem("userId");
-    const token = localStorage.getItem("accessToken");
+    const userId = sessionStorage.getItem("userId");
+    const token = sessionStorage.getItem("accessToken");
     
     // Fetch profile if user is authenticated and we have userId
     if (authState?.accessToken && userId && token) {
@@ -166,8 +166,8 @@ export default function Cart() {
 
   // Fetch vouchers from API when component mounts and user is authenticated
   useEffect(() => {
-    // Get user ID from localStorage
-    const userId = localStorage.getItem("userId");
+    // Get user ID from sessionStorage
+    const userId = sessionStorage.getItem("userId");
     
     // This will fetch vouchers when the component mounts if user is authenticated
     if (authState?.accessToken && userId) {
@@ -177,8 +177,8 @@ export default function Cart() {
 
   // Fetch vouchers from API
   const fetchUserVouchers = async () => {
-    // Get user ID from localStorage since authState.user might not be populated
-    const userId = localStorage.getItem("userId");
+    // Get user ID from sessionStorage since authState.user might not be populated
+    const userId = sessionStorage.getItem("userId");
     
     if (authState?.accessToken && userId) {
       setLoadingVouchers(true);
@@ -349,8 +349,8 @@ export default function Cart() {
 
   // Fetch vouchers when dropdown is opened and options are empty
   const handleDropdownToggle = () => {
-    // Get user ID from localStorage
-    const userId = localStorage.getItem("userId");
+    // Get user ID from sessionStorage
+    const userId = sessionStorage.getItem("userId");
     
     if (!loadingVouchers) {
       const newState = !isVoucherDropdownOpen;
@@ -397,8 +397,8 @@ export default function Cart() {
         const updatedCartItems = cartItems.filter(item => item.id !== id);
         setCartItems(updatedCartItems);
         
-        // Update localStorage
-        localStorage.setItem('guestCart', JSON.stringify(updatedCartItems));
+        // Update sessionStorage
+        sessionStorage.setItem('guestCart', JSON.stringify(updatedCartItems));
         
         // Dispatch custom event to notify other components (like navbar) of cart change
         window.dispatchEvent(new Event('cartChange'));
@@ -640,8 +640,8 @@ export default function Cart() {
                                     
                                     setCartItems(updatedCartItems);
                                     
-                                    // Update localStorage
-                                    localStorage.setItem('guestCart', JSON.stringify(updatedCartItems));
+                                    // Update sessionStorage
+                                    sessionStorage.setItem('guestCart', JSON.stringify(updatedCartItems));
                                     
                                     // Dispatch custom event to notify other components (like navbar) of cart change
                                     window.dispatchEvent(new Event('cartChange'));
@@ -692,8 +692,8 @@ export default function Cart() {
                                   
                                   setCartItems(updatedCartItems);
                                   
-                                  // Update localStorage
-                                  localStorage.setItem('guestCart', JSON.stringify(updatedCartItems));
+                                  // Update sessionStorage
+                                  sessionStorage.setItem('guestCart', JSON.stringify(updatedCartItems));
                                   
                                   // Dispatch custom event to notify other components (like navbar) of cart change
                                   window.dispatchEvent(new Event('cartChange'));

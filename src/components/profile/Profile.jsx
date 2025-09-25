@@ -88,8 +88,8 @@ export default function Profile() {
 
   // Fetch profile on component mount
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    const userId = localStorage.getItem("userId") || "currentUserId";
+    const token = sessionStorage.getItem("accessToken");
+    const userId = sessionStorage.getItem("userId") || "currentUserId";
     if (token && userId) {
       console.log("Dispatching getProfileByUserId with userId:", userId);
       dispatch(getProfileByUserId(userId, token))
@@ -117,13 +117,13 @@ export default function Profile() {
       // Fetch point details
       fetchPointDetails(token);
     } else {
-      console.warn("No token or userId found in localStorage");
+      console.warn("No token or userId found in sessionStorage");
     }
   }, [dispatch]);
 
   // Fetch user vouchers when component mounts
   useEffect(() => {
-    const userId = localStorage.getItem("userId");
+    const userId = sessionStorage.getItem("userId");
     
     if (authState?.accessToken && userId) {
       fetchUserVouchers();
@@ -139,7 +139,7 @@ export default function Profile() {
 
   // Fetch vouchers from API
   const fetchUserVouchers = async () => {
-    const userId = localStorage.getItem("userId");
+    const userId = sessionStorage.getItem("userId");
     
     if (authState?.accessToken && userId) {
       setLoadingVouchers(true);
@@ -241,9 +241,9 @@ export default function Profile() {
       console.log("New user data:", newUserData);
       setUserData(newUserData);
       
-      // Store avatar in localStorage for persistence across page reloads
+      // Store avatar in sessionStorage for persistence across page reloads
       if (profile.data.avatar) {
-        localStorage.setItem('userAvatar', profile.data.avatar);
+        sessionStorage.setItem('userAvatar', profile.data.avatar);
       }
     } else {
       console.log("No profile data available");
@@ -334,8 +334,8 @@ export default function Profile() {
   };
 
   const handleSave = () => {
-    const token = localStorage.getItem("accessToken");
-    const userId = localStorage.getItem("userId") || "currentUserId";
+    const token = sessionStorage.getItem("accessToken");
+    const userId = sessionStorage.getItem("userId") || "currentUserId";
     if (token && userId) {
       // Handle avatar upload if a new avatar was selected
       const avatarFileInput = document.getElementById("avatar-upload");
@@ -350,8 +350,8 @@ export default function Profile() {
             const uploadResponse = await profileApi.uploadAvatar(avatarFile, token);
             avatarUrl = uploadResponse.data; // Get the URL from the response data
             
-            // Store the new avatar URL in localStorage
-            localStorage.setItem('userAvatar', avatarUrl);
+            // Store the new avatar URL in sessionStorage
+            sessionStorage.setItem('userAvatar', avatarUrl);
           } catch (error) {
             // Handle upload error
             let errorMsg = "Có lỗi xảy ra khi tải ảnh đại diện lên. Vui lòng thử lại.";
@@ -490,7 +490,7 @@ export default function Profile() {
     }
 
     try {
-      const token = localStorage.getItem("accessToken");
+      const token = sessionStorage.getItem("accessToken");
       if (!token) {
         throw new Error("Không tìm thấy token xác thực");
       }
@@ -527,8 +527,8 @@ export default function Profile() {
   const handleLogout = () => {
     // Use the centralized logout action instead of manually removing items
     dispatch(logout());
-    // Remove user avatar from localStorage on logout
-    localStorage.removeItem('userAvatar');
+    // Remove user avatar from sessionStorage on logout
+    sessionStorage.removeItem('userAvatar');
     navigate("/login");
   };
 
