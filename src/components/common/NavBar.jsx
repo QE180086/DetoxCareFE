@@ -62,33 +62,33 @@ export default function Navbar() {
 
   // Fetch cart items and profile when component mounts or when auth state changes
   useEffect(() => {
-    // Fetch cart items - from server if authenticated, from localStorage if guest
+    // Fetch cart items - from server if authenticated, from sessionStorage if guest
     if (auth?.accessToken) {
       dispatch(fetchCartFromServer());
       
       // Fetch user profile
-      const userId = localStorage.getItem("userId") || "currentUserId";
+      const userId = sessionStorage.getItem("userId") || "currentUserId";
       if (userId) {
         dispatch(getProfileByUserId(userId, auth.accessToken));
       }
     } else {
-      // For guest users, fetch cart from localStorage
+      // For guest users, fetch cart from sessionStorage
       dispatch(fetchCartFromServer());
     }
   }, [dispatch, auth?.accessToken]);
 
-  // Listen for localStorage changes to sync guest cart
+  // Listen for sessionStorage changes to sync guest cart
   useEffect(() => {
     // Only for guest users (not authenticated)
     if (!auth?.accessToken) {
       const handleStorageChange = (e) => {
         if (e.key === 'guestCart') {
-          // When guestCart in localStorage changes, fetch updated cart
+          // When guestCart in sessionStorage changes, fetch updated cart
           dispatch(fetchCartFromServer());
         }
       };
 
-      // Add event listener for localStorage changes
+      // Add event listener for sessionStorage changes
       window.addEventListener('storage', handleStorageChange);
       
       // Cleanup event listener
@@ -98,11 +98,11 @@ export default function Navbar() {
     }
   }, [dispatch, auth?.accessToken]);
 
-  // NEW: Custom event listener for localStorage changes within the same tab
+  // NEW: Custom event listener for sessionStorage changes within the same tab
   useEffect(() => {
     if (!auth?.accessToken) {
       const handleCartChange = () => {
-        // Fetch updated cart from localStorage when cart changes
+        // Fetch updated cart from sessionStorage when cart changes
         dispatch(fetchCartFromServer());
       };
 
@@ -120,7 +120,7 @@ export default function Navbar() {
 
   const handleLogout = () => {
     console.log("Logout initiated");
-    // Dispatch the logout action which will clear localStorage and Redux state
+    // Dispatch the logout action which will clear sessionStorage and Redux state
     dispatch(logout());
     navigate("/login");
   };

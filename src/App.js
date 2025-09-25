@@ -9,7 +9,7 @@ function App() {
   const auth = useSelector((state) => state.auth);
   
   useEffect(() => {
-    const accessToken = localStorage.getItem("accessToken");
+    const accessToken = sessionStorage.getItem("accessToken");
     if (accessToken) {
       dispatch(setAccessToken(accessToken));
     }
