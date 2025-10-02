@@ -89,8 +89,8 @@ export default function Profile() {
   // Fetch profile on component mount
   useEffect(() => {
     const token = sessionStorage.getItem("accessToken");
-    const userId = sessionStorage.getItem("userId") || "currentUserId";
-    if (token && userId) {
+    const userId = sessionStorage.getItem("userId");
+    if (token && userId && userId !== "currentUserId") {
       console.log("Dispatching getProfileByUserId with userId:", userId);
       dispatch(getProfileByUserId(userId, token))
         .then(() => console.log("Profile action dispatched successfully"))
@@ -335,8 +335,8 @@ export default function Profile() {
 
   const handleSave = () => {
     const token = sessionStorage.getItem("accessToken");
-    const userId = sessionStorage.getItem("userId") || "currentUserId";
-    if (token && userId) {
+    const userId = sessionStorage.getItem("userId");
+    if (token && userId && userId !== "currentUserId") {
       // Handle avatar upload if a new avatar was selected
       const avatarFileInput = document.getElementById("avatar-upload");
       const avatarFile = avatarFileInput?.files[0];
