@@ -127,11 +127,13 @@ const ProductGrid = () => {
 
                 <div className="flex justify-between items-center mt-4">
                   <div className="flex flex-col">
-                    <span className="text-lg text-red-500 line-through font-medium">
-                      {(product.price || 0).toLocaleString("vi-VN")}₫
-                    </span>
+                    {product.salePrice > 0 && (
+                      <span className="text-lg text-red-500 line-through font-medium">
+                        {(product.price || 0).toLocaleString("vi-VN")}₫
+                      </span>
+                    )}
                     <span className="text-2xl font-bold text-green-800">
-                      {(product.salePrice || product.price || 0).toLocaleString("vi-VN")}₫
+                      {(product.salePrice > 0 ? product.salePrice : product.price || 0).toLocaleString("vi-VN")}₫
                     </span>
                   </div>
 

@@ -118,10 +118,10 @@ export default function SearchPage() {
     const minP = parseInt(minPrice, 10);
     const maxP = parseInt(maxPrice, 10);
     if (!isNaN(minP)) {
-      result = result.filter((p) => (p.salePrice || p.price) >= minP);
+      result = result.filter((p) => (p.salePrice > 0 ? p.salePrice : p.price) >= minP);
     }
     if (!isNaN(maxP)) {
-      result = result.filter((p) => (p.salePrice || p.price) <= maxP);
+      result = result.filter((p) => (p.salePrice > 0 ? p.salePrice : p.price) <= maxP);
     }
     
     // Apply rating filter
@@ -633,11 +633,13 @@ export default function SearchPage() {
 
                         <div className="flex justify-between items-center mt-4">
                           <div className="flex flex-col">
-                            <span className="text-lg text-red-500 line-through font-medium">
-                              {(p.price || 0).toLocaleString("vi-VN")}₫
-                            </span>
+                            {p.salePrice > 0 && (
+                              <span className="text-lg text-red-500 line-through font-medium">
+                                {(p.price || 0).toLocaleString("vi-VN")}₫
+                              </span>
+                            )}
                             <span className="text-2xl font-bold text-green-800">
-                              {(p.salePrice || p.price || 0).toLocaleString("vi-VN")}₫
+                              {(p.salePrice > 0 ? p.salePrice : p.price || 0).toLocaleString("vi-VN")}₫
                             </span>
                           </div>
 

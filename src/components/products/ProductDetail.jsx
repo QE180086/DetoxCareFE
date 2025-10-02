@@ -387,7 +387,7 @@ export default function ProductDetail() {
             </div>
             
             {/* Sale badge */}
-            {product.salePrice && product.price && (
+            {product.salePrice > 0 && product.price && (
               <div className="absolute top-10 right-10">
                 <div className="bg-red-500 text-white rounded-xl px-4 py-2 shadow-lg transform rotate-3">
                   <span className="text-sm font-bold">
@@ -490,14 +490,14 @@ export default function ProductDetail() {
                 <span className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                     {(product.salePrice || product.price || 0).toLocaleString("vi-VN")}₫
                 </span>
-                {product.salePrice && product.price && (
+                {product.salePrice > 0 && product.price && (
                   <span className="text-xl text-gray-500 line-through">
                       {product.price.toLocaleString("vi-VN")}₫
                   </span>
                 )}
               </div>
               
-              {product.salePrice && product.price && (
+              {product.salePrice > 0 && product.price && (
                 <p className="text-sm text-green-700 font-medium">
                      Tiết kiệm {(product.price - product.salePrice).toLocaleString("vi-VN")}₫
                 </p>
@@ -615,11 +615,13 @@ export default function ProductDetail() {
 
                     <div className="flex justify-between items-center mt-4">
                       <div className="flex flex-col">
-                        <span className="text-lg text-red-500 line-through font-medium">
-                          {(rp.price || 0).toLocaleString("vi-VN")}₫
-                        </span>
+                        {rp.salePrice > 0 && (
+                          <span className="text-lg text-red-500 line-through font-medium">
+                            {(rp.price || 0).toLocaleString("vi-VN")}₫
+                          </span>
+                        )}
                         <span className="text-2xl font-bold text-green-800">
-                          {(rp.salePrice || rp.price || 0).toLocaleString(
+                          {(rp.salePrice > 0 ? rp.salePrice : rp.price || 0).toLocaleString(
                             "vi-VN"
                           )}
                           ₫

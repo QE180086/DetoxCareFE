@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AiOutlineCheckCircle } from 'react-icons/ai';
 import { useDispatch } from 'react-redux';
-import { loginGoogle } from '../../state/Authentication/Action';
+import { loginGoogle, setAccessToken } from '../../state/Authentication/Action';
 
 export default function LoginSuccess() {
     const location = useLocation();
@@ -10,17 +10,32 @@ export default function LoginSuccess() {
     const dispatch = useDispatch();
 
     useEffect(() => {
-
         // Extract token from URL query parameters
         const searchParams = new URLSearchParams(location.search);
         const token = searchParams.get('token');
 
         if (token) {
-            // Dispatch loginGoogle với token và navigate
+            // Dispatch loginGoogle với token
             console.log("Token from URL:", token);
             sessionStorage.setItem("accessToken", token);
-            dispatch(loginGoogle(token));
-            navigate("/");
+            // Also dispatch setAccessToken to update Redux store immediately
+            dispatch(setAccessToken(token));
+            
+            // Handle Google login and navigation
+            dispatch(loginGoogle(token)).then((result) => {
+                // Dispatch a custom event to notify other components that Google login is complete
+                console.log("Dispatching googleLoginComplete event"); // Debug log
+                window.dispatchEvent(new CustomEvent('googleLoginComplete'));
+                
+                if (result?.role === "ADMIN") {
+                    navigate("/admin");
+                } else {
+                    navigate("/");
+                }
+            }).catch((error) => {
+                console.error("Google login failed:", error);
+                navigate("/login");
+            });
         } else {
             console.error("No token found in URL");
             navigate("/login");

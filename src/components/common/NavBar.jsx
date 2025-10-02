@@ -62,20 +62,107 @@ export default function Navbar() {
 
   // Fetch cart items and profile when component mounts or when auth state changes
   useEffect(() => {
-    // Fetch cart items - from server if authenticated, from sessionStorage if guest
-    if (auth?.accessToken) {
-      dispatch(fetchCartFromServer());
-      
-      // Fetch user profile
-      const userId = sessionStorage.getItem("userId") || "currentUserId";
-      if (userId) {
-        dispatch(getProfileByUserId(userId, auth.accessToken));
+    // Add a small delay to ensure sessionStorage is properly set
+    const timer = setTimeout(() => {
+      // Fetch cart items - from server if authenticated, from sessionStorage if guest
+      if (auth?.accessToken) {
+        dispatch(fetchCartFromServer());
+        
+        // Fetch user profile
+        // Try multiple times to get the userId in case of timing issues
+        let attempts = 0;
+        const maxAttempts = 10;
+        const getUserIdWithRetry = () => {
+          const userId = sessionStorage.getItem("userId");
+          console.log("NavBar - Retrieved userId from sessionStorage:", userId); // Debug log
+          if (userId && userId !== "currentUserId") {
+            dispatch(getProfileByUserId(userId, auth.accessToken));
+          } else if (attempts < maxAttempts) {
+            attempts++;
+            setTimeout(getUserIdWithRetry, 100); // Retry every 100ms
+          } else {
+            console.log("NavBar - Failed to retrieve valid userId after", maxAttempts, "attempts"); // Debug log
+          }
+        };
+        getUserIdWithRetry();
+      } else {
+        // For guest users, fetch cart from sessionStorage
+        dispatch(fetchCartFromServer());
       }
-    } else {
-      // For guest users, fetch cart from sessionStorage
-      dispatch(fetchCartFromServer());
-    }
+    }, 100); // Small delay to ensure proper initialization
+    
+    return () => clearTimeout(timer);
   }, [dispatch, auth?.accessToken]);
+
+  // Add a separate effect to listen for Google login completion
+  useEffect(() => {
+    const handleGoogleLoginComplete = () => {
+      console.log("NavBar - Google login complete event received"); // Debug log
+      // Add a small delay to ensure sessionStorage is updated
+      setTimeout(() => {
+        if (auth?.accessToken) {
+          // Try multiple times to get the userId in case of timing issues
+          let attempts = 0;
+          const maxAttempts = 10;
+          const getUserIdWithRetry = () => {
+            const userId = sessionStorage.getItem("userId");
+            console.log("NavBar - Google login - Retrieved userId from sessionStorage:", userId); // Debug log
+            if (userId && userId !== "currentUserId") {
+              dispatch(getProfileByUserId(userId, auth.accessToken));
+            } else if (attempts < maxAttempts) {
+              attempts++;
+              setTimeout(getUserIdWithRetry, 100); // Retry every 100ms
+            } else {
+              console.log("NavBar - Google login - Failed to retrieve valid userId after", maxAttempts, "attempts"); // Debug log
+            }
+          };
+          getUserIdWithRetry();
+        }
+      }, 100);
+    };
+    
+    // Listen for Google login completion event
+    window.addEventListener('googleLoginComplete', handleGoogleLoginComplete);
+    
+    // Cleanup event listener
+    return () => {
+      window.removeEventListener('googleLoginComplete', handleGoogleLoginComplete);
+    };
+  }, [auth?.accessToken, dispatch]);
+
+  // Add a separate effect to listen for changes in userId
+  useEffect(() => {
+    if (auth?.accessToken) {
+      const handleStorageChange = () => {
+        console.log("NavBar - Storage change detected"); // Debug log
+        // Try multiple times to get the userId in case of timing issues
+        let attempts = 0;
+        const maxAttempts = 10;
+        const getUserIdWithRetry = () => {
+          const userId = sessionStorage.getItem("userId");
+          console.log("NavBar - Storage change - Retrieved userId from sessionStorage:", userId); // Debug log
+          if (userId && userId !== "currentUserId") {
+            dispatch(getProfileByUserId(userId, auth.accessToken));
+          } else if (attempts < maxAttempts) {
+            attempts++;
+            setTimeout(getUserIdWithRetry, 100); // Retry every 100ms
+          } else {
+            console.log("NavBar - Storage change - Failed to retrieve valid userId after", maxAttempts, "attempts"); // Debug log
+          }
+        };
+        getUserIdWithRetry();
+      };
+      
+      // Check for userId immediately
+      handleStorageChange();
+      
+      // Listen for storage changes
+      window.addEventListener('storage', handleStorageChange);
+      return () => {
+        window.removeEventListener('storage', handleStorageChange);
+      };
+    }
+  }, [auth?.accessToken, dispatch]);
 
   // Listen for sessionStorage changes to sync guest cart
   useEffect(() => {
