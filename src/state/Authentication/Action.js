@@ -148,11 +148,8 @@ export const verifyOtp =
       });
 
       if (verifyData.success) {
-        if (registerData.role === "ADMIN") {
-          navigate("/admin");
-        } else {
-          navigate("/login");
-        }
+        // Always navigate to login page regardless of role
+        navigate("/login");
         dispatch({ type: VERIFY_OTP_SUCCESS, payload: verifyData });
       } else {
         throw new Error("Mã OTP không hợp lệ");
@@ -202,6 +199,7 @@ export const loginUser = (reqData) => async (dispatch) => {
       sessionStorage.setItem("userId", data?.data?.userId);
       sessionStorage.setItem("username", data?.data?.username);
       sessionStorage.setItem("email", data?.data?.email);
+      // Removed storing userRole since we're ignoring roles
       
       // Fetch user profile to get avatar and store it in sessionStorage
       try {
@@ -217,16 +215,13 @@ export const loginUser = (reqData) => async (dispatch) => {
       await syncLocalCartToServer(accessToken, dispatch)();
     }
 
-    if (data.role === "ADMIN") {
-      reqData.navigate("/admin");
-    } else {
-      reqData.navigate("/");
-    }
-
     dispatch({ type: LOGIN_SUCCESS, payload: accessToken });
     
     // Fetch cart to load user's cart from server
     dispatch(fetchCartFromServer());
+    
+    // Return success data instead of navigating
+    return data;
   } catch (error) {
     // Better error handling for the specific error you're seeing
     let errorMessage = "Đăng nhập thất bại";
@@ -347,21 +342,34 @@ export const loginGoogle = (accessToken) => async (dispatch) => {
   dispatch({ type: LOGIN_REQUEST });
   try {
     const data = await authApi.getMe();
+    console.log("getMe response data:", data); // Debug log to see the structure
 
     if (accessToken) {
       sessionStorage.setItem("accessToken", accessToken);
-      sessionStorage.setItem("userId", data?.data?.id);
-      sessionStorage.setItem("username", data?.data?.username);
-      sessionStorage.setItem("email", data?.data?.email);
+      // Use the correct field for userId from getMe response
+      // Check what field contains the user ID in the getMe response
+      const userId = data?.data?.id || data?.data?.userId;
+      console.log("Setting userId in sessionStorage:", userId); // Debug log
       
-      // Fetch user profile to get avatar and store it in sessionStorage
-      try {
-        const profileResponse = await profileApi.getUserById(data?.data?.userId, accessToken);
-        if (profileResponse?.data?.avatar) {
-          sessionStorage.setItem("userAvatar", profileResponse.data.avatar);
+      // Only proceed with profile fetching if we have a valid userId
+      if (userId && userId !== "undefined" && userId !== "null") {
+        sessionStorage.setItem("userId", userId);
+        sessionStorage.setItem("username", data?.data?.username);
+        sessionStorage.setItem("email", data?.data?.email);
+        
+        // Fetch user profile to get avatar and store it in sessionStorage
+        try {
+          // Use the userId from getMe response for fetching profile
+          console.log("Fetching profile for userId:", userId); // Debug log
+          // Use the correct profile API method that takes accessToken
+          const profileResponse = await profileApi.getUserById(userId, accessToken);
+          console.log("Profile response:", profileResponse); // Debug log
+          if (profileResponse?.data?.avatar) {
+            sessionStorage.setItem("userAvatar", profileResponse.data.avatar);
+          }
+        } catch (profileError) {
+          console.error("Failed to fetch user profile for avatar:", profileError);
         }
-      } catch (profileError) {
-        console.error("Failed to fetch user profile for avatar:", profileError);
       }
       
       // Sync local cart to server after successful login
@@ -372,6 +380,9 @@ export const loginGoogle = (accessToken) => async (dispatch) => {
     
     // Fetch cart to load user's cart from server
     dispatch(fetchCartFromServer());
+    
+    // Return the user data to ensure all data is ready before navigation
+    return data?.data;
   } catch (error) {
     // Better error handling for the specific error you're seeing
     let errorMessage = "Đăng nhập thất bại";

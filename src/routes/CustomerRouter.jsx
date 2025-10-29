@@ -18,10 +18,11 @@ import SearchPage from "../components/products/SearchPage"
 import ProductDetail from "../components/products/ProductDetail"
 import HistoryOrders from "../components/order/HistoryOrder"
 import LoginSuccess from "../components/auth/LoginSuccess"
+import LoginRedirect from "../components/auth/LoginRedirect"
 
 export const CustomerRouter = () => {
     const location = useLocation();
-    const hideLayout = location.pathname === "/login" || location.pathname === "/register" || location.pathname === "/send-otp" || location.pathname === "/verify-otp";
+    const hideLayout = location.pathname === "/login" || location.pathname === "/register" || location.pathname === "/send-otp" || location.pathname === "/verify-otp" || location.pathname === "/login/success" || location.pathname === "/login/redirect";
 
     return (
         <div>
@@ -40,6 +41,7 @@ export const CustomerRouter = () => {
                     <Route path="/my-profile" element={<MyProfile/>}></Route>
                     <Route path="/my-profile/orders" element={<Order/>}></Route> */}
                 <Route path="/login/success" element={<LoginSuccess />} />
+                <Route path="/login/redirect" element={<LoginRedirect />} />
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />

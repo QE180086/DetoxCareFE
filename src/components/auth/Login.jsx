@@ -26,12 +26,15 @@ export default function Login() {
         try {
             const reqData = {
                 userData: { username, password },
-                navigate,
+                navigate, // We'll modify the action to not use this navigate function directly
             };
             console.log('Gửi yêu cầu đăng nhập:', reqData);
             await dispatch(loginUser(reqData));
+            // Instead of letting the action navigate, we'll navigate here to our redirect page
             setLoadingLogin(false);
-            console.log('Đăng nhập thành công, kiểm tra sessionStorage để xác nhận jwt');
+            console.log('Đăng nhập thành công, chuyển hướng đến trang chờ');
+            // Navigate to the shared LoginRedirect component
+            navigate("/login/redirect");
         } catch (err) {
             setLoadingLogin(false);
             const errorMessage = authState.error?.message?.messageDetail || 'Sai tài khoản hoặc mật khẩu!';

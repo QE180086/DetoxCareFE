@@ -25,4 +25,14 @@ export const cartApi = {
     const response = await api.put("/api/cart/apply-voucher", voucherData);
     return response.data;
   },
+
+  calculateGhnFee: async (fullAddress, cartId) => {
+    const response = await api.post("/api/ghn/calculate-fee", null, {
+      params: {
+        fullAddress: fullAddress,
+        cartId: cartId
+      }
+    });
+    return response.data;
+  },
 };

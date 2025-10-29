@@ -177,7 +177,7 @@ export default function Blog() {
           }}
         />
         <div className="absolute inset-0 bg-black bg-opacity-40" />
-        <div className="absolute inset-0 bg-gradient-to-r from-green-900/30 to-green-700/30" />
+        <div className="absolute inset-0 bg-gradient-to-r from-gray-900/30 to-gray-800/30" />
 
         <div className="relative z-10 h-full flex items-center justify-center px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
@@ -236,7 +236,7 @@ export default function Blog() {
                 <div
                   key={blog.id}
                   onClick={() => navigate(`/blog/${blog.id}`)}
-                  className="group bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer"
+                  className="group bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl hover:border-green-400 transition-all duration-300 cursor-pointer"
                 >
                   <div className="relative h-64 overflow-hidden">
                     <img
@@ -245,18 +245,18 @@ export default function Blog() {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute top-4 left-4">
-                      <span className="bg-gradient-to-r from-green-600 to-green-500 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md">
+                      <span className="bg-green-400 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md">
                         {blog.categoryName}
                       </span>
                     </div>
                     <div className="absolute top-4 right-4">
-                      <div className="bg-yellow-500 p-2 rounded-full">
+                      <div className="bg-gray-900 p-2 rounded-full">
                         <FaStar className="text-white text-sm" />
                       </div>
                     </div>
                   </div>
                   <div className="p-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-green-600 transition-colors">
+                    <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-green-400 transition-colors">
                       {blog.title}
                     </h3>
                     <p className="text-gray-600 mb-4 line-clamp-2">
@@ -280,7 +280,7 @@ export default function Blog() {
         )}
 
         {/* Search and Filter Section */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-12">
+        <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6 mb-12">
           <div className="flex flex-col lg:flex-row gap-6 items-start">
             {/* Search */}
             <div className="flex-1 max-w-md">
@@ -293,7 +293,7 @@ export default function Blog() {
                   placeholder="Tìm kiếm bài viết..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full p-4 pl-12 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-700 transition-all duration-200"
+                  className="w-full p-4 pl-12 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent text-gray-700 transition-all duration-200 bg-white"
                 />
                 <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               </div>
@@ -311,8 +311,8 @@ export default function Blog() {
                     onClick={() => setSelectedCategory(category)}
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                       selectedCategory === category
-                        ? "bg-green-600 text-white shadow-md transform scale-105"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:shadow-sm"
+                        ? "bg-green-400 text-white shadow-md transform scale-105"
+                        : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
                     }`}
                   >
                     {category === "all" ? "Tất cả" : category}
@@ -323,7 +323,7 @@ export default function Blog() {
                 {hasHiddenCategories && !showAllCategories && (
                   <button
                     onClick={() => setShowAllCategories(true)}
-                    className="px-4 py-2 rounded-full text-sm font-medium bg-green-100 text-green-600 hover:bg-green-200 hover:shadow-sm transition-all duration-200"
+                    className="px-4 py-2 rounded-full text-sm font-medium bg-white text-green-400 border border-gray-200 hover:bg-gray-50 hover:shadow-sm transition-all duration-200"
                   >
                     +{hiddenCategoriesCount}
                   </button>
@@ -333,7 +333,7 @@ export default function Blog() {
                 {showAllCategories && hasHiddenCategories && (
                   <button
                     onClick={() => setShowAllCategories(false)}
-                    className="px-4 py-2 rounded-full text-sm font-medium bg-green-100 text-green-600 hover:bg-green-200 hover:shadow-sm transition-all duration-200"
+                    className="px-4 py-2 rounded-full text-sm font-medium bg-white text-green-400 border border-gray-200 hover:bg-gray-50 hover:shadow-sm transition-all duration-200"
                   >
                     Thu gọn
                   </button>
@@ -349,7 +349,7 @@ export default function Blog() {
               <div className="relative">
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="w-full lg:w-48 px-4 py-3 pr-10 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-gray-700 bg-white cursor-pointer transition-all duration-200 hover:border-green-300 hover:shadow-sm text-left"
+                  className="w-full lg:w-48 px-4 py-3 pr-10 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 text-gray-700 bg-white cursor-pointer transition-all duration-200 hover:border-green-300 hover:shadow-sm text-left"
                 >
                   {selectedOption.name}
                 </button>
@@ -368,9 +368,9 @@ export default function Blog() {
                       <button
                         key={option.id}
                         onClick={() => handleSortChange(option.value)}
-                        className={`w-full px-4 py-3 text-left hover:bg-green-50 transition-colors duration-150 ${
+                        className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-150 ${
                           sortOption === option.value
-                            ? "bg-green-100 text-green-700 font-medium"
+                            ? "bg-green-50 text-green-700 font-medium"
                             : "text-gray-700 hover:text-green-600"
                         }`}
                       >
@@ -409,7 +409,7 @@ export default function Blog() {
                 <div
                   key={blog.id}
                   onClick={() => navigate(`/blog/${blog.id}`)}
-                  className="group bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer"
+                  className="group bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl hover:border-green-400 transition-all duration-300 hover:-translate-y-1 cursor-pointer"
                 >
                   <div className="relative h-48 overflow-hidden">
                     <img
@@ -418,13 +418,13 @@ export default function Blog() {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute top-4 left-4">
-                      <span className="bg-gradient-to-r from-green-600 to-green-500 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md">
+                      <span className="bg-green-400 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md">
                         {blog.categoryName}
                       </span>
                     </div>
                   </div>
                   <div className="p-6">
-                    <h3 className="text-lg font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-green-600 transition-colors">
+                    <h3 className="text-lg font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-green-400 transition-colors">
                       {blog.title}
                     </h3>
                     <p className="text-gray-600 mb-4 line-clamp-2">
@@ -462,9 +462,7 @@ export default function Blog() {
             <button
               onClick={() => setCurrentPage((x) => Math.max(x - 1, 1))}
               disabled={currentPage === 1}
-              className="px-4 py-2 rounded-full text-sm font-semibold transition
-                disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed
-                bg-green-600 text-white hover:bg-green-700 shadow"
+              className="px-5 py-2.5 rounded-xl text-sm font-medium transition disabled:opacity-40 disabled:cursor-not-allowed bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
             >
               Trước
             </button>
@@ -473,12 +471,11 @@ export default function Blog() {
               <button
                 key={i}
                 onClick={() => setCurrentPage(i + 1)}
-                className={`w-9 h-9 rounded-full text-sm font-bold transition
-                  ${
-                    currentPage === i + 1
-                      ? "bg-green-700 text-white scale-110 shadow-md"
-                      : "bg-white text-green-700 border border-green-300 hover:bg-green-100"
-                  }`}
+                className={`w-10 h-10 rounded-xl text-sm font-bold transition ${
+                  currentPage === i + 1
+                    ? "bg-green-400 text-white shadow-md"
+                    : "bg-white text-gray-700 border border-gray-200 hover:border-green-400"
+                }`}
               >
                 {i + 1}
               </button>
@@ -489,9 +486,7 @@ export default function Blog() {
                 setCurrentPage((x) => Math.min(x + 1, effectiveTotalPages))
               }
               disabled={currentPage === effectiveTotalPages}
-              className="px-4 py-2 rounded-full text-sm font-semibold transition
-                disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed
-                bg-green-600 text-white hover:bg-green-700 shadow"
+              className="px-5 py-2.5 rounded-xl text-sm font-medium transition disabled:opacity-40 disabled:cursor-not-allowed bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
             >
               Sau
             </button>

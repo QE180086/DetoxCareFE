@@ -69,13 +69,12 @@ export default function VoucherExchange() {
   const [showNotification, setShowNotification] = useState(false);
   const [notificationType, setNotificationType] = useState("info");
   const [notificationMessage, setNotificationMessage] = useState("");
-  const [userPoints, setUserPoints] = useState(0); // Add state for user points
-  
+  const [userPoints, setUserPoints] = useState(0);
+
   const dispatch = useDispatch();
   const auth = useSelector(state => state.auth);
   const profile = useSelector(state => state.profile);
 
-  // Fetch user points when component mounts or when auth changes
   useEffect(() => {
     const fetchUserPoints = async () => {
       if (auth?.accessToken) {
@@ -94,7 +93,6 @@ export default function VoucherExchange() {
   }, [auth?.accessToken]);
 
   const handleVoucherSelect = (voucher) => {
-    // If the clicked voucher is already selected, deselect it
     if (selectedVoucher?.id === voucher.id) {
       setSelectedVoucher(null);
     } else {
@@ -126,24 +124,21 @@ export default function VoucherExchange() {
 
     setIsExchanging(true);
     try {
-      // Prepare the voucher data to send to the API
       const voucherPayload = {
         discountValue: selectedVoucher.discountValue,
         minOrderValue: selectedVoucher.minOrderValue,
-        image: "", // Empty string as default
+        image: "",
         exchangePoint: selectedVoucher.exchangePoint,
         active: selectedVoucher.active,
         percentage: selectedVoucher.percentage
       };
       
-      // Call the exchange API with voucher data
       await productApi.exchangeVoucher(voucherPayload, auth.accessToken);
       
       setNotificationType("success");
       setNotificationMessage(`Đổi voucher "${selectedVoucher.name}" thành công!`);
       setShowNotification(true);
       
-      // Refresh user points after successful exchange
       try {
         const response = await profileApi.getPointDetail(auth.accessToken);
         if (response && response.data && response.data.currentPoints !== undefined) {
@@ -153,7 +148,6 @@ export default function VoucherExchange() {
         console.error("Error refreshing user points:", error);
       }
       
-      // Reset selection
       setSelectedVoucher(null);
     } catch (error) {
       console.error("Failed to exchange voucher:", error);
@@ -178,53 +172,53 @@ export default function VoucherExchange() {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-6 mb-12">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-emerald-700 flex items-center justify-center gap-3">
-          <FaGift className="text-emerald-500" />
+    <div className="max-w-6xl mx-auto bg-green-400 rounded-2xl shadow-lg p-6 md:p-8 mb-12">
+      <div className="text-center mb-10">
+        <h2 className="text-2xl md:text-3xl font-bold text-black flex items-center justify-center gap-3">
+          <FaGift className="text-black" />
           Đổi Điểm Lấy Ưu Đãi
         </h2>
-        <p className="text-gray-600 mt-2">
+        <p className="text-black/80 mt-2 text-sm md:text-base font-medium">
           Đổi điểm tích lũy để nhận các voucher hấp dẫn
         </p>
-        <div className="mt-4 p-3 bg-emerald-50 rounded-lg inline-block">
-          <p className="text-emerald-800 font-semibold">
-            Điểm hiện tại của bạn: <span className="text-xl">{userPoints.toLocaleString()}</span> điểm
+        <div className="mt-5 p-4 bg-black rounded-xl inline-block border border-gray-200 shadow-lg">
+          <p className="text-white font-medium">
+            Điểm hiện tại: <span className="text-green-400 font-bold text-lg">{userPoints.toLocaleString()}</span> điểm
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
         {voucherData.map((voucher) => (
           <div
             key={voucher.id}
             onClick={() => handleVoucherSelect(voucher)}
-            className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-300 hover:shadow-lg bg-gray-100 text-gray-800 relative ${
+            className={`relative rounded-xl p-5 cursor-pointer transition-all duration-300 border-2 bg-black shadow-lg ${
               selectedVoucher?.id === voucher.id
-                ? "ring-4 ring-emerald-300 border-emerald-500"
-                : "border-gray-200 hover:border-gray-300"
+                ? "border-green-400 shadow-md"
+                : "border-gray-700 hover:border-gray-600 hover:shadow-xl"
             }`}
           >
             {selectedVoucher?.id === voucher.id && (
-              <div className="absolute top-2 right-2 bg-green-500 rounded-full p-1">
-                <FaCheck className="text-white text-xs" />
+              <div className="absolute -top-2 -right-2 bg-green-400 rounded-full p-1.5">
+                <FaCheck className="text-black text-xs font-bold" />
               </div>
             )}
             <div className="text-center">
               <div className="flex justify-center mb-3">
-                <div className="bg-white rounded-full p-3">
-                  <FaLeaf className="text-emerald-600 text-2xl" />
+                <div className="bg-green-400 rounded-full p-3 w-12 h-12 flex items-center justify-center">
+                  <FaLeaf className="text-black text-xl" />
                 </div>
               </div>
-              <h3 className="font-bold text-gray-800 text-lg mt-2">
+              <h3 className="font-bold text-white text-lg">
                 {voucher.percentage 
                   ? formatPercentage(voucher.discountValue) 
                   : formatCurrency(voucher.discountValue)}
               </h3>
-              <p className="text-sm text-gray-600 mt-1">{voucher.description}</p>
-              <div className="mt-3 p-2 bg-gray-200 rounded-lg">
-                <p className="font-semibold text-sm text-gray-700">
-                  {voucher.exchangePoint} điểm
+              <p className="text-xs text-gray-300 mt-1.5 font-medium">{voucher.description}</p>
+              <div className="mt-4 py-2 bg-gray-800 rounded-lg">
+                <p className="font-semibold text-white text-sm">
+                  {voucher.exchangePoint.toLocaleString()} điểm
                 </p>
               </div>
             </div>
@@ -232,19 +226,19 @@ export default function VoucherExchange() {
         ))}
       </div>
 
-      <div className="mt-8 text-center">
+      <div className="mt-10 text-center">
         <button
           onClick={handleExchangeVoucher}
           disabled={isExchanging || !selectedVoucher}
-          className={`px-6 py-3 rounded-xl font-semibold text-white flex items-center justify-center mx-auto transition-all ${
+          className={`px-6 py-3.5 rounded-xl font-semibold text-white flex items-center justify-center mx-auto transition-all duration-300 shadow-lg ${
             isExchanging || !selectedVoucher
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 shadow-lg hover:shadow-xl"
+              ? "bg-gray-700 cursor-not-allowed"
+              : "bg-black hover:bg-gray-800 active:bg-gray-900 border border-gray-600 hover:border-green-400 hover:shadow-xl"
           }`}
         >
           {isExchanging ? (
             <>
-              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
@@ -259,10 +253,12 @@ export default function VoucherExchange() {
         </button>
         
         {selectedVoucher && (
-          <div className="mt-4 text-gray-600">
-            <p>
-              Bạn sẽ đổi <span className="font-semibold">{selectedVoucher.exchangePoint} điểm</span> lấy voucher{" "}
-              <span className="font-semibold">
+          <div className="mt-4 text-black font-medium max-w-md mx-auto">
+            <p className="text-sm bg-white/80 backdrop-blur-sm rounded-lg p-3 shadow">
+              Bạn sẽ đổi{" "}
+              <span className="font-bold text-green-600">{selectedVoucher.exchangePoint.toLocaleString()} điểm</span>{" "}
+              lấy voucher{" "}
+              <span className="font-bold">
                 {selectedVoucher.percentage 
                   ? formatPercentage(selectedVoucher.discountValue) 
                   : formatCurrency(selectedVoucher.discountValue)}
@@ -272,7 +268,6 @@ export default function VoucherExchange() {
         )}
       </div>
 
-      {/* Notification */}
       <Notification
         isOpen={showNotification}
         type={notificationType}
