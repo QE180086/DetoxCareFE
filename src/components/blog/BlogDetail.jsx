@@ -396,28 +396,34 @@ export default function BlogDetail() {
     return commentsList.map((c) => (
       <div 
         key={c.id} 
-        className={`${level > 0 ? 'ml-6 mt-3' : ''}`}
+        className={`${level > 0 ? 'ml-8 mt-4' : 'mb-6'}`}
       >
         <div
-          className={`bg-white border border-gray-100 rounded-xl p-4 hover:shadow-sm transition-shadow ${level > 0 ? 'border-l-2 border-l-green-500' : 'border-l-4 border-l-green-600 shadow-sm'}`}
+          className={`bg-white rounded-2xl p-5 transition-all duration-300 hover:shadow-lg ${
+            level > 0 
+              ? 'border-l-2 border-l-green-400 shadow-sm' 
+              : 'border border-gray-200 shadow-sm'
+          }`}
         >
-          <div className="flex items-start gap-3">
+          <div className="flex items-start gap-4">
             <img
               src={c.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(
                 c.userName || 'Người dùng'
-              )}&background=10B981&color=fff&size=48`}
+              )}&background=000&color=fff&size=48`}
               alt={`${c.userName || 'Người dùng'}'s avatar`}
-              className={`rounded-full flex-shrink-0 object-cover ${level > 0 ? 'w-8 h-8' : 'w-10 h-10'}`}
+              className={`rounded-full flex-shrink-0 object-cover ${
+                level > 0 ? 'w-10 h-10' : 'w-12 h-12'
+              }`}
             />
             <div className="flex-grow">
-              <div className="flex justify-between items-start mb-1">
+              <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center gap-2">
-                  <h4 className={`font-medium text-gray-900 ${level > 0 ? 'text-sm' : 'text-base font-semibold'}`}>
+                  <h4 className={`font-semibold text-black ${level > 0 ? 'text-sm' : 'text-base'}`}>
                     {c.userName || 'Người dùng'}
                   </h4>
                   {/* Show edit indicator for user's own comments */}
                   {user && c.userId === user.id && (
-                    <span className="text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full">
+                    <span className="text-xs bg-green-400 text-black px-2 py-0.5 rounded-full font-medium">
                       Bạn
                     </span>
                   )}
@@ -430,7 +436,7 @@ export default function BlogDetail() {
                   {user && c.userId === user.id && (
                     <button
                       onClick={() => startEditingComment(c)}
-                      className="text-gray-500 hover:text-green-600 transition-colors"
+                      className="text-gray-400 hover:text-green-400 transition-colors"
                       title="Chỉnh sửa bình luận"
                     >
                       <FaEdit className={` ${level > 0 ? 'w-3 h-3' : 'w-4 h-4'}`} />
@@ -441,23 +447,23 @@ export default function BlogDetail() {
               
               {/* Comment content - Editable */}
               {editingCommentId === c.id ? (
-                <div className="mt-2">
+                <div className="mt-3">
                   <textarea
-                    rows={2}
-                    className="shadow-sm focus:ring-green-500 focus:border-green-500 block w-full text-sm border border-gray-300 rounded-md p-2"
+                    rows={3}
+                    className="shadow-sm focus:ring-2 focus:ring-green-400 focus:border-green-400 block w-full text-sm border border-gray-300 rounded-xl p-3 bg-gray-50"
                     value={editingCommentText}
                     onChange={(e) => setEditingCommentText(e.target.value)}
                   />
-                  <div className="flex justify-end gap-2 mt-2">
+                  <div className="flex justify-end gap-3 mt-3">
                     <button
                       onClick={cancelEditing}
-                      className="px-2 py-1 text-xs text-gray-600 hover:text-gray-800 transition-colors"
+                      className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors rounded-lg hover:bg-gray-100"
                     >
                       <FaTimes className="inline mr-1" /> Hủy
                     </button>
                     <button
                       onClick={saveEditedComment}
-                      className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                      className="px-4 py-2 text-sm bg-green-400 text-black rounded-lg hover:bg-green-500 transition-colors font-medium"
                     >
                       <FaSave className="inline mr-1" /> Lưu
                     </button>
@@ -465,15 +471,15 @@ export default function BlogDetail() {
                 </div>
               ) : (
                 <div>
-                  <p className={`text-gray-700 leading-relaxed ${level > 0 ? 'text-sm' : 'text-base'}`}>
+                  <p className={`text-gray-800 leading-relaxed ${level > 0 ? 'text-sm' : 'text-base'}`}>
                     {c.content}
                   </p>
                   {/* Reply button for level 1 comments only (not for level 2 replies) */}
                   {accessToken && level < 1 && (
-                    <div className="mt-2">
+                    <div className="mt-3">
                       <button
                         onClick={() => startReplying(c.id)}
-                        className={`text-green-600 hover:text-green-800 font-medium flex items-center gap-1 ${level > 0 ? 'text-xs' : 'text-sm'}`}
+                        className={`text-green-400 hover:text-green-500 font-medium flex items-center gap-1 ${level > 0 ? 'text-xs' : 'text-sm'}`}
                       >
                         <FaComments className={` ${level > 0 ? 'w-3 h-3' : 'w-4 h-4'}`} />
                         Phản hồi
@@ -483,14 +489,14 @@ export default function BlogDetail() {
                   
                   {/* Reply form for this comment */}
                   {replyingToCommentId === c.id && (
-                    <div className={`mt-3 bg-gray-50 rounded-lg p-3 ${level > 0 ? 'ml-2' : ''}`}>
-                      <form onSubmit={handleReplySubmit} className="space-y-2">
+                    <div className={`mt-4 bg-gray-100 rounded-xl p-4 ${level > 0 ? 'ml-2' : ''}`}>
+                      <form onSubmit={handleReplySubmit} className="space-y-3">
                         <div>
                           <textarea
                             value={replyComment}
                             onChange={(e) => setReplyComment(e.target.value)}
                             rows="2"
-                            className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-colors resize-none"
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-green-400 focus:ring-2 focus:ring-green-400/20 transition-colors resize-none bg-white"
                             placeholder="Viết phản hồi của bạn..."
                             required
                           ></textarea>
@@ -499,13 +505,13 @@ export default function BlogDetail() {
                           <button
                             type="button"
                             onClick={cancelReplying}
-                            className="px-2 py-1 text-xs text-gray-600 hover:text-gray-800 transition-colors"
+                            className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 transition-colors rounded-lg hover:bg-gray-200"
                           >
                             Hủy
                           </button>
                           <button
                             type="submit"
-                            className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                            className="px-3 py-1.5 text-sm bg-green-400 text-black rounded-lg hover:bg-green-500 transition-colors font-medium"
                           >
                             Gửi phản hồi
                           </button>
@@ -521,7 +527,7 @@ export default function BlogDetail() {
         
         {/* Render child comments if they exist */}
         {c.replies && c.replies.length > 0 && (
-          <div className="mt-3">
+          <div className="mt-4">
             {renderLimitedChildComments(c.replies, level + 1, c.id)}
           </div>
         )}
@@ -531,9 +537,9 @@ export default function BlogDetail() {
 
   // Function to render child comments with limit and expand/collapse functionality
   const renderLimitedChildComments = (childComments, level, parentId) => {
-    const maxRepliesToShow = 3;
+    const maxRepliesToShow = 2;
     
-    // Show only first 3 replies by default, or all if expanded
+    // Show only first 2 replies by default, or all if expanded
     const isExpanded = expandedReplies[parentId] || false;
     const visibleReplies = isExpanded 
       ? childComments 
@@ -548,12 +554,12 @@ export default function BlogDetail() {
     
     return (
       <div>
-        {/* Show expand/collapse button if there are more than 3 replies */}
+        {/* Show expand/collapse button if there are more than 2 replies */}
         {childComments.length > maxRepliesToShow && (
           <div className="flex justify-center mb-3">
             <button
               onClick={toggleReplies}
-              className="flex items-center gap-1 text-green-600 hover:text-green-800 text-sm font-medium"
+              className="flex items-center gap-1 text-green-400 hover:text-green-500 text-sm font-medium"
             >
               {isExpanded ? (
                 <>
@@ -571,25 +577,25 @@ export default function BlogDetail() {
         )}
         
         {visibleReplies.map((reply) => (
-          <div key={reply.id} className="ml-6 mt-3">
-            <div className="bg-white border border-gray-100 rounded-xl p-4 hover:shadow-sm transition-shadow border-l-2 border-l-green-500">
+          <div key={reply.id} className="ml-8 mt-4">
+            <div className="bg-white rounded-2xl p-4 transition-all duration-300 hover:shadow-md border-l-2 border-l-green-400 shadow-sm">
               <div className="flex items-start gap-3">
                 <img
                   src={reply.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(
                     reply.userName || 'Người dùng'
-                  )}&background=10B981&color=fff&size=48`}
+                  )}&background=000&color=fff&size=48`}
                   alt={`${reply.userName || 'Người dùng'}'s avatar`}
-                  className="w-8 h-8 rounded-full flex-shrink-0 object-cover"
+                  className="w-9 h-9 rounded-full flex-shrink-0 object-cover"
                 />
                 <div className="flex-grow">
                   <div className="flex justify-between items-start mb-1">
                     <div className="flex items-center gap-2">
-                      <h4 className="font-medium text-gray-900 text-sm">
+                      <h4 className="font-semibold text-black text-sm">
                         {reply.userName || 'Người dùng'}
                       </h4>
                       {/* Show edit indicator for user's own comments */}
                       {user && reply.userId === user.id && (
-                        <span className="text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full">
+                        <span className="text-xs bg-green-400 text-black px-2 py-0.5 rounded-full font-medium">
                           Bạn
                         </span>
                       )}
@@ -602,7 +608,7 @@ export default function BlogDetail() {
                       {user && reply.userId === user.id && (
                         <button
                           onClick={() => startEditingComment(reply)}
-                          className="text-gray-500 hover:text-green-600 transition-colors"
+                          className="text-gray-400 hover:text-green-400 transition-colors"
                           title="Chỉnh sửa bình luận"
                         >
                           <FaEdit className="w-3 h-3" />
@@ -615,28 +621,28 @@ export default function BlogDetail() {
                   {editingCommentId === reply.id ? (
                     <div className="mt-2">
                       <textarea
-                        rows={2}
-                        className="shadow-sm focus:ring-green-500 focus:border-green-500 block w-full text-sm border border-gray-300 rounded-md p-2"
+                        rows={3}
+                        className="shadow-sm focus:ring-2 focus:ring-green-400 focus:border-green-400 block w-full text-sm border border-gray-300 rounded-xl p-3 bg-gray-50"
                         value={editingCommentText}
                         onChange={(e) => setEditingCommentText(e.target.value)}
                       />
-                      <div className="flex justify-end gap-2 mt-2">
+                      <div className="flex justify-end gap-3 mt-3">
                         <button
                           onClick={cancelEditing}
-                          className="px-2 py-1 text-xs text-gray-600 hover:text-gray-800 transition-colors"
+                          className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors rounded-lg hover:bg-gray-100"
                         >
                           <FaTimes className="inline mr-1" /> Hủy
                         </button>
                         <button
                           onClick={saveEditedComment}
-                          className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                          className="px-4 py-2 text-sm bg-green-400 text-black rounded-lg hover:bg-green-500 transition-colors font-medium"
                         >
                           <FaSave className="inline mr-1" /> Lưu
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <p className="text-gray-700 leading-relaxed text-sm">
+                    <p className="text-gray-800 leading-relaxed text-sm">
                       {reply.content}
                     </p>
                   )}
@@ -662,39 +668,26 @@ export default function BlogDetail() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header Navigation */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <Link
-            to="/blog"
-            className="inline-flex items-center gap-2 text-gray-600 hover:text-green-600 transition-colors font-medium"
-          >
-            <FaArrowLeft className="text-sm" />
-            Quay lại danh sách Blog
-          </Link>
-        </div>
-      </div>
-
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="relative bg-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center py-16">
             {/* Content */}
             <div className="order-2 lg:order-1">
-              <div className="inline-flex items-center gap-2 bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium mb-6">
+              <div className="inline-flex items-center gap-2 bg-white text-green-400 px-3 py-1 rounded-full text-sm font-medium mb-6 border border-green-400">
                 <FaLeaf className="text-xs" />
                 {blog.category}
               </div>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight mb-6">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-black leading-tight mb-6">
                 {loading ? "Đang tải..." : blog.title || "Không tìm thấy"}
               </h1>
-              <div className="flex flex-wrap items-center gap-6 text-gray-600">
+              <div className="flex flex-wrap items-center gap-6 text-gray-700">
                 <div className="flex items-center gap-2">
-                  <FaCalendarAlt className="text-green-600" />
+                  <FaCalendarAlt className="text-green-400" />
                   <span>{formatDate(blog.created_at)}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <FaUser className="text-green-600" />
+                  <FaUser className="text-green-400" />
                   <span>{blog.author}</span>
                 </div>
               </div>
@@ -722,7 +715,7 @@ export default function BlogDetail() {
           <div className="lg:col-span-2">
             <article className="bg-white">
               {/* Content */}
-              <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed">
+              <div className="prose prose-lg max-w-none text-gray-800 leading-relaxed">
                 {loading ? (
                   <div className="text-gray-500">Đang tải nội dung...</div>
                 ) : error ? (
@@ -734,16 +727,7 @@ export default function BlogDetail() {
                 )}
               </div>
 
-              {/* Divider */}
-              <div className="border-t border-gray-100 my-12"></div>
 
-              {/* Tags/Categories (Optional) */}
-              <div className="flex flex-wrap gap-2 mb-8">
-                <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm">
-                  <FaLeaf className="text-xs" />
-                  {blog.category}
-                </span>
-              </div>
             </article>
           </div>
 
@@ -751,38 +735,38 @@ export default function BlogDetail() {
           <div className="lg:col-span-1">
             <div className="sticky top-24 space-y-8">
               {/* Author Card */}
-              <div className="bg-gray-50 rounded-2xl p-6">
-                <h3 className="font-semibold text-gray-900 mb-4">Về tác giả</h3>
+              <div className="bg-gray-100 rounded-2xl p-6">
+                <h3 className="font-semibold text-black mb-4">Về tác giả</h3>
                 <div className="flex items-center gap-4">
                   <img
                     src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
                       blog.author
-                    )}&background=10B981&color=fff&size=64`}
+                    )}&background=000&color=fff&size=64`}
                     alt={blog.author}
                     className="w-16 h-16 rounded-full"
                   />
                   <div>
-                    <p className="font-medium text-gray-900">{blog.author}</p>
-                    <p className="text-sm text-gray-600">Chuyên gia Detox</p>
+                    <p className="font-medium text-black">{blog.author}</p>
+                    <p className="text-sm text-gray-700">Chuyên gia Detox</p>
                   </div>
                 </div>
               </div>
 
               {/* Quick Stats */}
-              <div className="bg-gray-50 rounded-2xl p-6">
-                <h3 className="font-semibold text-gray-900 mb-4">Thống kê</h3>
+              <div className="bg-gray-100 rounded-2xl p-6">
+                <h3 className="font-semibold text-black mb-4">Thống kê</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Lượt xem</span>
-                    <span className="font-medium text-gray-900">1,234</span>
+                    <span className="text-gray-700">Lượt xem</span>
+                    <span className="font-medium text-black">1,234</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Chia sẻ</span>
-                    <span className="font-medium text-gray-900">56</span>
+                    <span className="text-gray-700">Chia sẻ</span>
+                    <span className="font-medium text-black">56</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Bình luận</span>
-                    <span className="font-medium text-gray-900">
+                    <span className="text-gray-700">Bình luận</span>
+                    <span className="font-medium text-black">
                       {comments.length}
                     </span>
                   </div>
@@ -793,18 +777,18 @@ export default function BlogDetail() {
         </div>
 
         {/* Comments Section */}
-        <div className="mt-16 border-t border-gray-100 pt-16">
+        <div className="mt-16 border-t border-gray-200 pt-16">
           <div className="max-w-4xl mx-auto">
             <div className="flex items-center gap-3 mb-8">
-              <FaComments className="text-green-600 text-2xl" />
-              <h2 className="text-2xl font-bold text-gray-900">
+              <FaComments className="text-green-400 text-2xl" />
+              <h2 className="text-2xl font-bold text-black">
                 Bình luận ({comments.length})
               </h2>
             </div>
 
             {/* Comment Form */}
-            <div className="bg-gray-50 rounded-2xl p-8 mb-12">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">
+            <div className="bg-gray-100 rounded-2xl p-8 mb-12">
+              <h3 className="text-lg font-semibold text-black mb-6">
                 Chia sẻ ý kiến của bạn
               </h3>
               {accessToken ? (
@@ -821,14 +805,14 @@ export default function BlogDetail() {
                       value={comment}
                       onChange={(e) => setComment(e.target.value)}
                       rows="5"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-colors resize-none"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-green-400 focus:ring-2 focus:ring-green-400/20 transition-colors resize-none bg-white text-black"
                       placeholder="Chia sẻ ý kiến của bạn về bài viết này..."
                       required
                     ></textarea>
                   </div>
                   <button
                     type="submit"
-                    className="inline-flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-green-700 transition-colors shadow-sm"
+                    className="inline-flex items-center gap-2 bg-green-400 text-black px-6 py-3 rounded-xl font-medium hover:bg-green-500 transition-colors shadow-sm hover:shadow-md"
                   >
                     <FaLeaf />
                     Gửi bình luận
@@ -836,12 +820,12 @@ export default function BlogDetail() {
                 </form>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-gray-600 mb-4">
+                  <p className="text-gray-700 mb-4">
                     Vui lòng đăng nhập để bình luận
                   </p>
                   <Link
                     to="/login"
-                    className="inline-flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-green-700 transition-colors"
+                    className="inline-flex items-center gap-2 bg-green-400 text-black px-6 py-3 rounded-xl font-medium hover:bg-green-500 transition-colors shadow-sm hover:shadow-md"
                   >
                     Đăng nhập
                   </Link>
@@ -853,8 +837,8 @@ export default function BlogDetail() {
             <div className="space-y-6">
               {comments.length === 0 ? (
                 <div className="text-center py-12">
-                  <FaComments className="text-gray-300 text-4xl mx-auto mb-4" />
-                  <p className="text-gray-500">
+                  <FaComments className="text-gray-400 text-4xl mx-auto mb-4" />
+                  <p className="text-gray-600 text-lg">
                     Chưa có bình luận nào. Hãy là người đầu tiên chia sẻ!
                   </p>
                 </div>
@@ -865,10 +849,10 @@ export default function BlogDetail() {
                   
                   {/* Show expand/collapse button if there are more than 3 top-level comments */}
                   {comments.length > 3 && (
-                    <div className="flex justify-center mt-4">
+                    <div className="flex justify-center mt-6">
                       <button
                         onClick={() => setShowAllComments(!showAllComments)}
-                        className="flex items-center gap-2 text-green-600 hover:text-green-800 font-medium"
+                        className="flex items-center gap-2 text-green-400 hover:text-green-500 font-medium px-4 py-2 rounded-lg hover:bg-gray-100"
                       >
                         {showAllComments ? (
                           <>

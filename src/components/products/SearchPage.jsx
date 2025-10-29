@@ -1,16 +1,14 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
-  FaLeaf,
   FaStar,
   FaRegStar,
   FaStarHalfAlt,
-  FaFire,
-  FaPlus,
-  FaMinus,
+  FaChevronUp,
+  FaChevronDown,
 } from "react-icons/fa";
 import { AiOutlineSearch } from "react-icons/ai";
-import { FiShoppingCart } from "react-icons/fi";
+import { FiShoppingCart, FiX } from "react-icons/fi";
 import { useDispatch } from "react-redux";
 import { addToCartFromServer } from "../../state/Cart/Action";
 import { productApi } from "../../utils/api/product.api";
@@ -40,7 +38,7 @@ export default function SearchPage() {
   const [draftMaxPrice, setDraftMaxPrice] = useState("");
   const [minRating, setMinRating] = useState(""); // '' | 1..5
   const [sortByPurchases, setSortByPurchases] = useState(""); // '' | 'asc' | 'desc'
-  const [filterHot, setFilterHot] = useState(false);
+
   // Collapsible controls for sidebar (chỉ hiển thị khi không có query)
   const [showAllFilters, setShowAllFilters] = useState(false);
   const [showRatingOptions, setShowRatingOptions] = useState(false);
@@ -103,7 +101,7 @@ export default function SearchPage() {
   // Reset to first page when query or filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [query, categoryFilter, minPrice, maxPrice, minRating, sortByPurchases, filterHot]);
+  }, [query, categoryFilter, minPrice, maxPrice, minRating, sortByPurchases]);
 
   // Apply client-side filters and pagination
   useEffect(() => {
@@ -130,10 +128,7 @@ export default function SearchPage() {
       result = result.filter((p) => (p.statisticsRate?.averageRate || 0) >= minR);
     }
     
-    // Apply HOT filter
-    if (filterHot) {
-      result = result.filter((p) => p.active === true);
-    }
+
     
     // Apply sorting
     if (sortByPurchases === "asc") {
@@ -156,7 +151,6 @@ export default function SearchPage() {
     maxPrice,
     minRating,
     sortByPurchases,
-    filterHot,
   ]);
 
   // Scroll to top whenever search query changes
@@ -173,6 +167,16 @@ export default function SearchPage() {
   const handleAddToCart = (product) => {
     dispatch(addToCartFromServer(product));
     alert(`Đã thêm "${product.name}" vào giỏ hàng!`);
+  };
+
+  const clearAllFilters = () => {
+    setCategoryFilter("");
+    setMinPrice("");
+    setMaxPrice("");
+    setDraftMinPrice("");
+    setDraftMaxPrice("");
+    setMinRating("");
+    setSortByPurchases("");
   };
 
   /* ======= Render sao ======= */
@@ -205,139 +209,135 @@ export default function SearchPage() {
     );
   };
 
-  /* ======= UI ======= */
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-lime-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Header / Banner */}
+    <div className="min-h-screen bg-white">
+      <div className="max-w-[1400px] mx-auto px-6 lg:px-8 py-8">
         {hasQuery ? (
-          <div className="mb-10">
-            <div className="w-full bg-gradient-to-r from-green-600 to-lime-500 rounded-2xl py-10 px-6 text-center text-white shadow-lg">
-              <h1 className="text-4xl md:text-5xl font-extrabold flex items-center justify-center gap-3">
-                <FaLeaf className="animate-pulse" />
-                Kết quả tìm kiếm
-              </h1>
-              <p className="mt-3 text-white/90">
-                Từ khóa:{" "}
-                <span className="font-semibold underline decoration-white/80">
-                  {query}
-                </span>
-              </p>
-              <div className="mt-6">
-                <button
-                  onClick={() => {
-                    setCategoryFilter("");
-                    navigate("/search");
-                  }}
-                  className="inline-flex items-center gap-2 px-6 py-2 bg-white/90 text-green-700 rounded-full hover:bg-white transition shadow font-semibold"
-                >
-                  <FaLeaf className="text-green-600" />
-                  Xem tất cả sản phẩm
-                </button>
+          <div className="mb-8">
+            <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-3xl p-8 text-white relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-green-400/10 rounded-full blur-3xl"></div>
+              <div className="relative z-10">
+                <h1 className="text-3xl font-bold mb-2">Kết quả tìm kiếm</h1>
+                <p className="text-gray-300">
+                  Từ khóa: <span className="text-green-400 font-semibold">{query}</span>
+                </p>
               </div>
             </div>
           </div>
         ) : (
-          <div className="mb-10">
-            <div className="w-full bg-gradient-to-r from-green-600 to-lime-500 rounded-2xl py-10 px-6 text-center text-white shadow-lg">
-              <h1 className="text-4xl md:text-5xl font-extrabold flex items-center justify-center gap-3">
-                <FaLeaf className="animate-pulse" />
-                Tất cả sản phẩm
-              </h1>
-              <p className="mt-3 text-white/90">
-                Khám phá các sản phẩm tốt nhất từ DetoxCare
-              </p>
+          <div className="mb-8">
+            {/* Hero Section - Updated to match Blog.jsx style */}
+            <div className="relative h-96 overflow-hidden rounded-3xl">
+              <div
+                className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                style={{
+                  backgroundImage:
+                    "url('https://images.unsplash.com/photo-1490645935967-10de6ba17061?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2053&q=80')",
+                }}
+              />
+              <div className="absolute inset-0 bg-black bg-opacity-40" />
+              <div className="absolute inset-0 bg-gradient-to-r from-gray-900/30 to-gray-800/30" />
+
+              <div className="relative z-10 h-full flex items-center justify-center px-4 sm:px-6 lg:px-8">
+                <div className="max-w-4xl mx-auto text-center">
+                  <div className="flex justify-center items-center mb-6">
+                    <div className="bg-white/20 backdrop-blur-sm p-4 rounded-full border border-white/30">
+                      <FaStar className="text-white text-3xl drop-shadow-lg" />
+                    </div>
+                  </div>
+                  <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 drop-shadow-lg">
+                    Khám phá sản phẩm
+                  </h1>
+                  <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto drop-shadow-md">
+                    Tìm kiếm các sản phẩm detox tốt nhất cho sức khỏe của bạn
+                  </p>
+
+                  {/* Decorative elements */}
+                  <div className="flex justify-center items-center mt-8 gap-4">
+                    <div className="w-16 h-0.5 bg-white/50"></div>
+                    <FaStar className="text-white/70 text-xl" />
+                    <div className="w-16 h-0.5 bg-white/50"></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Floating elements for decoration */}
+              <div className="absolute top-20 left-10 opacity-20">
+                <FaStar className="text-white text-2xl animate-pulse" />
+              </div>
+              <div className="absolute bottom-20 right-10 opacity-20">
+                <FaStar
+                  className="text-white text-3xl animate-pulse"
+                  style={{ animationDelay: "1s" }}
+                />
+              </div>
+              <div className="absolute top-32 right-1/4 opacity-15">
+                <FaStar
+                  className="text-white text-xl animate-pulse"
+                  style={{ animationDelay: "2s" }}
+                />
+              </div>
             </div>
           </div>
         )}
 
-        {/* No filter bar when searching (requested) */}
-
-        <div className="flex flex-col lg:flex-row gap-10">
-          {/* === Sidebar === */}
+        <div className="flex gap-6">
           {!hasQuery && (
-            <aside className="lg:w-1/4">
-              <div className="sticky top-24 bg-white/70 backdrop-blur-lg rounded-2xl shadow-lg p-6">
-                <div className="mb-5 flex items-center justify-between">
-                  <h2 className="text-xl font-bold text-green-700">Danh mục</h2>
-                  <button
-                    onClick={() => setShowAllFilters((v) => !v)}
-                    className="inline-flex items-center justify-center w-9 h-9 rounded-full text-green-700 hover:bg-green-100 hover:shadow transition"
-                    aria-label={
-                      showAllFilters ? "Thu gọn danh mục" : "Mở rộng danh mục"
-                    }
-                    title={
-                      showAllFilters ? "Thu gọn danh mục" : "Mở rộng danh mục"
-                    }
-                  >
-                    {showAllFilters ? <FaMinus /> : <FaPlus />}
-                  </button>
-                </div>
-                <ul className="space-y-3">
-                  {showAllFilters ? (
-                    // Mở rộng: hiển thị toàn bộ danh mục (bao gồm 'Tất cả')
-                    <>
-                      {categories.map((cat) => {
-                        const value = cat === "Tất cả" ? "" : cat;
-                        const active = categoryFilter === value;
-                        return (
-                          <li key={cat}>
+            <aside className="w-64 flex-shrink-0">
+              <div className="sticky top-8 space-y-4">
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-md font-bold text-gray-900">Danh mục</h2>
+                    <button
+                      onClick={() => setShowAllFilters((v) => !v)}
+                      className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-white transition"
+                    >
+                      {showAllFilters ? <FaChevronUp className="w-3 h-3" /> : <FaChevronDown className="w-3 h-3" />}
+                    </button>
+                  </div>
+                  <div className="space-y-1.5">
+                    {showAllFilters ? (
+                      <>
+                        {categories.map((cat) => {
+                          const value = cat === "Tất cả" ? "" : cat;
+                          const active = categoryFilter === value;
+                          return (
                             <button
+                              key={cat}
                               onClick={() => setCategoryFilter(value)}
-                              className={`w-full text-left px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200
-                                ${
-                                  active
-                                    ? "bg-gradient-to-r from-green-600 to-lime-500 text-white shadow-md"
-                                    : "text-green-700 hover:bg-green-100 hover:shadow"
-                                }`}
+                              className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition ${
+                                active
+                                  ? "bg-green-400 text-white shadow-sm"
+                                  : "text-gray-700 hover:bg-white"
+                              }`}
                             >
                               {cat}
                             </button>
-                          </li>
-                        );
-                      })}
-                    </>
-                  ) : (
-                    // Thu gọn: chỉ hiển thị hạng mục đang chọn
-                    <li>
+                          );
+                        })}
+                      </>
+                    ) : (
                       <button
-                        onClick={() => setCategoryFilter(categoryFilter)}
-                        className={`w-full text-left px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200
-                          ${"bg-gradient-to-r from-green-600 to-lime-500 text-white shadow-md"}`}
+                        className="w-full text-left px-3 py-2 rounded-lg text-xs font-medium bg-green-400 text-white shadow-sm"
                       >
                         {categoryFilter || "Tất cả"}
                       </button>
-                    </li>
-                  )}
-                </ul>
+                    )}
+                  </div>
+                </div>
 
-                {/* Giá cả đã chuyển xuống cuối */}
-
-                {/* Đánh giá (thu gọn/mở rộng giống danh mục) */}
-                <div className="mt-6">
-                  <div className="mb-5 flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-green-700">
-                      Đánh giá
-                    </h2>
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-md font-bold text-gray-900">Đánh giá</h2>
                     <button
                       onClick={() => setShowRatingOptions((v) => !v)}
-                      className="inline-flex items-center justify-center w-9 h-9 rounded-full text-green-700 hover:bg-green-100 hover:shadow transition"
-                      aria-label={
-                        showRatingOptions
-                          ? "Thu gọn đánh giá"
-                          : "Mở rộng đánh giá"
-                      }
-                      title={
-                        showRatingOptions
-                          ? "Thu gọn đánh giá"
-                          : "Mở rộng đánh giá"
-                      }
+                      className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-white transition"
                     >
-                      {showRatingOptions ? <FaMinus /> : <FaPlus />}
+                      {showRatingOptions ? <FaChevronUp className="w-3 h-3" /> : <FaChevronDown className="w-3 h-3" />}
                     </button>
                   </div>
                   {showRatingOptions ? (
-                    <ul className="space-y-3">
+                    <div className="space-y-1.5">
                       {[
                         { label: "Tất cả", value: "" },
                         { label: "4.5", value: "4.5" },
@@ -345,55 +345,50 @@ export default function SearchPage() {
                         { label: "3.5", value: "3.5" },
                         { label: "3", value: "3" },
                       ].map((opt) => (
-                        <li key={opt.value || "all"}>
-                          <button
-                            onClick={() => setMinRating(opt.value)}
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200
-                              ${
-                                minRating === opt.value
-                                  ? "bg-gradient-to-r from-green-600 to-lime-500 text-white shadow-md"
-                                  : "text-green-700 hover:bg-green-100 hover:shadow"
-                              }`}
-                          >
-                            {opt.value === "" ? (
-                              <span>Tất cả</span>
-                            ) : (
-                              <span className="flex items-center">
-                                {Array.from({ length: 5 }).map((_, i) => {
-                                  const v = parseFloat(opt.value);
-                                  const rem = v - i;
-                                  if (rem >= 1)
-                                    return (
-                                      <FaStar
-                                        key={i}
-                                        className="text-yellow-400"
-                                      />
-                                    );
-                                  if (rem >= 0.5)
-                                    return (
-                                      <FaStarHalfAlt
-                                        key={i}
-                                        className="text-yellow-400"
-                                      />
-                                    );
+                        <button
+                          key={opt.value || "all"}
+                          onClick={() => setMinRating(opt.value)}
+                          className={`w-full flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition ${
+                            minRating === opt.value
+                              ? "bg-green-400 text-white shadow-sm"
+                              : "text-gray-700 hover:bg-white"
+                          }`}
+                        >
+                          {opt.value === "" ? (
+                            <span>Tất cả</span>
+                          ) : (
+                            <span className="flex items-center">
+                              {Array.from({ length: 5 }).map((_, i) => {
+                                const v = parseFloat(opt.value);
+                                const rem = v - i;
+                                if (rem >= 1)
                                   return (
-                                    <FaRegStar
+                                    <FaStar
                                       key={i}
-                                      className="text-yellow-400"
+                                      className={`w-3 h-3 ${minRating === opt.value ? 'fill-white text-white' : 'fill-green-400 text-green-400'}`}
                                     />
                                   );
-                                })}
-                              </span>
-                            )}
-                          </button>
-                        </li>
+                                if (rem >= 0.5)
+                                  return (
+                                    <FaStarHalfAlt
+                                      key={i}
+                                      className={`w-3 h-3 ${minRating === opt.value ? 'fill-white text-white' : 'fill-green-400 text-green-400'}`}
+                                    />
+                                  );
+                                return (
+                                  <FaRegStar
+                                    key={i}
+                                    className={`w-3 h-3 ${minRating === opt.value ? 'text-white/40' : 'text-gray-300'}`}
+                                  />
+                                );
+                              })}
+                            </span>
+                          )}
+                        </button>
                       ))}
-                    </ul>
+                    </div>
                   ) : (
-                    <button
-                      onClick={() => setMinRating(minRating)}
-                      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 bg-gradient-to-r from-green-600 to-lime-500 text-white shadow-md`}
-                    >
+                    <button className="w-full flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-green-400 text-white shadow-sm">
                       {minRating === "" ? (
                         <span>Tất cả</span>
                       ) : (
@@ -402,19 +397,10 @@ export default function SearchPage() {
                             const v = parseFloat(minRating);
                             const rem = v - i;
                             if (rem >= 1)
-                              return (
-                                <FaStar key={i} className="text-yellow-300" />
-                              );
+                              return <FaStar key={i} className="w-3 h-3 fill-white text-white" />;
                             if (rem >= 0.5)
-                              return (
-                                <FaStarHalfAlt
-                                  key={i}
-                                  className="text-yellow-300"
-                                />
-                              );
-                            return (
-                              <FaRegStar key={i} className="text-yellow-300" />
-                            );
+                              return <FaStarHalfAlt key={i} className="w-3 h-3 fill-white text-white" />;
+                            return <FaRegStar key={i} className="w-3 h-3 text-white/40" />;
                           })}
                         </span>
                       )}
@@ -422,234 +408,163 @@ export default function SearchPage() {
                   )}
                 </div>
 
-                {/* Lượt mua (thu gọn/mở rộng giống đánh giá) */}
-                <div className="mt-6">
-                  <div className="mb-5 flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-green-700">
-                      Lượt mua
-                    </h2>
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-md font-bold text-gray-900">Lượt mua</h2>
                     <button
                       onClick={() => setShowPurchasesOptions((v) => !v)}
-                      className="inline-flex items-center justify-center w-9 h-9 rounded-full text-green-700 hover:bg-green-100 hover:shadow transition"
-                      aria-label={
-                        showPurchasesOptions
-                          ? "Thu gọn lượt mua"
-                          : "Mở rộng lượt mua"
-                      }
-                      title={
-                        showPurchasesOptions
-                          ? "Thu gọn lượt mua"
-                          : "Mở rộng lượt mua"
-                      }
+                      className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-white transition"
                     >
-                      {showPurchasesOptions ? <FaMinus /> : <FaPlus />}
+                      {showPurchasesOptions ? <FaChevronUp className="w-3 h-3" /> : <FaChevronDown className="w-3 h-3" />}
                     </button>
                   </div>
                   {showPurchasesOptions ? (
-                    <ul className="space-y-3">
+                    <div className="space-y-1.5">
                       {[
                         { label: "Mặc định", value: "" },
                         { label: "Tăng dần", value: "asc" },
                         { label: "Giảm dần", value: "desc" },
                       ].map((opt) => (
-                        <li key={opt.value || "default"}>
-                          <button
-                            onClick={() => setSortByPurchases(opt.value)}
-                            className={`w-full text-left px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200
-                              ${
-                                sortByPurchases === opt.value
-                                  ? "bg-gradient-to-r from-green-600 to-lime-500 text-white shadow-md"
-                                  : "text-green-700 hover:bg-green-100 hover:shadow"
-                              }`}
-                          >
-                            {opt.label}
-                          </button>
-                        </li>
-                      ))}
-                      {/* Toggle HOT */}
-                      <li>
                         <button
-                          onClick={() => setFilterHot((v) => !v)}
-                          className={`w-full flex items-center justify-between px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200
-                            ${
-                              filterHot
-                                ? "bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-md"
-                                : "text-red-600 bg-red-50 hover:bg-red-100 hover:shadow"
-                            }`}
-                          title="Chỉ hiển thị sản phẩm HOT"
+                          key={opt.value || "default"}
+                          onClick={() => setSortByPurchases(opt.value)}
+                          className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition ${
+                            sortByPurchases === opt.value
+                              ? "bg-green-400 text-white shadow-sm"
+                              : "text-gray-700 hover:bg-white"
+                          }`}
                         >
-                          <span className="flex items-center gap-2">
-                            <FaFire />
-                            HOT
-                          </span>
-                          {/* Không cần chữ 'Bật' khi active */}
+                          {opt.label}
                         </button>
-                      </li>
-                    </ul>
-                  ) : (
-                    <div className="flex flex-col gap-2">
-                      <button
-                        onClick={() => setSortByPurchases(sortByPurchases)}
-                        className={`w-full text-left px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 bg-gradient-to-r from-green-600 to-lime-500 text-white shadow-md`}
-                      >
-                        {sortByPurchases === "asc"
-                          ? "Tăng dần"
-                          : sortByPurchases === "desc"
-                          ? "Giảm dần"
-                          : "Mặc định"}
-                      </button>
-                      {filterHot && (
-                        <div className="inline-flex items-center gap-1 self-start px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-red-500 to-orange-500 text-white shadow">
-                          <FaFire className="text-sm" /> HOT
-                        </div>
-                      )}
+                      ))}
                     </div>
+                  ) : (
+                    <button className="w-full text-left px-3 py-2 rounded-lg text-xs font-medium bg-green-400 text-white shadow-sm">
+                      {sortByPurchases === "asc"
+                        ? "Tăng dần"
+                        : sortByPurchases === "desc"
+                        ? "Giảm dần"
+                        : "Mặc định"}
+                    </button>
                   )}
                 </div>
 
-                {/* Giá cả (đưa xuống cuối) */}
-                <div className="mt-6">
-                  <h2 className="text-xl font-bold text-green-700 mb-5">
-                    Giá cả
-                  </h2>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="number"
-                      min="0"
-                      value={draftMinPrice}
-                      onChange={(e) => setDraftMinPrice(e.target.value)}
-                      placeholder="Từ (đ)"
-                      className="w-1/2 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
-                    />
-                    <span className="text-gray-500">-</span>
-                    <input
-                      type="number"
-                      min="0"
-                      value={draftMaxPrice}
-                      onChange={(e) => setDraftMaxPrice(e.target.value)}
-                      placeholder="Đến (đ)"
-                      className="w-1/2 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
-                    />
-                  </div>
-                  <div className="mt-3">
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                  <h2 className="text-md font-bold text-gray-900 mb-3">Giá cả</h2>
+                  <div className="space-y-2.5">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        value={draftMinPrice}
+                        onChange={(e) => setDraftMinPrice(e.target.value)}
+                        placeholder="Từ"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none text-xs"
+                      />
+                      <span className="text-gray-400">-</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={draftMaxPrice}
+                        onChange={(e) => setDraftMaxPrice(e.target.value)}
+                        placeholder="Đến"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none text-xs"
+                      />
+                    </div>
                     <button
                       onClick={() => {
                         setMinPrice(draftMinPrice);
                         setMaxPrice(draftMaxPrice);
                       }}
-                      className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow"
+                      className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition font-medium text-xs"
                     >
-                      <AiOutlineSearch className="w-4 h-4" />
-                      <span>Lọc giá</span>
+                      <AiOutlineSearch className="w-3 h-3" />
+                      Áp dụng
                     </button>
                   </div>
                 </div>
 
-                {/* Nút xóa lọc */}
-                <div className="mt-6 flex gap-2">
-                  <button
-                    onClick={() => {
-                      setCategoryFilter("");
-                      setMinPrice("");
-                      setMaxPrice("");
-                      setMinRating("");
-                      setSortByPurchases("");
-                      setFilterHot(false);
-                      setDraftMinPrice("");
-                      setDraftMaxPrice("");
-                    }}
-                    className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
-                  >
-                    Xóa lọc
-                  </button>
-                </div>
+                <button
+                  onClick={clearAllFilters}
+                  className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 bg-white border-2 border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium text-xs"
+                >
+                  <FiX className="w-3 h-3" />
+                  Xóa tất cả bộ lọc
+                </button>
               </div>
             </aside>
           )}
 
-          {/* === Product Grid === */}
-          <main className={`${hasQuery ? "w-full" : "lg:w-3/4"}`}>
+          <main className={`${hasQuery ? "w-full" : "flex-1"}`}>
             {loading ? (
-              <div className="text-center py-20">
-                <FaLeaf className="mx-auto text-7xl text-green-200 mb-4 animate-pulse" />
-                <p className="text-xl text-gray-500">Đang tải sản phẩm...</p>
+              <div className="text-center py-32">
+                <div className="inline-block w-12 h-12 border-4 border-gray-200 border-t-green-400 rounded-full animate-spin mb-4"></div>
+                <p className="text-gray-600 font-medium">Đang tải sản phẩm...</p>
               </div>
             ) : error ? (
-              <div className="text-center py-20">
-                <FaLeaf className="mx-auto text-7xl text-red-200 mb-4" />
-                <p className="text-xl text-red-500">{error}</p>
+              <div className="text-center py-32">
+                <p className="text-red-500 font-medium">{error}</p>
               </div>
             ) : currentItems.length ? (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {currentItems.map((p) => (
                     <article
                       key={p.id}
-                      className="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300
-                                 transform hover:-translate-y-2 overflow-hidden group relative"
+                      onClick={() => navigate(`/product/${p.id}`)}
+                      className="group bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl hover:border-green-400 transition-all duration-300 cursor-pointer"
                     >
-                      {/* Badge HOT */}
-                      {p.active && (
-                        <div className="absolute top-3 left-3 z-10">
-                          <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg">
-                            <FaFire className="text-sm" />
-                            HOT
-                          </div>
+                      <div className="relative aspect-video overflow-hidden bg-gray-100">
+                        <div className="absolute top-4 right-4 z-10">
+                          <span className="inline-block px-3 py-1 bg-green-400 text-white rounded-lg text-xs font-bold truncate shadow-md">
+                            {p.typeProduct?.name}
+                          </span>
                         </div>
-                      )}
-
-                      {/* Ảnh */}
-                      <div className="relative rounded-2xl overflow-hidden leading-[0]">
                         <img
                           src={p.image}
                           alt={p.name}
-                          className="block w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       </div>
 
-                      {/* Thông tin */}
                       <div className="p-5">
-                        <h3
-                          onClick={() => navigate(`/product/${p.id}`)}
-                          className="text-lg font-bold text-green-800 truncate cursor-pointer hover:text-green-600 transition"
-                        >
+                        <h3 className="text-lg font-bold text-gray-900 mb-2 truncate group-hover:text-green-400 transition cursor-pointer">
                           {p.name}
                         </h3>
+
                         {p.description && (
-                          <p className="text-xs text-gray-500 mt-1 mb-2 truncate">
+                          <p className="text-sm text-gray-600 mb-3 line-clamp-3 truncate">
                             {p.description}
                           </p>
                         )}
-                        <p className="text-sm text-green-600 font-medium">
-                          {p.typeProduct?.name}
+
+                        <div className="mb-3">{renderStars(p.statisticsRate?.averageRate, p.statisticsRate?.totalRate)}</div>
+
+                        <p className="text-sm text-gray-500 mb-4">
+                          Đã bán: <span className="font-semibold text-gray-700">{p.statisticsRate?.totalSale || 0}</span>
                         </p>
 
-                        <div className="mt-3 mb-3">{renderStars(p.statisticsRate?.averageRate, p.statisticsRate?.totalRate)}</div>
-
-                        <p className="text-sm text-gray-500">
-                          Đã bán: {p.statisticsRate?.totalSale || 0}
-                        </p>
-
-                        <div className="flex justify-between items-center mt-4">
+                        <div className="flex items-end justify-between pt-4 border-t border-gray-100">
                           <div className="flex flex-col">
                             {p.salePrice > 0 && (
-                              <span className="text-lg text-red-500 line-through font-medium">
+                              <span className="text-sm text-gray-400 line-through">
                                 {(p.price || 0).toLocaleString("vi-VN")}₫
                               </span>
                             )}
-                            <span className="text-2xl font-bold text-green-800">
+                            <span className="text-2xl font-bold text-gray-900">
                               {(p.salePrice > 0 ? p.salePrice : p.price || 0).toLocaleString("vi-VN")}₫
                             </span>
                           </div>
 
                           <button
-                            onClick={() => handleAddToCart(p)}
-                            className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-full
-                                     hover:bg-green-700 transition-all shadow-md hover:shadow-lg"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAddToCart(p);
+                            }}
+                            className="flex items-center gap-2 px-5 py-2.5 bg-green-400 text-white rounded-xl hover:bg-green-500 transition-all font-medium shadow-sm hover:shadow-md"
                           >
-                            <FiShoppingCart />
-                            <span className="text-xs font-semibold">Thêm</span>
+                            <FiShoppingCart className="w-4 h-4" />
+                            <span className="text-sm">Thêm</span>
                           </button>
                         </div>
                       </div>
@@ -657,15 +572,12 @@ export default function SearchPage() {
                   ))}
                 </div>
 
-                {/* Pagination */}
-                {totalPages > 0 && (
+                {totalPages > 1 && (
                   <nav className="flex justify-center items-center gap-2 mt-12">
                     <button
                       onClick={() => setCurrentPage((x) => Math.max(x - 1, 1))}
                       disabled={currentPage === 1}
-                      className="px-4 py-2 rounded-full text-sm font-semibold transition
-                        disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed
-                        bg-green-600 text-white hover:bg-green-700 shadow"
+                      className="px-5 py-2.5 rounded-xl text-sm font-medium transition disabled:opacity-40 disabled:cursor-not-allowed bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
                     >
                       Trước
                     </button>
@@ -674,25 +586,20 @@ export default function SearchPage() {
                       <button
                         key={i}
                         onClick={() => setCurrentPage(i + 1)}
-                        className={`w-9 h-9 rounded-full text-sm font-bold transition
-                          ${
-                            currentPage === i + 1
-                              ? "bg-green-700 text-white scale-110 shadow-md"
-                              : "bg-white text-green-700 border border-green-300 hover:bg-green-100"
-                          }`}
+                        className={`w-10 h-10 rounded-xl text-sm font-bold transition ${
+                          currentPage === i + 1
+                            ? "bg-green-400 text-white shadow-md"
+                            : "bg-white text-gray-700 border border-gray-200 hover:border-green-400"
+                        }`}
                       >
                         {i + 1}
                       </button>
                     ))}
 
                     <button
-                      onClick={() =>
-                        setCurrentPage((x) => Math.min(x + 1, totalPages))
-                      }
+                      onClick={() => setCurrentPage((x) => Math.min(x + 1, totalPages))}
                       disabled={currentPage === totalPages}
-                      className="px-4 py-2 rounded-full text-sm font-semibold transition
-                        disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed
-                        bg-green-600 text-white hover:bg-green-700 shadow"
+                      className="px-5 py-2.5 rounded-xl text-sm font-medium transition disabled:opacity-40 disabled:cursor-not-allowed bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
                     >
                       Sau
                     </button>
@@ -700,10 +607,12 @@ export default function SearchPage() {
                 )}
               </>
             ) : (
-              <div className="text-center py-20">
-                <FaLeaf className="mx-auto text-7xl text-green-200 mb-4" />
-                <p className="text-xl text-gray-500">
-                  Không tìm thấy sản phẩm nào phù hợp.
+              <div className="text-center py-32">
+                <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
+                  <AiOutlineSearch className="w-10 h-10 text-gray-400" />
+                </div>
+                <p className="text-xl text-gray-600 font-medium">
+                  Không tìm thấy sản phẩm nào phù hợp
                 </p>
               </div>
             )}

@@ -22,16 +22,16 @@ export default function LoginSuccess() {
             dispatch(setAccessToken(token));
             
             // Handle Google login and navigation
-            dispatch(loginGoogle(token)).then((result) => {
+            dispatch(loginGoogle(token)).then((userData) => {
+                // Log the user data to see its structure
+                console.log("User data from loginGoogle:", userData);
+                
                 // Dispatch a custom event to notify other components that Google login is complete
                 console.log("Dispatching googleLoginComplete event"); // Debug log
                 window.dispatchEvent(new CustomEvent('googleLoginComplete'));
                 
-                if (result?.role === "ADMIN") {
-                    navigate("/admin");
-                } else {
-                    navigate("/");
-                }
+                // Navigate to the shared LoginRedirect component instead of handling redirect here
+                navigate("/login/redirect");
             }).catch((error) => {
                 console.error("Google login failed:", error);
                 navigate("/login");
@@ -43,22 +43,17 @@ export default function LoginSuccess() {
     }, [location, dispatch, navigate]);
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-white to-emerald-50">
-            <div className="flex w-[500px] rounded-2xl overflow-hidden shadow-2xl bg-white">
-                <div className="w-full p-10 text-center">
-                    {/* Header */}
-                    <div className="mb-8">
-                        <div className="mx-auto w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mb-4">
-                            <AiOutlineCheckCircle className="w-8 h-8 text-white" />
-                        </div>
-                        <h2 className="text-3xl font-bold text-gray-800 mb-2">Đăng nhập thành công</h2>
-                        <p className="text-gray-600">Bạn sẽ được chuyển hướng trong giây lát...</p>
-                    </div>
-
-                    {/* Loading Spinner */}
-                    <div className="flex justify-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-                    </div>
+        <div className="min-h-screen flex flex-col items-center justify-center bg-white">
+            <div className="flex flex-col items-center justify-center space-y-6">
+                {/* Loading Spinner */}
+                <div className="flex justify-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-400"></div>
+                </div>
+                
+                {/* Success Text */}
+                <div className="text-center">
+                    <h2 className="text-2xl font-semibold text-gray-800 mb-2">Đăng nhập thành công</h2>
+                    <p className="text-gray-600">Bạn sẽ được chuyển hướng trong giây lát...</p>
                 </div>
             </div>
         </div>

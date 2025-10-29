@@ -1,21 +1,25 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
-  FaLeaf,
-  FaStar,
-  FaRegStar,
-  FaStarHalfAlt,
-  FaFire,
-  FaEdit,
-  FaSave,
-  FaTimes,
-  FaChevronDown,
-  FaChevronUp,
-} from "react-icons/fa";
-import { FiShoppingCart } from "react-icons/fi";
+  Star,
+  StarHalf,
+  Leaf,
+  Flame,
+  ShoppingCart,
+  ChevronLeft,
+  Package,
+  Shield,
+  RotateCcw,
+  Edit2,
+  Save,
+  X,
+  ChevronDown,
+  ChevronUp,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { addToCartFromServer } from "../../state/Cart/Action";
-import Notification from "../common/Nontification";
 import { productApi } from "../../utils/api/product.api";
 
 export default function ProductDetail() {
@@ -28,18 +32,12 @@ export default function ProductDetail() {
   const [newComment, setNewComment] = useState("");
   const [userRating, setUserRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
-  const [showNotification, setShowNotification] = useState(false);
-  const [notificationType, setNotificationType] = useState("info");
-  const [notificationMessage, setNotificationMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  // State for comment editing
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingCommentText, setEditingCommentText] = useState("");
-
-  // State for comment visibility
   const [showAllComments, setShowAllComments] = useState(false);
+  const [relatedProducts, setRelatedProducts] = useState([]);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -49,7 +47,6 @@ export default function ProductDetail() {
         const response = await productApi.getById(id);
         if (response?.data) {
           setProduct(response.data);
-          // Use actual rate responses from API instead of mock data
           setComments(response.data.rateResponses || []);
         } else {
           setError("Sản phẩm không tồn tại");
@@ -69,41 +66,66 @@ export default function ProductDetail() {
     }
   }, [id, navigate]);
 
-  const renderStars = (rating, totalRate) => {
-    // Validate and sanitize rating value
-    const numericRating = Number(rating);
-    const safeRating = Number.isFinite(numericRating)
-      ? Math.max(0, Math.min(5, numericRating))
-      : 0;
+  useEffect(() => {
+    const fetchRelatedProducts = async () => {
+      if (product) {
+        try {
+          let related = [];
 
+          if (product?.typeProduct?.name) {
+            const response = await productApi.getAll(1, 20, "createdDate", "desc");
+            if (response?.data?.content) {
+              related = response.data.content
+                .filter((p) => p.typeProduct?.name === product.typeProduct.name && p.id !== product.id)
+                .slice(0, 4);
+            }
+          }
+
+          if (related.length < 4) {
+            const response = await productApi.getAll(1, 20, "createdDate", "desc");
+            if (response?.data?.content) {
+              const additional = response.data.content
+                .filter((p) => p.id !== product.id)
+                .slice(0, 4 - related.length);
+              related = [...related, ...additional];
+            }
+          }
+
+          setRelatedProducts(related);
+        } catch (error) {
+          console.error("Failed to fetch related products:", error);
+          setRelatedProducts([]);
+        }
+      }
+    };
+
+    fetchRelatedProducts();
+  }, [product]);
+
+  const renderStars = (rating, totalRate) => {
+    const numericRating = Number(rating);
+    const safeRating = Number.isFinite(numericRating) ? Math.max(0, Math.min(5, numericRating)) : 0;
     const full = Math.floor(safeRating);
     const half = safeRating % 1 >= 0.5;
     const empty = 5 - full - (half ? 1 : 0);
 
     return (
-      <div className="flex items-center gap-0.5">
+      <div className="flex items-center gap-1">
         {full > 0 &&
           Array(full)
-            .fill()
-            .map((_, i) => (
-              <FaStar key={`f-${i}`} className="w-5 h-5 text-yellow-400" />
-            ))}
-        {half && <FaStarHalfAlt className="w-5 h-5 text-yellow-400" />}
+            .fill(0)
+            .map((_, i) => <Star key={`f-${i}`} className="w-4 h-4 fill-green-400 text-green-400" />)}
+        {half && <StarHalf className="w-4 h-4 fill-green-400 text-green-400" />}
         {empty > 0 &&
           Array(empty)
-            .fill()
-            .map((_, i) => (
-              <FaRegStar key={`e-${i}`} className="w-5 h-5 text-yellow-400" />
-            ))}
-        <span className="ml-1 text-sm text-gray-500">({safeRating})</span>
-        {totalRate !== undefined && (
-          <span className="ml-1 text-sm text-gray-400">[{totalRate}]</span>
-        )}
+            .fill(0)
+            .map((_, i) => <Star key={`e-${i}`} className="w-4 h-4 text-gray-300" />)}
+        <span className="ml-1.5 text-sm font-medium text-gray-700">{safeRating.toFixed(1)}</span>
+        {totalRate !== undefined && <span className="text-sm text-gray-400">({totalRate})</span>}
       </div>
     );
   };
 
-  // Tạo initials từ tên để hiển thị avatar chữ cái
   const getInitials = (name = "") => {
     return name
       .split(" ")
@@ -117,231 +139,129 @@ export default function ProductDetail() {
   const handleAddToCart = () => {
     if (!product) return;
     if (product.stock === 0) {
-      setNotificationType("error");
-      setNotificationMessage("Sản phẩm đã hết hàng!");
+      alert("Sản phẩm đã hết hàng!");
     } else {
       dispatch(addToCartFromServer(product));
-      setNotificationType("success");
-      setNotificationMessage(`Đã thêm “${product.name}” vào giỏ hàng!`);
+      alert(`Đã thêm "${product.name}" vào giỏ hàng!`);
     }
-    setShowNotification(true);
   };
 
   const handleAddRelatedToCart = (item) => {
     if (!item) return;
     if (item.stock === 0) {
-      setNotificationType("error");
-      setNotificationMessage("Sản phẩm đã hết hàng!");
+      alert("Sản phẩm đã hết hàng!");
     } else {
       dispatch(addToCartFromServer(item));
-      setNotificationType("success");
-      setNotificationMessage(`Đã thêm “${item.name}” vào giỏ hàng!`);
+      alert(`Đã thêm "${item.name}" vào giỏ hàng!`);
     }
-    setShowNotification(true);
   };
 
-  const handleCommentSubmit = async (e) => {
+  const handleCommentSubmit = (e) => {
     e.preventDefault();
     if (!newComment.trim() || userRating === 0) {
-      setShowNotification(true);
-      setNotificationType("error");
-      setNotificationMessage("Vui lòng nhập bình luận và đánh giá sao!");
+      alert("Vui lòng nhập bình luận và đánh giá sao!");
       return;
     }
 
-    // Check if user is logged in
     if (!accessToken) {
-      setShowNotification(true);
-      setNotificationType("error");
-      setNotificationMessage("Vui lòng đăng nhập để đánh giá sản phẩm!");
+      alert("Vui lòng đăng nhập để đánh giá sản phẩm!");
       return;
     }
 
-    try {
-      // Prepare rating data according to API requirements
-      const ratingData = {
-        productId: id,
-        rateValue: userRating,
-        comment: newComment,
-      };
+    (async () => {
+      try {
+        const ratingData = {
+          productId: id,
+          rateValue: userRating,
+          comment: newComment,
+        };
 
-      // Submit rating using the new postRating API
-      await productApi.postRating(id, ratingData, accessToken);
+        await productApi.postRating(id, ratingData, accessToken);
+        const response = await productApi.getById(id);
+        if (response?.data) {
+          setProduct(response.data);
+          setComments(response.data.rateResponses || []);
+        }
 
-      // After successful submission, fetch the updated product data to get the new comment
-      const response = await productApi.getById(id);
-      if (response?.data) {
-        setProduct(response.data);
-        // Update comments with the actual data from the server
-        setComments(response.data.rateResponses || []);
+        setNewComment("");
+        setUserRating(0);
+        alert("Đã gửi đánh giá thành công!");
+      } catch (error) {
+        console.error("Failed to submit rating:", error);
+        alert("Không thể gửi đánh giá. Vui lòng thử lại sau!");
       }
-
-      // Reset form
-      setNewComment("");
-      setUserRating(0);
-      setShowNotification(true);
-      setNotificationType("success");
-      setNotificationMessage("Đã gửi đánh giá thành công!");
-    } catch (error) {
-      console.error("Failed to submit rating:", error);
-      setShowNotification(true);
-      setNotificationType("error");
-      setNotificationMessage("Không thể gửi đánh giá. Vui lòng thử lại sau!");
-    }
+    })();
   };
 
-  // Function to start editing a comment
   const startEditingComment = (comment) => {
-    // Check if the comment belongs to the current user
     if (user && comment.userId === user.id) {
       setEditingCommentId(comment.id);
       setEditingCommentText(comment.comment);
     }
   };
 
-  // Function to cancel editing
   const cancelEditing = () => {
     setEditingCommentId(null);
     setEditingCommentText("");
   };
 
-  // Function to save edited comment
-  const saveEditedComment = async () => {
+  const saveEditedComment = () => {
     if (!editingCommentText.trim()) {
-      setShowNotification(true);
-      setNotificationType("error");
-      setNotificationMessage("Bình luận không được để trống!");
+      alert("Bình luận không được để trống!");
       return;
     }
 
-    try {
-      // Find the comment being edited
-      const commentToEdit = comments.find(
-        (comment) => comment.id === editingCommentId
-      );
+    (async () => {
+      try {
+        const commentToEdit = comments.find((comment) => comment.id === editingCommentId);
 
-      if (!commentToEdit) {
-        setShowNotification(true);
-        setNotificationType("error");
-        setNotificationMessage("Không tìm thấy bình luận để chỉnh sửa!");
-        return;
-      }
-
-      // Prepare updated rating data
-      const updatedRatingData = {
-        productId: id,
-        rateValue: commentToEdit.rating,
-        comment: editingCommentText,
-      };
-
-      // Update rating using the updateRating API
-      await productApi.updateRating(
-        editingCommentId,
-        updatedRatingData,
-        accessToken
-      );
-
-      // Fetch updated product data
-      const response = await productApi.getById(id);
-      if (response?.data) {
-        setProduct(response.data);
-        setComments(response.data.rateResponses || []);
-      }
-
-      // Reset editing state
-      setEditingCommentId(null);
-      setEditingCommentText("");
-
-      setShowNotification(true);
-      setNotificationType("success");
-      setNotificationMessage("Đã cập nhật bình luận thành công!");
-    } catch (error) {
-      console.error("Failed to update comment:", error);
-      setShowNotification(true);
-      setNotificationType("error");
-      setNotificationMessage(
-        "Không thể cập nhật bình luận. Vui lòng thử lại sau!"
-      );
-    }
-  };
-
-  const [relatedProducts, setRelatedProducts] = useState([]);
-
-  // Fetch related products from API
-  useEffect(() => {
-    const fetchRelatedProducts = async () => {
-      if (product) {
-        try {
-          // First, try to get products of the same type
-          let related = [];
-
-          if (product?.typeProduct?.name) {
-            const response = await productApi.getAll(
-              1,
-              20,
-              "createdDate",
-              "desc"
-            );
-            if (response?.data?.content) {
-              related = response.data.content
-                .filter(
-                  (p) =>
-                    p.typeProduct?.name === product.typeProduct.name &&
-                    p.id !== product.id
-                )
-                .slice(0, 4);
-            }
-          }
-
-          // If we don't have enough related products, fetch some additional products
-          if (related.length < 4) {
-            const response = await productApi.getAll(
-              1,
-              20,
-              "createdDate",
-              "desc"
-            );
-            if (response?.data?.content) {
-              const additional = response.data.content
-                .filter((p) => p.id !== product.id) // Exclude current product
-                .slice(0, 4 - related.length);
-              related = [...related, ...additional];
-            }
-          }
-
-          setRelatedProducts(related);
-        } catch (error) {
-          console.error("Failed to fetch related products:", error);
-          // Even if there's an error, we still want to show something
-          setRelatedProducts([]);
+        if (!commentToEdit) {
+          alert("Không tìm thấy bình luận để chỉnh sửa!");
+          return;
         }
-      }
-    };
 
-    fetchRelatedProducts();
-  }, [product]);
+        const updatedRatingData = {
+          productId: id,
+          rateValue: commentToEdit.rating,
+          comment: editingCommentText,
+        };
+
+        await productApi.updateRating(editingCommentId, updatedRatingData, accessToken);
+        const response = await productApi.getById(id);
+        if (response?.data) {
+          setProduct(response.data);
+          setComments(response.data.rateResponses || []);
+        }
+
+        setEditingCommentId(null);
+        setEditingCommentText("");
+        alert("Đã cập nhật bình luận thành công!");
+      } catch (error) {
+        console.error("Failed to update comment:", error);
+        alert("Không thể cập nhật bình luận. Vui lòng thử lại sau!");
+      }
+    })();
+  };
 
   if (loading)
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-white">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
-          <FaLeaf className="animate-spin text-green-600 text-4xl mx-auto mb-4" />
-          <p className="text-lg text-gray-600">
-            Đang tải thông tin sản phẩm...
-          </p>
+          <Leaf className="animate-spin text-green-400 w-12 h-12 mx-auto mb-4" />
+          <p className="text-base text-gray-600">Đang tải thông tin sản phẩm...</p>
         </div>
       </div>
     );
 
   if (error)
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-white">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
-          <FaLeaf className="text-red-500 text-4xl mx-auto mb-4" />
-          <p className="text-lg text-red-600 mb-4">{error}</p>
+          <AlertCircle className="text-red-500 w-12 h-12 mx-auto mb-4" />
+          <p className="text-base text-red-600 mb-4">{error}</p>
           <button
             onClick={() => navigate("/")}
-            className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+            className="px-6 py-2.5 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
           >
             Về trang chủ
           </button>
@@ -351,555 +271,380 @@ export default function ProductDetail() {
 
   if (!product)
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-white">
-        <FaLeaf className="animate-spin text-green-600 text-4xl" />
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Leaf className="animate-spin text-green-400 w-12 h-12" />
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50">
-      <div className="max-w-7xl mx-auto px-4 py-12 space-y-14">
-           {/* PRODUCT DETAIL SECTION */}
-        <section className="bg-white rounded-3xl shadow-xl p-8 lg:p-12">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-            {/* LEFT SIDE - PRODUCT IMAGE */}
+    <div className="min-h-screen bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+        {/* PRODUCT DETAIL */}
+        <div className="mb-16">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
+            {/* IMAGE */}
             <div className="space-y-6">
-              {/* Main Product Image */}
               <div className="relative group">
-          {/* Decorative background */}
-          <div className="absolute -inset-4 bg-gradient-to-r from-green-400/10 to-blue-400/10 rounded-3xl blur-xl"></div>
-          
-          {/* Main image container */}
-          <div className="relative bg-white rounded-3xl p-6 shadow-2xl shadow-black/10">
-            <div className="aspect-square rounded-2xl overflow-hidden bg-gray-100">
-              <img
-                 src={product.image || "/placeholder.svg"}
-                alt={product.name}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-              />
-            </div>
-            
-            {/* Image overlay info */}
-            <div className="absolute top-10 left-10">
-              <div className="bg-white/90 backdrop-blur-sm rounded-xl px-4 py-2 shadow-lg">
-                 <span className="text-sm font-semibold text-green-600">{product.typeProduct?.name}</span>
+                <div className="aspect-square bg-gray-50 rounded-2xl overflow-hidden border border-gray-100">
+                  <img
+                    src={product.image || "/placeholder.svg"}
+                    alt={product.name}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                </div>
+                {product.salePrice > 0 && product.price && (
+                  <div className="absolute top-4 right-4">
+                    <div className="bg-green-400 text-black font-bold text-sm px-3 py-1.5 rounded-lg">
+                      -{Math.round(((product.price - product.salePrice) / product.price) * 100)}%
+                    </div>
+                  </div>
+                )}
+                {product.active && (
+                  <div className="absolute top-4 left-4">
+                    <div className="bg-black text-white font-medium text-sm px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                      <Flame className="w-4 h-4" />
+                      HOT
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-            
-            {/* Sale badge */}
-            {product.salePrice > 0 && product.price && (
-              <div className="absolute top-10 right-10">
-                <div className="bg-red-500 text-white rounded-xl px-4 py-2 shadow-lg transform rotate-3">
-                  <span className="text-sm font-bold">
-                    -{Math.round(((product.price - product.salePrice) / product.price) * 100)}% OFF
-                  </span>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-gray-50 rounded-xl p-4 text-center border border-gray-100">
+                  <Package className="w-6 h-6 text-green-400 mx-auto mb-2" />
+                  <p className="text-sm font-semibold text-black">Miễn phí</p>
+                  <p className="text-xs text-gray-500">vận chuyển</p>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4 text-center border border-gray-100">
+                  <RotateCcw className="w-6 h-6 text-green-400 mx-auto mb-2" />
+                  <p className="text-sm font-semibold text-black">Đổi trả</p>
+                  <p className="text-xs text-gray-500">7 ngày</p>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4 text-center border border-gray-100">
+                  <Shield className="w-6 h-6 text-green-400 mx-auto mb-2" />
+                  <p className="text-sm font-semibold text-black">Bảo hành</p>
+                  <p className="text-xs text-gray-500">chính hãng</p>
                 </div>
               </div>
-            )}
+            </div>
+
+            {/* INFO */}
+            <div className="space-y-6">
+              <div>
+                <div className="inline-block px-3 py-1 bg-gray-100 rounded-full text-sm font-medium text-gray-700 mb-3">
+                  {product.typeProduct?.name}
+                </div>
+                <h1 className="text-3xl lg:text-4xl font-bold text-black mb-4 leading-tight">{product.name}</h1>
+                <div className="flex flex-wrap items-center gap-4 mb-4">
+                  {renderStars(product.statisticsRate?.averageRate, product.statisticsRate?.totalRate)}
+                  <div className="h-4 w-px bg-gray-300"></div>
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <ShoppingCart className="w-4 h-4" />
+                    <span className="text-sm font-medium">{product.statisticsRate?.totalSale || 0} đã bán</span>
+                  </div>
+                </div>
+                <p className="text-base text-gray-600 leading-relaxed">{product.description}</p>
+              </div>
+
+              <div className="border-y border-gray-200 py-6">
+                <div className="flex items-baseline gap-3">
+                  <span className="text-4xl lg:text-5xl font-bold text-black">
+                    {(product.salePrice || product.price || 0).toLocaleString("vi-VN")}₫
+                  </span>
+                  {product.salePrice > 0 && product.price && (
+                    <span className="text-xl text-gray-400 line-through">
+                      {product.price.toLocaleString("vi-VN")}₫
+                    </span>
+                  )}
+                </div>
+                {product.salePrice > 0 && product.price && (
+                  <p className="text-sm text-green-400 font-medium mt-2">
+                    Tiết kiệm {(product.price - product.salePrice).toLocaleString("vi-VN")}₫
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                {product.stock === 0 ? (
+                  <>
+                    <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                    <span className="text-sm font-semibold text-red-600">Hết hàng</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-5 h-5 text-green-400" />
+                    <span className="text-sm font-semibold text-green-400">Còn hàng</span>
+                  </>
+                )}
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                <button
+                  onClick={handleAddToCart}
+                  disabled={product.stock === 0}
+                  className={`flex-1 py-4 px-6 rounded-xl font-semibold text-base transition-all ${
+                    product.stock === 0
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-green-400 text-black hover:bg-green-500 active:scale-[0.98]"
+                  }`}
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    <ShoppingCart className="w-5 h-5" />
+                    {product.stock === 0 ? "Hết hàng" : "Thêm vào giỏ"}
+                  </span>
+                </button>
+                <button
+                  onClick={() => navigate(-1)}
+                  className="px-6 py-4 rounded-xl border-2 border-gray-200 text-black font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all"
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    <ChevronLeft className="w-5 h-5" />
+                    Quay lại
+                  </span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
-         {/* Trust Badges */}
-              <div className="grid grid-cols-3 gap-4">
-                <div className="flex flex-col items-center text-center p-4 bg-green-50 rounded-xl border border-green-100">
-                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mb-2">
-                    <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                      />
-                    </svg>
-                  </div>
-                  <span className="text-sm font-medium text-gray-700">Miễn phí</span>
-                  <span className="text-xs text-gray-500">vận chuyển</span>
-
-                  </div>
-                  <div className="flex flex-col items-center text-center p-4 bg-blue-50 rounded-xl border border-blue-100">
-                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mb-2">
-                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                      />
-                    </svg>
-                  </div>
-                  <span className="text-sm font-medium text-gray-700">Đổi trả</span>
-                  <span className="text-xs text-gray-500">7 ngày</span>
-                </div>
-
-                <div className="flex flex-col items-center text-center p-4 bg-purple-50 rounded-xl border border-purple-100">
-                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mb-2">
-                    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                      />
-                    </svg>
-                  </div>
-                  <span className="text-sm font-medium text-gray-700">Bảo hành</span>
-                  <span className="text-xs text-gray-500">chính hãng</span>
-                </div>
-              </div>
-            </div>
-
-            {/* RIGHT SIDE - PRODUCT INFO */}
-            <div className="space-y-8">
-              {/* Product Title */}
-              <div className="space-y-4">
-                <h1 className="text-4xl lg:text-5xl font-bold leading-tight">
-              <span className="bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                {product.name}
-              </span>
-            </h1>
-            
-            {/* Rating & Sales */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                  <div className="flex items-center gap-2">
-                {renderStars(product.statisticsRate?.averageRate, product.statisticsRate?.totalRate)}
-              </div>
-              <div className="flex items-center gap-2 text-gray-600">                
-                <div className="w-1 h-1 bg-gray-400 rounded-full hidden sm:block"></div>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-                      />                
-                </svg>
-                <span className="text-sm font-medium">{product.statisticsRate?.totalSale || 0} đã bán</span>
-              </div>
-            </div>
-          </div>
-          
-          {/* Description */}
-          <div className="prose prose-gray max-w-none">
-                <p className="text-lg text-gray-600 leading-relaxed">{product.description}</p>
-          </div>
-          
-          {/* Price Section */}
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-100 rounded-2xl p-6">           
-                 <div className="space-y-3">
-              <div className="flex items-baseline gap-3">
-                <span className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                    {(product.salePrice || product.price || 0).toLocaleString("vi-VN")}₫
-                </span>
-                {product.salePrice > 0 && product.price && (
-                  <span className="text-xl text-gray-500 line-through">
-                      {product.price.toLocaleString("vi-VN")}₫
-                  </span>
-                )}
-              </div>
-              
-              {product.salePrice > 0 && product.price && (
-                <p className="text-sm text-green-700 font-medium">
-                     Tiết kiệm {(product.price - product.salePrice).toLocaleString("vi-VN")}₫
-                </p>
-              )}
-            </div>
-          </div>
-          
-          {/* Stock Status */}
-           <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${product.stock === 0 ? "bg-red-400" : "bg-green-400"}`}></div>
-                <span className={`text-sm font-medium ${product.stock === 0 ? "text-red-600" : "text-green-600"}`}>
-                  {product.stock === 0 ? "Hết hàng" : "Còn hàng"}
-            </span>
-          </div>
-          
-          {/* Action Buttons */}
-         <div className="flex flex-col sm:flex-row gap-4">        
-        <button
-              onClick={handleAddToCart}
-              disabled={product.stock === 0}
-              className={`flex-1 py-4 px-8 rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]
-                   ${
-                      product.stock === 0
-                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        : "bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl shadow-green-200/50"
-                    }`}
-            >
-              <span className="flex items-center justify-center gap-3">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                 <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M3 3h2l.4 2M7 13h10l4-8H5.4m.6 8l1.25 5H19M7 13v6a1 1 0 001 1h10a1 1 0 001-1v-6M9 17h6"
-                      />
-                </svg>
-                {product.stock === 0 ? 'Hết hàng' : 'Thêm vào giỏ'}
-              </span>
-            </button>
-            
-            <button
-              onClick={() => navigate(-1)}
-              className="flex-1 py-4 px-8 rounded-2xl bg-white border-2 border-gray-200 text-gray-700 font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all duration-300"
-            >
-              <span className="flex items-center justify-center gap-3">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                Quay lại
-              </span>
-            </button>
-          </div>    
-    </div>
-  </div>
-</section>
-
         {/* RELATED PRODUCTS */}
-        <section>
-          <h2 className="text-3xl font-bold text-gray-800 mb-8 flex items-center gap-3">
-            <FaLeaf className="text-green-600" /> Có thể bạn thích
-          </h2>
-          {relatedProducts.length > 0 ? (
+        {relatedProducts.length > 0 && (
+          <div className="mb-16">
+            <h2 className="text-2xl font-bold text-black mb-6 flex items-center gap-2">
+              <Leaf className="w-6 h-6 text-green-400" />
+              Có thể bạn thích
+            </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {relatedProducts.map((rp) => (
-                <article
+                <div
                   key={rp.id}
-                  className="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden group relative"
+                  className="group bg-white border border-gray-100 rounded-xl overflow-hidden hover:border-gray-200 hover:shadow-lg transition-all duration-300"
                 >
-                   {/* Badge HOT  */}
-                  {rp.active && (
-                    <div className="absolute top-3 left-3 z-10">
-                      <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg">
-                        <FaFire className="text-sm" />
-                        HOT
-                      </div>
-                    </div>
-                  )}
-
-                   {/* Ảnh (hover đơn giản) */}
-                  <div className="relative rounded-2xl overflow-hidden leading-[0]">
+                  <div className="relative aspect-square bg-gray-50 overflow-hidden">
                     <img
                       src={rp.image}
                       alt={rp.name}
-                      className="block w-full h-52 object-cover transition-opacity duration-200 hover:opacity-95"
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
+                    {rp.active && (
+                      <div className="absolute top-3 left-3">
+                        <div className="bg-black text-white text-xs font-medium px-2 py-1 rounded-lg flex items-center gap-1">
+                          <Flame className="w-3 h-3" />
+                          HOT
+                        </div>
+                      </div>
+                    )}
                   </div>
-
-                  {/* Thông tin */}
-                  <div className="p-5">
+                  <div className="p-4">
                     <h3
                       onClick={() => navigate(`/product/${rp.id}`)}
-                      className="text-lg font-bold text-green-800 truncate cursor-pointer hover:text-green-600 transition"
+                      className="font-semibold text-black mb-2 truncate cursor-pointer hover:text-green-400 transition-colors"
                     >
                       {rp.name}
                     </h3>
-                    {rp.description && (
-                      <p className="text-xs text-gray-500 mt-1 mb-2 truncate">
-                        {rp.description}
-                      </p>
-                    )}
-                    <p className="text-sm text-green-600 font-medium">
-                      {rp.typeProduct?.name}
-                    </p>
-
-                    <div className="mt-3 mb-3">
-                      {renderStars(
-                        rp.statisticsRate?.averageRate,
-                        rp.statisticsRate?.totalRate
-                      )}
-                    </div>
-
-                    <p className="text-sm text-gray-500">
-                      Đã bán: {rp.statisticsRate?.totalSale || 0}
-                    </p>
-
-                    <div className="flex justify-between items-center mt-4">
-                      <div className="flex flex-col">
+                    <div className="mb-3">{renderStars(rp.statisticsRate?.averageRate, rp.statisticsRate?.totalRate)}</div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-xl font-bold text-black">
+                          {(rp.salePrice > 0 ? rp.salePrice : rp.price || 0).toLocaleString("vi-VN")}₫
+                        </div>
                         {rp.salePrice > 0 && (
-                          <span className="text-lg text-red-500 line-through font-medium">
+                          <div className="text-sm text-gray-400 line-through">
                             {(rp.price || 0).toLocaleString("vi-VN")}₫
-                          </span>
+                          </div>
                         )}
-                        <span className="text-2xl font-bold text-green-800">
-                          {(rp.salePrice > 0 ? rp.salePrice : rp.price || 0).toLocaleString(
-                            "vi-VN"
-                          )}
-                          ₫
-                        </span>
                       </div>
-
                       <button
                         onClick={() => handleAddRelatedToCart(rp)}
-                        className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition-all shadow-md hover:shadow-lg"
-                        title="Thêm vào giỏ hàng"
+                        className="p-2.5 bg-green-400 text-black rounded-lg hover:bg-green-500 transition-colors"
                       >
-                        <FiShoppingCart />
-                        <span className="text-xs font-semibold">Thêm</span>
+                        <ShoppingCart className="w-5 h-5" />
                       </button>
                     </div>
                   </div>
-                </article>
+                </div>
               ))}
             </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-gray-500">
-                Không có sản phẩm liên quan để hiển thị.
-              </p>
-            </div>
-          )}
-        </section>
-        
+          </div>
+        )}
 
         {/* REVIEWS */}
-        <section>
-          <h2 className="text-3xl font-bold text-gray-800 mb-8 flex items-center gap-3">
-            <FaLeaf className="text-green-600" /> Đánh giá & bình luận
+        <div>
+          <h2 className="text-2xl font-bold text-black mb-6 flex items-center gap-2">
+            <Star className="w-6 h-6 text-green-400" />
+            Đánh giá & bình luận
           </h2>
-          <div className="bg-white rounded-2xl shadow-lg p-8 space-y-6">
-            {comments.length ? (
-              <div className="space-y-5">
-                {/* Show only first 3 comments or all comments based on showAllComments state */}
-                {(showAllComments ? comments : comments.slice(0, 3)).map(
-                  (comment) => (
-                    <div
-                      key={comment.id}
-                      className="bg-white p-6 rounded-lg shadow-sm border border-gray-100"
-                    >
-                      <div className="flex items-start space-x-4">
-                        <div className="flex-shrink-0">
-                          {comment.avatar ? (
-                            <img
-                               src={comment.avatar || "/placeholder.svg"}
-                              alt={comment.fullName || comment.productName}
-                              className="w-12 h-12 rounded-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">
-                              <span className="text-green-800 font-semibold text-lg">
-                                {getInitials(
-                                  comment.fullName || comment.productName
-                                )}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <p className="font-semibold text-gray-900">
-                                  {comment.fullName || "Người dùng"}
-                                </p>
-                                {/* Show edit indicator for user's own comments */}
-                                {user && comment.userId === user.id && (
-                                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                                    Bạn
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex items-center mt-1">
-                                {[...Array(5)].map((_, i) =>
-                                  i < comment.rating ? (
-                                    <FaStar
-                                      key={i}
-                                      className="w-5 h-5 text-yellow-400"
-                                    />
-                                  ) : (
-                                    <FaRegStar
-                                      key={i}
-                                      className="w-5 h-5 text-yellow-400"
-                                    />
-                                  )
-                                )}
-                              </div>
+          <div className="space-y-6">
+            {comments.length > 0 && (
+              <div className="space-y-4">
+                {(showAllComments ? comments : comments.slice(0, 3)).map((comment) => (
+                  <div key={comment.id} className="bg-gray-50 rounded-xl p-6 border border-gray-100">
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0">
+                        {comment.avatar ? (
+                          <img
+                            src={comment.avatar || "/placeholder.svg"}
+                            alt={comment.fullName || comment.productName}
+                            className="w-12 h-12 rounded-full object-cover border-2 border-white"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-full bg-green-400 flex items-center justify-center border-2 border-white">
+                            <span className="text-black font-bold text-base">
+                              {getInitials(comment.fullName || comment.productName)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-semibold text-black">{comment.fullName || "Người dùng"}</p>
+                              {user && comment.userId === user.id && (
+                                <span className="text-xs bg-green-400 text-black px-2 py-0.5 rounded-full font-medium">
+                                  Bạn
+                                </span>
+                              )}
                             </div>
                             <div className="flex items-center gap-2">
-                              <span className="text-sm text-gray-500">
-                                {comment.createdDate
-                                  ? new Date(
-                                      comment.createdDate
-                                    ).toLocaleDateString("vi-VN")
-                                  : ""}
-                              </span>
-                              {/* Edit button for user's own comments */}
-                              {user && comment.userId === user.id && (
-                                <button
-                                  onClick={() => startEditingComment(comment)}
-                                  className="text-gray-500 hover:text-green-600 transition-colors"
-                                  title="Chỉnh sửa bình luận"
-                                >
-                                  <FaEdit className="w-4 h-4" />
-                                </button>
+                              {[...Array(5)].map((_, i) =>
+                                i < comment.rating ? (
+                                  <Star key={i} className="w-4 h-4 fill-green-400 text-green-400" />
+                                ) : (
+                                  <Star key={i} className="w-4 h-4 text-gray-300" />
+                                )
                               )}
                             </div>
                           </div>
-
-                          {/* Comment content - Editable */}
-                          {editingCommentId === comment.id ? (
-                            <div className="mt-3">
-                              <textarea
-                                rows={3}
-                                className="shadow-sm focus:ring-green-500 focus:border-green-500 block w-full sm:text-sm border border-gray-300 rounded-md p-2"
-                                value={editingCommentText}
-                                onChange={(e) =>
-                                  setEditingCommentText(e.target.value)
-                                }
-                              />
-                              <div className="flex justify-end gap-2 mt-2">
-                                <button
-                                  onClick={cancelEditing}
-                                  className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 transition-colors"
-                                >
-                                  <FaTimes className="inline mr-1" /> Hủy
-                                </button>
-                                <button
-                                  onClick={saveEditedComment}
-                                  className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-                                >
-                                  <FaSave className="inline mr-1" /> Lưu
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <p className="mt-3 text-gray-700 leading-relaxed">
-                              {comment.comment}
-                            </p>
-                          )}
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-500">
+                              {comment.createdDate ? new Date(comment.createdDate).toLocaleDateString("vi-VN") : ""}
+                            </span>
+                            {user && comment.userId === user.id && (
+                              <button
+                                onClick={() => startEditingComment(comment)}
+                                className="text-gray-400 hover:text-green-400 transition-colors"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
                         </div>
+                        {editingCommentId === comment.id ? (
+                          <div className="mt-3">
+                            <textarea
+                              rows={3}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-green-400 resize-none"
+                              value={editingCommentText}
+                              onChange={(e) => setEditingCommentText(e.target.value)}
+                            />
+                            <div className="flex justify-end gap-2 mt-2">
+                              <button
+                                onClick={cancelEditing}
+                                className="px-3 py-1.5 text-sm text-gray-600 hover:text-black transition-colors rounded-lg hover:bg-gray-100"
+                              >
+                                <X className="inline w-4 h-4 mr-1" /> Hủy
+                              </button>
+                              <button
+                                onClick={saveEditedComment}
+                                className="px-3 py-1.5 text-sm bg-green-400 text-black rounded-lg hover:bg-green-500 transition-colors font-medium"
+                              >
+                                <Save className="inline w-4 h-4 mr-1" /> Lưu
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="mt-2 text-gray-700 leading-relaxed">{comment.comment}</p>
+                        )}
                       </div>
                     </div>
-                  )
-                )}
-
-                {/* Show expand/collapse button if there are more than 3 comments */}
+                  </div>
+                ))}
                 {comments.length > 3 && (
-                  <div className="flex justify-center mt-4">
+                  <div className="flex justify-center">
                     <button
                       onClick={() => setShowAllComments(!showAllComments)}
-                      className="flex items-center gap-2 text-green-600 hover:text-green-800 font-medium"
+                      className="flex items-center gap-2 text-black hover:text-green-400 font-medium transition-colors"
                     >
-                      {showAllComments ? (
-                        <>
-                          <span>Thu gọn</span>
-                          <FaChevronUp className="w-4 h-4" />
-                        </>
-                      ) : (
-                        <>
-                          <span>Xem thêm {comments.length - 3} bình luận</span>
-                          <FaChevronDown className="w-4 h-4" />
-                        </>
-                      )}
+                      <span>{showAllComments ? "Thu gọn" : `Xem thêm ${comments.length - 3} bình luận`}</span>
+                      {showAllComments ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </button>
                   </div>
                 )}
               </div>
-            ) : (
-              <p className="text-center text-gray-500">
-                Chưa có đánh giá nào – hãy là người đầu tiên!
-              </p>
             )}
 
-            <form
-              onSubmit={handleCommentSubmit}
-              className="mt-8 bg-white p-6 rounded-lg shadow-sm border border-gray-100"
-            >
-              <h4 className="text-lg font-semibold text-gray-900 mb-4">
-                Viết đánh giá của bạn
-              </h4>
+            {comments.length === 0 && (
+              <div className="text-center py-12 bg-gray-50 rounded-xl border border-gray-100">
+                <Star className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500">Chưa có đánh giá nào – hãy là người đầu tiên!</p>
+              </div>
+            )}
 
-              {/* Show login prompt if user is not logged in */}
+            <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
+              <h3 className="text-lg font-semibold text-black mb-4">Viết đánh giá của bạn</h3>
               {!accessToken ? (
-                <div className="mb-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                  <p className="text-yellow-800">
+                <div className="p-4 bg-white rounded-lg border border-gray-200">
+                  <p className="text-gray-700">
                     Vui lòng{" "}
-                    <a
-                      href="/login"
-                      className="font-semibold text-green-600 hover:underline"
-                    >
+                    <a href="/login" className="font-semibold text-green-400 hover:underline">
                       đăng nhập
                     </a>{" "}
                     để đánh giá sản phẩm.
                   </p>
                 </div>
               ) : (
-                <>
-                  <div className="mb-4">
-                    <p className="text-sm font-medium text-gray-700 mb-2">
-                      Đánh giá của bạn
-                    </p>
-                    <div className="flex items-center">
+                <form onSubmit={handleCommentSubmit} className="space-y-4">
+                  <div>
+                    <p className="text-sm font-medium text-black mb-2">Đánh giá của bạn</p>
+                    <div className="flex items-center gap-1">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <button
                           key={star}
                           type="button"
-                          className="focus:outline-none"
                           onClick={() => setUserRating(star)}
                           onMouseEnter={() => setHoverRating(star)}
                           onMouseLeave={() => setHoverRating(0)}
-                          disabled={!accessToken}
+                          className="focus:outline-none transition-transform hover:scale-110"
                         >
                           {star <= (hoverRating || userRating) ? (
-                            <FaStar className="w-8 h-8 text-yellow-400" />
+                            <Star className="w-8 h-8 fill-green-400 text-green-400" />
                           ) : (
-                            <FaRegStar className="w-8 h-8 text-gray-300" />
+                            <Star className="w-8 h-8 text-gray-300" />
                           )}
                         </button>
                       ))}
-                      <span className="ml-3 text-sm font-medium text-gray-700">
+                      <span className="ml-2 text-sm font-medium text-gray-700">
                         {userRating > 0 ? `${userRating} sao` : "Chọn số sao"}
                       </span>
                     </div>
                   </div>
-
                   <div>
-                    <label
-                      htmlFor="comment"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
+                    <label htmlFor="comment" className="block text-sm font-medium text-black mb-2">
                       Bình luận của bạn
                     </label>
-                    <div>
-                      <textarea
-                        rows={4}
-                        name="comment"
-                        id="comment"
-                        className="shadow-sm focus:ring-green-500 focus:border-green-500 block w-full sm:text-sm border border-gray-300 rounded-md p-3"
-                        placeholder="Chia sẻ cảm nhận của bạn về sản phẩm..."
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        disabled={!accessToken}
-                      />
-                    </div>
+                    <textarea
+                      rows={4}
+                      name="comment"
+                      id="comment"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-green-400 resize-none"
+                      placeholder="Chia sẻ cảm nhận của bạn về sản phẩm..."
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                    />
                   </div>
-                  <div className="mt-4">
-                    <button
-                      type="submit"
-                      className={`inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white transition-colors duration-200 ${
-                        !accessToken
-                          ? "bg-gray-400 cursor-not-allowed"
-                          : "bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                      }`}
-                      disabled={!accessToken}
-                    >
-                      Gửi đánh giá
-                    </button>
-                  </div>
-                </>
+                  <button
+                    type="submit"
+                    className="px-6 py-3 bg-green-400 text-black font-semibold rounded-lg hover:bg-green-500 transition-colors"
+                  >
+                    Gửi đánh giá
+                  </button>
+                </form>
               )}
-            </form>
+            </div>
           </div>
-        </section>
+        </div>
       </div>
-
-      {/* Notification */}
-      <Notification
-        isOpen={showNotification}
-        type={notificationType}
-        message={notificationMessage}
-        onClose={() => setShowNotification(false)}
-        action={[{ label: "OK", onClick: () => setShowNotification(false) }]}
-      />
     </div>
   );
 }
