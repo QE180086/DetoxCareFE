@@ -21,6 +21,20 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { addToCartFromServer } from "../../state/Cart/Action";
 import { productApi } from "../../utils/api/product.api";
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
+
+// Add this helper function to safely render HTML content
+const renderHTMLContent = (content) => {
+  if (!content) return null;
+  
+  return (
+    <div 
+      className="text-gray-700 leading-relaxed"
+      dangerouslySetInnerHTML={{ __html: content }}
+    />
+  );
+};
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -158,7 +172,9 @@ export default function ProductDetail() {
 
   const handleCommentSubmit = (e) => {
     e.preventDefault();
-    if (!newComment.trim() || userRating === 0) {
+    // Check if comment has content (not just whitespace or empty HTML tags)
+    const strippedContent = newComment.replace(/<[^>]*>/g, '').trim();
+    if (!strippedContent || userRating === 0) {
       alert("Vui lòng nhập bình luận và đánh giá sao!");
       return;
     }
@@ -206,7 +222,9 @@ export default function ProductDetail() {
   };
 
   const saveEditedComment = () => {
-    if (!editingCommentText.trim()) {
+    // Check if comment has content (not just whitespace or empty HTML tags)
+    const strippedContent = editingCommentText.replace(/<[^>]*>/g, '').trim();
+    if (!strippedContent) {
       alert("Bình luận không được để trống!");
       return;
     }
@@ -532,11 +550,25 @@ export default function ProductDetail() {
                         </div>
                         {editingCommentId === comment.id ? (
                           <div className="mt-3">
-                            <textarea
-                              rows={3}
-                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-green-400 resize-none"
+                            <ReactQuill
                               value={editingCommentText}
-                              onChange={(e) => setEditingCommentText(e.target.value)}
+                              onChange={setEditingCommentText}
+                              modules={{
+                                toolbar: [
+                                  [{ 'header': [2, 3, false] }],
+                                  ['bold', 'italic', 'underline'],
+                                  [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                  ['link'],
+                                  ['clean']
+                                ]
+                              }}
+                              formats={[
+                                'header',
+                                'bold', 'italic', 'underline',
+                                'list', 'bullet',
+                                'link'
+                              ]}
+                              className="bg-white text-black"
                             />
                             <div className="flex justify-end gap-2 mt-2">
                               <button
@@ -554,7 +586,9 @@ export default function ProductDetail() {
                             </div>
                           </div>
                         ) : (
-                          <p className="mt-2 text-gray-700 leading-relaxed">{comment.comment}</p>
+                          <div className="mt-2 text-gray-700 leading-relaxed">
+                            {renderHTMLContent(comment.comment)}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -623,14 +657,26 @@ export default function ProductDetail() {
                     <label htmlFor="comment" className="block text-sm font-medium text-black mb-2">
                       Bình luận của bạn
                     </label>
-                    <textarea
-                      rows={4}
-                      name="comment"
-                      id="comment"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-green-400 resize-none"
-                      placeholder="Chia sẻ cảm nhận của bạn về sản phẩm..."
+                    <ReactQuill
                       value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
+                      onChange={setNewComment}
+                      modules={{
+                        toolbar: [
+                          [{ 'header': [2, 3, false] }],
+                          ['bold', 'italic', 'underline'],
+                          [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                          ['link'],
+                          ['clean']
+                        ]
+                      }}
+                      formats={[
+                        'header',
+                        'bold', 'italic', 'underline',
+                        'list', 'bullet',
+                        'link'
+                      ]}
+                      className="bg-white text-black"
+                      placeholder="Chia sẻ cảm nhận của bạn về sản phẩm..."
                     />
                   </div>
                   <button

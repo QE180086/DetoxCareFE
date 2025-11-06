@@ -35,7 +35,10 @@ const SearchableDropdown = ({
   const [searchTerm, setSearchTerm] = useState('');
   const dropdownRef = useRef(null);
 
-  const filteredOptions = options.filter(option =>
+  // Ensure options is always an array
+  const safeOptions = Array.isArray(options) ? options : [];
+  
+  const filteredOptions = safeOptions.filter(option =>
     option.label.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -52,7 +55,7 @@ const SearchableDropdown = ({
     };
   }, []);
 
-  const selectedOption = options.find(option => option.value === value);
+  const selectedOption = safeOptions.find(option => option.value === value);
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -173,6 +176,11 @@ export default function Profile() {
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Validation errors state
+  const [errors, setErrors] = useState({});
+
+  const [editingAddressIndex, setEditingAddressIndex] = useState(null);
 
   useEffect(() => {
     console.log("userData state updated:", userData);
@@ -340,6 +348,11 @@ export default function Profile() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setUserData((prev) => ({ ...prev, [name]: value }));
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleAddressChange = (index, field, value) => {
@@ -348,6 +361,34 @@ export default function Profile() {
       newAddresses[index] = { ...newAddresses[index], [field]: value };
       return { ...prev, addresses: newAddresses };
     });
+  };
+
+  // New function to start editing an address
+  const startEditingAddress = (index) => {
+    setEditingAddressIndex(index);
+  };
+
+  // New function to cancel editing an address
+  const cancelEditingAddress = () => {
+    setEditingAddressIndex(null);
+    // Reset address data to original if it was an existing address
+    if (profile && profile.data && editingAddressIndex !== null && editingAddressIndex < profile.data.addresses.length) {
+      setUserData((prev) => {
+        const newAddresses = [...prev.addresses];
+        const originalAddress = profile.data.addresses[editingAddressIndex];
+        newAddresses[editingAddressIndex] = {
+          addressLine: originalAddress.address || "",
+          isDefault: originalAddress.default || false,
+          provinceId: originalAddress.provinceId || null,
+          provinceName: originalAddress.provinceName || "",
+          districtId: originalAddress.districtId || null,
+          districtName: originalAddress.districtName || "",
+          wardCode: originalAddress.wardCode || "",
+          wardName: originalAddress.wardName || "",
+        };
+        return { ...prev, addresses: newAddresses };
+      });
+    }
   };
 
   const addNewAddress = () => {
@@ -361,7 +402,7 @@ export default function Profile() {
       ...prev,
       addresses: [...prev.addresses, {
         addressLine: "",
-        isDefault: false,
+        isDefault: prev.addresses.length === 0, // First address is default by default
         provinceId: null,
         provinceName: "",
         districtId: null,
@@ -370,6 +411,9 @@ export default function Profile() {
         wardName: ""
       }],
     }));
+    
+    // Set the new address as the one being edited
+    setEditingAddressIndex(userData.addresses.length);
   };
 
   const removeAddress = (index) => {
@@ -412,9 +456,63 @@ export default function Profile() {
     setPasswordSuccess("");
   };
 
+  const validateProfileData = () => {
+    const newErrors = {};
+    
+    // Validate required fields (only phone number and full name are required)
+    if (!userData.fullName?.trim()) {
+      newErrors.fullName = "Họ và tên là bắt buộc";
+    } else if (userData.fullName.length > 20) {
+      newErrors.fullName = "Họ và tên phải dưới 20 ký tự";
+    }
+    
+    if (!userData.phoneNumber?.trim()) {
+      newErrors.phoneNumber = "Số điện thoại là bắt buộc";
+    } else if (!/^\d{10}$/.test(userData.phoneNumber)) {
+      newErrors.phoneNumber = "Số điện thoại phải là 10 chữ số";
+    }
+    
+    // Validate nickname only if provided
+    if (userData.nickName && userData.nickName.length > 20) {
+      newErrors.nickName = "Biệt danh phải dưới 20 ký tự";
+    }
+    
+    // Validate addresses - only validate addresses that are being edited or new
+    userData.addresses.forEach((address, index) => {
+      // Only validate if this is the address being edited or if it's a new address
+      const shouldValidate = editingAddressIndex === index || index >= (profile?.data?.addresses?.length || 0);
+      
+      if (shouldValidate && (!address.provinceId || !address.districtId || !address.wardCode)) {
+        if (!address.provinceId) {
+          newErrors[`province_${index}`] = "Tỉnh/Thành phố là bắt buộc";
+        }
+        if (!address.districtId) {
+          newErrors[`district_${index}`] = "Quận/Huyện là bắt buộc";
+        }
+        if (!address.wardCode) {
+          newErrors[`ward_${index}`] = "Phường/Xã là bắt buộc";
+        }
+      }
+    });
+    
+    return newErrors;
+  };
+
   const handleSave = () => {
     const token = sessionStorage.getItem("accessToken");
     const userId = sessionStorage.getItem("userId");
+    
+    // Validate data before saving
+    const newErrors = validateProfileData();
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      // Show first error in modal
+      const firstError = Object.values(newErrors)[0];
+      setErrorMessage(firstError || "Vui lòng kiểm tra lại thông tin");
+      setShowErrorModal(true);
+      return;
+    }
+    
     if (token && userId && userId !== "currentUserId") {
       const avatarFileInput = document.getElementById("avatar-upload");
       const avatarFile = avatarFileInput?.files[0];
@@ -448,6 +546,15 @@ export default function Profile() {
           }
         }
 
+        // Ensure exactly one address is default
+        const addressesWithDefault = userData.addresses.map((address, index) => {
+          // If no address is marked as default, mark the first one
+          if (!userData.addresses.some(addr => addr.isDefault)) {
+            return { ...address, isDefault: index === 0 };
+          }
+          return address;
+        });
+
         const profileData = {
           userId,
           username: userData.username,
@@ -461,7 +568,7 @@ export default function Profile() {
               ? "FEMALE"
               : userData.gender,
           dateOfBirth: userData.dateOfBirth,
-          addresses: userData.addresses.map((address, index) => ({
+          addresses: addressesWithDefault.map((address, index) => ({
             address: address.addressLine || `${address.provinceName}, ${address.districtName}, ${address.wardName}`,
             other: "",
             default: address.isDefault || false,
@@ -480,6 +587,8 @@ export default function Profile() {
           console.log("Profile updated successfully");
           setAvatarPreview(null);
           setIsEditing(false);
+          setEditingAddressIndex(null); // Reset address editing state
+          setErrors({}); // Clear errors on success
         } catch (error) {
           let errorMsg = "Có lỗi xảy ra khi lưu thông tin. Vui lòng thử lại.";
           if (error && typeof error === 'object') {
@@ -503,6 +612,7 @@ export default function Profile() {
     } else {
       setAvatarPreview(null);
       setIsEditing(false);
+      setEditingAddressIndex(null); // Reset address editing state
     }
   };
 
@@ -543,6 +653,7 @@ export default function Profile() {
       avatarFileInput.value = "";
     }
     setIsEditing(false);
+    setEditingAddressIndex(null); // Reset address editing state
   };
 
   const handlePasswordSubmit = async (e) => {
@@ -559,8 +670,27 @@ export default function Profile() {
       return;
     }
 
-    if (passwordData.newPassword.length < 6) {
-      setErrorMessage("Mật khẩu mới phải có ít nhất 6 ký tự");
+    // Password validation
+    if (passwordData.newPassword.length < 8) {
+      setErrorMessage("Mật khẩu mới phải có ít nhất 8 ký tự");
+      setShowErrorModal(true);
+      return;
+    }
+
+    if (!/[A-Z]/.test(passwordData.newPassword)) {
+      setErrorMessage("Mật khẩu mới phải chứa ít nhất một chữ cái in hoa");
+      setShowErrorModal(true);
+      return;
+    }
+
+    if (!/[0-9]/.test(passwordData.newPassword)) {
+      setErrorMessage("Mật khẩu mới phải chứa ít nhất một chữ số");
+      setShowErrorModal(true);
+      return;
+    }
+
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(passwordData.newPassword)) {
+      setErrorMessage("Mật khẩu mới phải chứa ít nhất một ký tự đặc biệt");
       setShowErrorModal(true);
       return;
     }
@@ -588,16 +718,28 @@ export default function Profile() {
       setPasswordData({ oldPassword: "", newPassword: "", confirmPassword: "" });
     } catch (error) {
       let errorMsg = "Có lỗi xảy ra khi đổi mật khẩu. Vui lòng thử lại.";
+      
+      // Check if it's an old password error from the server
       if (error && typeof error === 'object') {
-        if (error.message) {
+        // Check for specific error messages related to old password
+        if (error.message && (error.message.includes("old password") || error.message.includes("request fall"))) {
+          errorMsg = "Mật khẩu cũ không đúng";
+        } else if (error.message) {
           errorMsg = error.message;
         } else if (error.messageDetail) {
           errorMsg = error.messageDetail;
+        } else if (error.status === 400) {
+          // For any 400 status, assume it's an old password issue
+          errorMsg = "Mật khẩu cũ không đúng";
         } else {
           errorMsg = JSON.stringify(error);
         }
       } else if (typeof error === 'string') {
-        errorMsg = error;
+        if (error.includes("old password") || error.includes("request fall")) {
+          errorMsg = "Mật khẩu cũ không đúng";
+        } else {
+          errorMsg = error;
+        }
       }
 
       setErrorMessage(errorMsg);
@@ -666,9 +808,21 @@ export default function Profile() {
       try {
         setLoadingProvinces(true);
         const response = await addressApi.getProvinces();
-        setProvinces(response.data || response || []);
+        
+        // Check if response data is valid array
+        if (response && response.data && Array.isArray(response.data)) {
+          setProvinces(response.data);
+        } else {
+          // Handle invalid response
+          setProvinces([]);
+          setErrorMessage("Không thể tải danh sách tỉnh/thành phố. Vui lòng thử lại.");
+          setShowErrorModal(true);
+        }
       } catch (error) {
         console.error("Error fetching provinces:", error);
+        setProvinces([]);
+        setErrorMessage("Không thể tải danh sách tỉnh/thành phố. Vui lòng kiểm tra kết nối mạng.");
+        setShowErrorModal(true);
       } finally {
         setLoadingProvinces(false);
       }
@@ -703,9 +857,21 @@ export default function Profile() {
       try {
         setLoadingDistricts(true);
         const response = await addressApi.getDistricts(provinceId);
-        setDistricts(response.data || response || []);
+        
+        // Check if response data is valid array
+        if (response && response.data && Array.isArray(response.data)) {
+          setDistricts(response.data);
+        } else {
+          // Handle invalid response
+          setDistricts([]);
+          setErrorMessage("Không thể tải danh sách quận/huyện. Vui lòng thử lại.");
+          setShowErrorModal(true);
+        }
       } catch (error) {
         console.error("Error fetching districts:", error);
+        setDistricts([]);
+        setErrorMessage("Không thể tải danh sách quận/huyện. Vui lòng kiểm tra lại tỉnh/thành phố đã chọn.");
+        setShowErrorModal(true);
       } finally {
         setLoadingDistricts(false);
       }
@@ -740,9 +906,21 @@ export default function Profile() {
       try {
         setLoadingWards(true);
         const response = await addressApi.getWards(districtId);
-        setWards(response.data || response || []);
+        
+        // Check if response data is valid array
+        if (response && response.data && Array.isArray(response.data)) {
+          setWards(response.data);
+        } else {
+          // Handle invalid response
+          setWards([]);
+          setErrorMessage("Không thể tải danh sách phường/xã. Vui lòng thử lại.");
+          setShowErrorModal(true);
+        }
       } catch (error) {
         console.error("Error fetching wards:", error);
+        setWards([]);
+        setErrorMessage("Không thể tải danh sách phường/xã. Vui lòng kiểm tra lại quận/huyện đã chọn.");
+        setShowErrorModal(true);
       } finally {
         setLoadingWards(false);
       }
@@ -909,14 +1087,17 @@ export default function Profile() {
                             Biệt danh
                           </label>
                           {isEditing ? (
-                            <input
-                              type="text"
-                              name="nickName"
-                              value={userData.nickName || ""}
-                              onChange={handleInputChange}
-                              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-400 focus:ring-2 focus:ring-green-100 focus:outline-none transition-all text-gray-900"
-                              placeholder="Nhập biệt danh"
-                            />
+                            <>
+                              <input
+                                type="text"
+                                name="nickName"
+                                value={userData.nickName || ""}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-400 focus:ring-2 focus:ring-green-100 focus:outline-none transition-all text-gray-900"
+                                placeholder="Nhập biệt danh"
+                              />
+                              
+                            </>
                           ) : (
                             <div className="px-4 py-3 bg-gray-50 rounded-lg text-gray-900 border border-gray-100">
                               {userData.nickName || (
@@ -928,17 +1109,20 @@ export default function Profile() {
 
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Họ và tên
+                            Họ và tên <span className="text-red-500">*</span>
                           </label>
                           {isEditing ? (
-                            <input
-                              type="text"
-                              name="fullName"
-                              value={userData.fullName || ""}
-                              onChange={handleInputChange}
-                              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-400 focus:ring-2 focus:ring-green-100 focus:outline-none transition-all text-gray-900"
-                              placeholder="Nhập họ và tên"
-                            />
+                            <>
+                              <input
+                                type="text"
+                                name="fullName"
+                                value={userData.fullName || ""}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-400 focus:ring-2 focus:ring-green-100 focus:outline-none transition-all text-gray-900"
+                                placeholder="Nhập họ và tên"
+                              />
+                              
+                            </>
                           ) : (
                             <div className="px-4 py-3 bg-gray-50 rounded-lg text-gray-900 border border-gray-100">
                               {userData.fullName || (
@@ -950,17 +1134,20 @@ export default function Profile() {
 
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Số điện thoại
+                            Số điện thoại <span className="text-red-500">*</span>
                           </label>
                           {isEditing ? (
-                            <input
-                              type="tel"
-                              name="phoneNumber"
-                              value={userData.phoneNumber || ""}
-                              onChange={handleInputChange}
-                              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-400 focus:ring-2 focus:ring-green-100 focus:outline-none transition-all text-gray-900"
-                              placeholder="Nhập số điện thoại"
-                            />
+                            <>
+                              <input
+                                type="tel"
+                                name="phoneNumber"
+                                value={userData.phoneNumber || ""}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-400 focus:ring-2 focus:ring-green-100 focus:outline-none transition-all text-gray-900"
+                                placeholder="Nhập số điện thoại"
+                              />
+                              
+                            </>
                           ) : (
                             <div className="px-4 py-3 bg-gray-50 rounded-lg text-gray-900 border border-gray-100">
                               {userData.phoneNumber || (
@@ -975,17 +1162,20 @@ export default function Profile() {
                             Giới tính
                           </label>
                           {isEditing ? (
-                            <select
-                              name="gender"
-                              value={userData.gender || ""}
-                              onChange={handleInputChange}
-                              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-400 focus:ring-2 focus:ring-green-100 focus:outline-none transition-all text-gray-900 bg-white"
-                            >
-                              <option value="">Chọn giới tính</option>
-                              <option value="Nam">Nam</option>
-                              <option value="Nữ">Nữ</option>
-                              <option value="Khác">Khác</option>
-                            </select>
+                            <>
+                              <select
+                                name="gender"
+                                value={userData.gender || ""}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-400 focus:ring-2 focus:ring-green-100 focus:outline-none transition-all text-gray-900 bg-white"
+                              >
+                                <option value="">Chọn giới tính</option>
+                                <option value="Nam">Nam</option>
+                                <option value="Nữ">Nữ</option>
+                                <option value="Khác">Khác</option>
+                              </select>
+                              
+                            </>
                           ) : (
                             <div className="px-4 py-3 bg-gray-50 rounded-lg text-gray-900 border border-gray-100">
                               {userData.gender || (
@@ -1000,13 +1190,16 @@ export default function Profile() {
                             Ngày sinh
                           </label>
                           {isEditing ? (
-                            <input
-                              type="date"
-                              name="dateOfBirth"
-                              value={userData.dateOfBirth || ""}
-                              onChange={handleInputChange}
-                              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-400 focus:ring-2 focus:ring-green-100 focus:outline-none transition-all text-gray-900"
-                            />
+                            <>
+                              <input
+                                type="date"
+                                name="dateOfBirth"
+                                value={userData.dateOfBirth || ""}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-400 focus:ring-2 focus:ring-green-100 focus:outline-none transition-all text-gray-900"
+                              />
+                              
+                            </>
                           ) : (
                             <div className="px-4 py-3 bg-gray-50 rounded-lg text-gray-900 border border-gray-100">
                               {formatDate(userData.dateOfBirth) || (
@@ -1022,7 +1215,7 @@ export default function Profile() {
                       <div className="flex items-center justify-between mb-5">
                         <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                           <div className="w-1 h-5 bg-green-400 rounded-full"></div>
-                          Địa chỉ
+                          Địa chỉ <span className="text-red-500">*</span>
                         </h3>
                         {isEditing && (
                           <button
@@ -1040,73 +1233,137 @@ export default function Profile() {
                           <div key={index} className="border border-gray-200 rounded-lg p-5 bg-gray-50">
                             {isEditing ? (
                               <div className="space-y-4">
-                                {address.addressLine && (
-                                  <div className="bg-white border border-gray-200 rounded-lg p-3 mb-3">
-                                    <div className="text-xs text-gray-500 mb-1">Địa chỉ hiện tại:</div>
-                                    <div className="font-medium text-gray-900 text-sm">
-                                      {address.addressLine}
+                                {/* Check if this is a new address (index >= number of original addresses) */}
+                                {index >= (profile?.data?.addresses?.length || 0) || editingAddressIndex === index ? (
+                                  // Editing mode for new addresses or the address being edited
+                                  <>
+                                    {address.addressLine && (
+                                      <div className="bg-white border border-gray-200 rounded-lg p-3 mb-3">
+                                        <div className="text-xs text-gray-500 mb-1">Địa chỉ hiện tại:</div>
+                                        <div className="font-medium text-gray-900 text-sm">
+                                          {address.addressLine}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                      <div>
+                                        <SearchableDropdown
+                                          label="Tỉnh/Thành phố"
+                                          options={Array.isArray(provinces) ? provinces.map(province => ({
+                                            value: province.ProvinceID,
+                                            label: province.ProvinceName
+                                          })) : []}
+                                          value={address.provinceId || ""}
+                                          onChange={(value) => handleProvinceChange(index, value)}
+                                          placeholder="Chọn tỉnh/thành"
+                                          disabled={loadingProvinces}
+                                          loading={loadingProvinces}
+                                        />
+                                      </div>
+
+                                      <div>
+                                        <SearchableDropdown
+                                          label="Quận/Huyện"
+                                          options={Array.isArray(districts) ? districts.map(district => ({
+                                            value: district.DistrictID,
+                                            label: district.DistrictName
+                                          })) : []}
+                                          value={address.districtId || ""}
+                                          onChange={(value) => handleDistrictChange(index, value)}
+                                          placeholder="Chọn quận/huyện"
+                                          disabled={loadingDistricts || !address.provinceId}
+                                          loading={loadingDistricts}
+                                        />
+                                      </div>
+
+                                      <div>
+                                        <SearchableDropdown
+                                          label="Phường/Xã"
+                                          options={Array.isArray(wards) ? wards.map(ward => ({
+                                            value: ward.WardCode,
+                                            label: ward.WardName
+                                          })) : []}
+                                          value={address.wardCode || ""}
+                                          onChange={(value) => handleWardChange(index, value)}
+                                          placeholder="Chọn phường/xã"
+                                          disabled={loadingWards || !address.districtId}
+                                          loading={loadingWards}
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                                      <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                          type="checkbox"
+                                          checked={address.isDefault || false}
+                                          onChange={() => handleSetDefaultAddress(index)}
+                                          className="w-4 h-4 text-green-400 border-gray-300 rounded focus:ring-green-400"
+                                        />
+                                        <span className="text-sm text-gray-700 font-medium">Đặt làm mặc định</span>
+                                      </label>
+                                      <div className="flex gap-2">
+                                        {/* For new addresses, only show cancel button */}
+                                        {index >= (profile?.data?.addresses?.length || 0) ? (
+                                          <button
+                                            onClick={() => removeAddress(index)}
+                                            className="px-3 py-1.5 bg-white text-gray-700 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 hover:border-gray-300 transition-all"
+                                          >
+                                            Hủy
+                                          </button>
+                                        ) : (
+                                          <>
+                                            <button
+                                              onClick={cancelEditingAddress}
+                                              className="px-3 py-1.5 bg-white text-gray-700 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 hover:border-gray-300 transition-all"
+                                            >
+                                              Hủy
+                                            </button>
+                                            <button
+                                              onClick={() => {
+                                                setEditingAddressIndex(null);
+                                              }}
+                                              className="px-3 py-1.5 bg-green-400 text-white rounded-lg text-sm hover:bg-green-500 transition-all"
+                                            >
+                                              Lưu
+                                            </button>
+                                          </>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </>
+                                ) : (
+                                  // Display mode for existing addresses with edit button
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                      <div className="text-gray-900 font-medium mb-1">
+                                        {address.addressLine || `${address.provinceName}, ${address.districtName}, ${address.wardName}` || (
+                                          <span className="text-gray-400">Chưa cập nhật</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="flex gap-2 items-center">
+                                      {address.isDefault && (
+                                        <span className="px-3 py-1 bg-green-400 text-white text-xs font-medium rounded-full whitespace-nowrap">
+                                          Mặc định
+                                        </span>
+                                      )}
+                                      <button
+                                        onClick={() => startEditingAddress(index)}
+                                        className="px-3 py-1.5 bg-white text-gray-700 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 hover:border-gray-300 transition-all"
+                                      >
+                                        Sửa
+                                      </button>
+                                      <button
+                                        onClick={() => removeAddress(index)}
+                                        className="px-3 py-1.5 bg-white text-gray-700 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 hover:border-gray-300 transition-all"
+                                      >
+                                        Xóa
+                                      </button>
                                     </div>
                                   </div>
                                 )}
-
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                  <SearchableDropdown
-                                    label="Tỉnh/Thành phố"
-                                    options={provinces.map(province => ({
-                                      value: province.ProvinceID,
-                                      label: province.ProvinceName
-                                    }))}
-                                    value={address.provinceId || ""}
-                                    onChange={(value) => handleProvinceChange(index, value)}
-                                    placeholder="Chọn tỉnh/thành"
-                                    disabled={loadingProvinces}
-                                    loading={loadingProvinces}
-                                  />
-
-                                  <SearchableDropdown
-                                    label="Quận/Huyện"
-                                    options={districts.map(district => ({
-                                      value: district.DistrictID,
-                                      label: district.DistrictName
-                                    }))}
-                                    value={address.districtId || ""}
-                                    onChange={(value) => handleDistrictChange(index, value)}
-                                    placeholder="Chọn quận/huyện"
-                                    disabled={loadingDistricts || !address.provinceId}
-                                    loading={loadingDistricts}
-                                  />
-
-                                  <SearchableDropdown
-                                    label="Phường/Xã"
-                                    options={wards.map(ward => ({
-                                      value: ward.WardCode,
-                                      label: ward.WardName
-                                    }))}
-                                    value={address.wardCode || ""}
-                                    onChange={(value) => handleWardChange(index, value)}
-                                    placeholder="Chọn phường/xã"
-                                    disabled={loadingWards || !address.districtId}
-                                    loading={loadingWards}
-                                  />
-                                </div>
-
-                                <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-                                  <label className="flex items-center gap-2 cursor-pointer">
-                                    <input
-                                      type="checkbox"
-                                      checked={address.isDefault || false}
-                                      onChange={() => handleSetDefaultAddress(index)}
-                                      className="w-4 h-4 text-green-400 border-gray-300 rounded focus:ring-green-400"
-                                    />
-                                    <span className="text-sm text-gray-700 font-medium">Đặt làm mặc định</span>
-                                  </label>
-                                  <button
-                                    onClick={() => removeAddress(index)}
-                                    className="px-3 py-1.5 bg-white text-gray-700 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 hover:border-gray-300 transition-all"
-                                  >
-                                    Xóa
-                                  </button>
-                                </div>
                               </div>
                             ) : (
                               <div className="flex items-start justify-between">
@@ -1194,7 +1451,7 @@ export default function Profile() {
                             <button
                               type="button"
                               onClick={() => setShowOldPassword(!showOldPassword)}
-                              className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600"
+                              className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                             >
                               {showOldPassword ? (
                                 <AiOutlineEyeInvisible size={20} />
@@ -1221,7 +1478,7 @@ export default function Profile() {
                             <button
                               type="button"
                               onClick={() => setShowNewPassword(!showNewPassword)}
-                              className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600"
+                              className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                             >
                               {showNewPassword ? (
                                 <AiOutlineEyeInvisible size={20} />
@@ -1248,7 +1505,7 @@ export default function Profile() {
                             <button
                               type="button"
                               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                              className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600"
+                              className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                             >
                               {showConfirmPassword ? (
                                 <AiOutlineEyeInvisible size={20} />

@@ -5,7 +5,7 @@ import {
   FaBox, FaArrowLeft, FaArrowRight,
   FaMapMarkerAlt, FaPhone, FaEnvelope,
   FaTruck, FaCalendarAlt, FaChevronDown,
-  FaChevronUp, FaBoxOpen
+  FaChevronUp, FaBoxOpen, FaShippingFast
 } from 'react-icons/fa';
 import { ordersApi } from '../../utils/api/orders.api';
 
@@ -16,6 +16,88 @@ export default function HistoryOrders() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 8;
+  const [ghnOrderDetails, setGhnOrderDetails] = useState({});
+  const [showShippingTimeline, setShowShippingTimeline] = useState({});
+
+  // Function to fetch GHN order details
+  const fetchGhnOrderDetails = async (orderCode, orderId) => {
+    try {
+      const data = await ordersApi.getGhnOrderDetail(orderCode);
+      if (data?.success) {
+        setGhnOrderDetails(prev => ({
+          ...prev,
+          [orderId]: data.data
+        }));
+      }
+    } catch (error) {
+      console.error('Lỗi khi lấy chi tiết đơn hàng GHN:', error);
+    }
+  };
+
+  // Status mapping for better display
+  const getShippingStatusText = (status) => {
+    switch (status) {
+      case 'ready_to_pick': return 'Sẵn sàng lấy hàng';
+      case 'picking': return 'Đang lấy hàng';
+      case 'picked': return 'Đã lấy hàng';
+      case 'delivering': return 'Đang giao hàng';
+      case 'delivered': return 'Đã giao hàng';
+      case 'cancelled': return 'Đã hủy';
+      case 'return': return 'Trả hàng';
+      case 'returned': return 'Đã trả hàng';
+      default: return status;
+    }
+  };
+
+  // Status timeline order
+  const shippingStatusOrder = [
+    'ready_to_pick',
+    'picking',
+    'picked',
+    'delivering',
+    'delivered',
+    'cancelled',
+    'return',
+    'returned'
+  ];
+
+  // Get current status index
+  const getCurrentStatusIndex = (status) => {
+    return shippingStatusOrder.indexOf(status);
+  };
+
+  // Toggle order details (both products and shipping timeline)
+  const toggleOrderDetails = async (orderId, orderCode) => {
+    const isCurrentlyExpanded = expandedOrder === orderId;
+    
+    // If expanding and there's an order code, fetch GHN details
+    if (!isCurrentlyExpanded && orderCode) {
+      await fetchGhnOrderDetails(orderCode, orderId);
+      // Show shipping timeline when expanding
+      setShowShippingTimeline(prev => ({
+        ...prev,
+        [orderId]: true
+      }));
+    }
+    
+    // Toggle expanded state
+    setExpandedOrder(isCurrentlyExpanded ? null : orderId);
+  };
+
+  // Toggle shipping timeline visibility
+  const toggleShippingTimeline = async (orderId, orderCode) => {
+    const isShowing = showShippingTimeline[orderId];
+    
+    // If showing for the first time, fetch GHN details
+    if (!isShowing && orderCode) {
+      await fetchGhnOrderDetails(orderCode, orderId);
+    }
+    
+    setShowShippingTimeline(prev => ({
+      ...prev,
+      [orderId]: !isShowing
+    }));
+  };
 
   const fetchOrders = async (page) => {
     try {
@@ -45,13 +127,13 @@ export default function HistoryOrders() {
         return <FaCheckCircle className="w-5 h-5 text-white" />;
       case 'PENDING': 
       case 'PROCESSING': 
-        return <FaClock className="w-5 h-5 text-gray-400" />;
+        return <FaClock className="w-5 h-5 text-white" />;
       case 'CANCELLED': 
       case 'CANCELED': 
       case 'CANCEL': 
         return <FaTimes className="w-5 h-5 text-white" />;
       default: 
-        return <FaClock className="w-5 h-5 text-gray-400" />;
+        return <FaClock className="w-5 h-5 text-white" />;
     }
   };
 
@@ -73,10 +155,6 @@ export default function HistoryOrders() {
     }
   };
 
-  const toggleOrderDetails = (orderId) => {
-    setExpandedOrder(expandedOrder === orderId ? null : orderId);
-  };
-
   const handlePreviousPage = () => {
     if (currentPage > 1) {
       setCurrentPage(currentPage - 1);
@@ -87,6 +165,135 @@ export default function HistoryOrders() {
     if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
     }
+  };
+
+  // Function to format date for display
+  const formatDateTime = (dateString) => {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // Function to render shipping timeline based on log data
+  const renderShippingTimeline = (orderDetails) => {
+    const { log, status: currentStatus, leadtime } = orderDetails;
+    
+    // Filter out any invalid log entries and sort by updated_date
+    const validLogs = (log || []).filter(item => item.status && item.updated_date);
+    
+    if (validLogs.length === 0) {
+      return (
+        <div className="text-center py-8 text-gray-500">
+          <div className="flex flex-col items-center gap-2">
+            <FaShippingFast className="w-12 h-12 text-gray-300" />
+            <p className="text-sm">Chưa có thông tin vận chuyển</p>
+          </div>
+        </div>
+      );
+    }
+
+    // Sort logs by updated_date chronologically
+    const sortedLogs = [...validLogs].sort((a, b) => 
+      new Date(a.updated_date) - new Date(b.updated_date)
+    );
+
+    // Get the latest log entry to determine completion status
+    const latestLog = sortedLogs[sortedLogs.length - 1];
+
+    return (
+      <div className="relative py-4">
+        {/* Timeline line - gradient effect */}
+        <div className="absolute left-5 top-0 bottom-0 w-1 bg-gradient-to-b from-green-400 via-green-400 to-green-400"></div>
+        
+        <div className="space-y-4">
+          {sortedLogs.map((logItem, index) => {
+            const isCurrent = logItem.status === currentStatus;
+            const isLatest = logItem === latestLog;
+            const isCompleted = true; // All logs in the array are completed events
+            
+            return (
+              <div key={index} className="relative pl-14 pr-4">
+                {/* Status dot with shadow */}
+                <div className={`absolute left-0 top-4 w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ${
+                  isCompleted 
+                    ? 'bg-gradient-to-br from-green-400 to-green-500 scale-110' 
+                    : 'bg-white border-2 border-gray-300'
+                }`}>
+                  {isCompleted && (
+                    <FaCheckCircle className="w-5 h-5 text-white" />
+                  )}
+                </div>
+                
+                {/* Status content with hover effect */}
+                <div className={`p-5 rounded-2xl shadow-sm transition-all duration-300 hover:shadow-md ${
+                  isCurrent 
+                    ? 'bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-300' 
+                    : isLatest
+                      ? 'bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300'
+                      : 'bg-white border border-gray-200'
+                }`}>
+                  <div className="flex justify-between items-start gap-3 mb-3">
+                    <h5 className={`font-semibold text-base ${
+                      isCompleted ? 'text-gray-800' : 'text-gray-500'
+                    }`}>
+                      {getShippingStatusText(logItem.status)}
+                    </h5>
+                    <div className="flex gap-2">
+                      {isCurrent && (
+                        <span className="px-3 py-1 bg-green-500 text-white text-xs font-medium rounded-full whitespace-nowrap shadow-sm">
+                          Hiện tại
+                        </span>
+                      )}
+                      {isLatest && !isCurrent && (
+                        <span className="px-3 py-1 bg-blue-500 text-white text-xs font-medium rounded-full whitespace-nowrap shadow-sm">
+                          Mới nhất
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <FaClock className="w-3.5 h-3.5 text-gray-400" />
+                    <p className="text-sm text-gray-600 font-medium">
+                      {formatDateTime(logItem.updated_date)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          
+          {/* Expected delivery date if available and not already delivered */}
+          {leadtime && currentStatus !== 'delivered' && (
+            <div className="relative pl-14 pr-4">
+              <div className="absolute left-0 top-4 w-10 h-10 rounded-full flex items-center justify-center bg-white border-2 border-dashed border-gray-400 shadow-sm">
+                <FaCalendarAlt className="w-4 h-4 text-gray-500" />
+              </div>
+              <div className="p-5 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 shadow-sm">
+                <div className="flex justify-between items-start gap-3 mb-3">
+                  <h5 className="font-semibold text-base text-gray-700">
+                    Dự kiến giao hàng
+                  </h5>
+                  <span className="px-3 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-full whitespace-nowrap">
+                    Ước tính
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <FaClock className="w-3.5 h-3.5 text-gray-400" />
+                  <p className="text-sm text-gray-600 font-medium">
+                    {formatDateTime(leadtime)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -254,23 +461,26 @@ export default function HistoryOrders() {
                       </div>
                     )}
 
-                    {/* Toggle Details Button */}
-                    <button
-                      onClick={() => toggleOrderDetails(order.id)}
-                      className="w-full py-3 px-6 bg-black text-white rounded-xl hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 font-semibold"
-                    >
-                      {expandedOrder === order.id ? (
-                        <>
-                          <FaChevronUp className="w-4 h-4" />
-                          Ẩn chi tiết
-                        </>
-                      ) : (
-                        <>
-                          <FaEye className="w-4 h-4" />
-                          Xem chi tiết sản phẩm
-                        </>
-                      )}
-                    </button>
+                    {/* Action Buttons */}
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => toggleOrderDetails(order.id, order.orderCode)}
+                        className="flex-1 py-3 px-6 bg-black text-white rounded-xl hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 font-semibold"
+                      >
+                        {expandedOrder === order.id ? (
+                          <>
+                            <FaChevronUp className="w-4 h-4" />
+                            Ẩn chi tiết
+                          </>
+                        ) : (
+                          <>
+                            <FaEye className="w-4 h-4" />
+                            Xem chi tiết
+                          </>
+                        )}
+                      </button>
+                    </div>
+
                   </div>
 
                   {/* Expanded Order Details */}
@@ -359,6 +569,21 @@ export default function HistoryOrders() {
                       </div>
                     </div>
                   )}
+
+                  {/* Shipping Status Timeline */}
+                  {expandedOrder === order.id && order.orderCode && ghnOrderDetails[order.id] && (
+                    <div className="px-6 pb-6">
+                      <div className="border-t border-gray-200 pt-6">
+                        <h4 className="text-lg font-bold text-black mb-4 flex items-center gap-2">
+                          <FaTruck className="w-5 h-5 text-green-400" />
+                          Quá trình vận chuyển
+                        </h4>
+                        
+                        {renderShippingTimeline(ghnOrderDetails[order.id])}
+                      </div>
+                    </div>
+                  )}
+
                 </div>
               ))}
             </div>

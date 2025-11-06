@@ -235,7 +235,7 @@ export default function Blog() {
               {featuredBlogs.map((blog) => (
                 <div
                   key={blog.id}
-                  onClick={() => navigate(`/blog/${blog.id}`)}
+                  onClick={() => navigate(`/blog/${blog.slugName}`)}
                   className="group bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl hover:border-green-400 transition-all duration-300 cursor-pointer"
                 >
                   <div className="relative h-64 overflow-hidden">
@@ -408,7 +408,7 @@ export default function Blog() {
               {currentBlogs.map((blog) => (
                 <div
                   key={blog.id}
-                  onClick={() => navigate(`/blog/${blog.id}`)}
+                  onClick={() => navigate(`/blog/${blog.slugName}`)}
                   className="group bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl hover:border-green-400 transition-all duration-300 hover:-translate-y-1 cursor-pointer"
                 >
                   <div className="relative h-48 overflow-hidden">

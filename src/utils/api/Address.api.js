@@ -16,25 +16,40 @@ const ghnApi = axios.create({
 export const addressApi = {
   // Get all provinces
   getProvinces: async () => {
-    const response = await ghnApi.get("/master-data/province");
-    return response.data;
+    try {
+      const response = await ghnApi.get("/master-data/province");
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching provinces:", error);
+      throw error;
+    }
   },
 
   // Get districts by province ID (passed in request body)
   getDistricts: async (provinceId) => {
-    console.log("Sending district request with provinceId:", provinceId);
-    const response = await ghnApi.post("/master-data/district", {
-      province_id: parseInt(provinceId)
-    });
-    console.log("District response:", response);
-    return response.data;
+    try {
+      console.log("Sending district request with provinceId:", provinceId);
+      const response = await ghnApi.post("/master-data/district", {
+        province_id: parseInt(provinceId)
+      });
+      console.log("District response:", response);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching districts:", error);
+      throw error;
+    }
   },
 
   // Get wards by district ID (passed in request body)
   getWards: async (districtId) => {
-    const response = await ghnApi.post("/master-data/ward?district_id", {
-      district_id: parseInt(districtId)
-    });
-    return response.data;
+    try {
+      const response = await ghnApi.post("/master-data/ward?district_id", {
+        district_id: parseInt(districtId)
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching wards:", error);
+      throw error;
+    }
   },
 };

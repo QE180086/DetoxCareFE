@@ -14,7 +14,16 @@ export default function Home() {
       <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8 flex flex-col items-center">
         <div className="w-full max-w-7xl space-y-12">
           <ComboOffers />
-          <VoucherExchange />
+          {/* VoucherExchange will be moved outside the constrained container */}
+        </div>
+      </div>
+      
+      {/* Voucher Exchange - Full width */}
+      <VoucherExchange />
+
+      {/* Remaining Content */}
+      <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8 flex flex-col items-center">
+        <div className="w-full max-w-7xl space-y-12">
           <ProductGrid />
         </div>
       </div>

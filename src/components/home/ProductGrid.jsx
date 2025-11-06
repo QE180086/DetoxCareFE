@@ -101,9 +101,15 @@ const ProductGrid = () => {
   return (
     <section className="py-12 bg-white overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 py-12">
-        <h2 className="text-3xl font-bold text-gray-800 mb-8 flex items-center gap-3">
-          <FaLeaf className="text-green-400" /> Sản Phẩm Nổi Bật
-        </h2>
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-800 flex items-center justify-center gap-3">
+            <FaLeaf className="text-green-400" /> Sản Phẩm Nổi Bật
+          </h2>
+          <p className="text-gray-600 mt-2 max-w-2xl mx-auto">
+            Khám phá những sản phẩm detox được ưa chuộng nhất của chúng tôi
+          </p>
+          <div className="w-20 h-1 bg-green-400 mx-auto mt-4 rounded-full"></div>
+        </div>
 
         <div 
           ref={scrollRef}
@@ -189,7 +195,7 @@ const ProductGrid = () => {
             to="/search"
             className="inline-flex items-center gap-2 px-6 py-3 bg-green-400 text-white rounded-full hover:bg-green-700 transition-all duration-300 text-base font-semibold shadow-lg hover:shadow-xl"
           >
-            <FaLeaf className="w-5 h-5" /> Xem tất cả sản phẩm
+            <FiShoppingCart className="w-5 h-5" /> Xem tất cả sản phẩm
           </Link>
         </div>
       </div>
