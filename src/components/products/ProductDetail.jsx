@@ -87,7 +87,7 @@ export default function ProductDetail() {
           let related = [];
 
           if (product?.typeProduct?.name) {
-            const response = await productApi.getAll(1, 20, "createdDate", "desc");
+            const response = await productApi.getAll(1, 20, "createdDate", "desc", "");
             if (response?.data?.content) {
               related = response.data.content
                 .filter((p) => p.typeProduct?.name === product.typeProduct.name && p.id !== product.id)
@@ -96,7 +96,7 @@ export default function ProductDetail() {
           }
 
           if (related.length < 4) {
-            const response = await productApi.getAll(1, 20, "createdDate", "desc");
+            const response = await productApi.getAll(1, 20, "createdDate", "desc", "");
             if (response?.data?.content) {
               const additional = response.data.content
                 .filter((p) => p.id !== product.id)

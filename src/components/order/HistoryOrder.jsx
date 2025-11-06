@@ -5,7 +5,8 @@ import {
   FaBox, FaArrowLeft, FaArrowRight,
   FaMapMarkerAlt, FaPhone, FaEnvelope,
   FaTruck, FaCalendarAlt, FaChevronDown,
-  FaChevronUp, FaBoxOpen, FaShippingFast
+  FaChevronUp, FaBoxOpen, FaShippingFast,
+  FaSearch
 } from 'react-icons/fa';
 import { ordersApi } from '../../utils/api/orders.api';
 
@@ -18,6 +19,81 @@ export default function HistoryOrders() {
   const pageSize = 8;
   const [ghnOrderDetails, setGhnOrderDetails] = useState({});
   const [showShippingTimeline, setShowShippingTimeline] = useState({});
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredOrders, setFilteredOrders] = useState([]);
+
+  // Check for hash parameter on component mount and listen for custom event
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      if (hash && hash.startsWith('#order-search-')) {
+        const orderId = hash.replace('#order-search-', '');
+        setSearchTerm(orderId);
+      }
+    };
+
+    const handleSetSearchTerm = (event) => {
+      setSearchTerm(event.detail);
+    };
+
+    const handleStorageChange = () => {
+      const orderId = localStorage.getItem('searchOrderId');
+      if (orderId) {
+        setSearchTerm(orderId);
+        localStorage.removeItem('searchOrderId'); // Clean up
+      }
+    };
+
+    // Check initial hash
+    handleHashChange();
+
+    // Check for searchOrderId in localStorage on mount
+    const orderIdFromStorage = localStorage.getItem('searchOrderId');
+    if (orderIdFromStorage) {
+      setSearchTerm(orderIdFromStorage);
+      localStorage.removeItem('searchOrderId'); // Clean up
+    }
+
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleHashChange);
+    
+    // Listen for custom event from AI chat
+    window.addEventListener('setSearchTerm', handleSetSearchTerm);
+    
+    // Listen for storage changes
+    window.addEventListener('storage', handleStorageChange);
+
+    // Cleanup listeners
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+      window.removeEventListener('setSearchTerm', handleSetSearchTerm);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
+  // Effect to filter orders when searchTerm changes
+  useEffect(() => {
+    if (searchTerm.trim() === '') {
+      setFilteredOrders(orders);
+    } else {
+      const filtered = orders.filter(order => 
+        order.id.toString().includes(searchTerm.trim())
+      );
+      setFilteredOrders(filtered);
+    }
+  }, [searchTerm, orders]);
+
+  // Effect to focus on search input when searchTerm is set
+  useEffect(() => {
+    if (searchTerm) {
+      // Scroll to the search box
+      const searchInput = document.querySelector('input[placeholder="Tìm kiếm theo mã đơn hàng..."]');
+      if (searchInput) {
+        searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        searchInput.focus();
+      }
+    }
+  }, [searchTerm]);
 
   // Function to fetch GHN order details
   const fetchGhnOrderDetails = async (orderCode, orderId) => {
@@ -312,6 +388,21 @@ export default function HistoryOrders() {
           <p className="text-gray-500 text-lg max-w-2xl mx-auto mb-6">
             Theo dõi và quản lý tất cả đơn hàng detox của bạn một cách dễ dàng
           </p>
+          
+          {/* Search Box */}
+          <div className="max-w-2xl mx-auto mb-6">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Tìm kiếm theo mã đơn hàng..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-6 py-4 rounded-2xl border-2 border-gray-300 focus:border-green-400 focus:outline-none text-lg shadow-sm transition-all"
+              />
+              <FaSearch className="absolute right-6 top-1/2 transform -translate-y-1/2 text-gray-400 w-6 h-6" />
+            </div>
+          </div>
+          
           <div className="mt-6 p-5 bg-gray-50 rounded-2xl max-w-3xl mx-auto border border-gray-200">
             <div className="flex items-start gap-3">
               <FaTruck className="w-5 h-5 text-green-400 mt-1 flex-shrink-0" />
@@ -330,10 +421,10 @@ export default function HistoryOrders() {
               <p className="mt-4 text-gray-500">Đang tải đơn hàng...</p>
             </div>
           </div>
-        ) : orders?.length > 0 ? (
+        ) : filteredOrders?.length > 0 ? (
           <>
             <div className="grid grid-cols-1 gap-6 mb-8">
-              {orders.map((order) => (
+              {filteredOrders.map((order) => (
                 <div
                   key={order.id}
                   className={`bg-white border-2 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden ${
@@ -415,7 +506,7 @@ export default function HistoryOrders() {
                       <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
                         <p className="text-xs text-gray-500 mb-1">Mã vận đơn</p>
                         <p className="text-lg font-bold text-black">
-                          {order.orderCode ? `#${order.orderCode}` : 'Chưa có'}
+                          {order.orderCode ? `#{order.orderCode}` : 'Chưa có'}
                         </p>
                       </div>
                     </div>
@@ -589,35 +680,37 @@ export default function HistoryOrders() {
             </div>
 
             {/* Pagination */}
-            <div className="flex items-center justify-between p-6 bg-gray-50 rounded-2xl border border-gray-200">
-              <div className="text-gray-600 font-semibold">
-                Trang <span className="text-black">{currentPage}</span> / <span className="text-black">{totalPages}</span>
+            {searchTerm.trim() === '' && (
+              <div className="flex items-center justify-between p-6 bg-gray-50 rounded-2xl border border-gray-200">
+                <div className="text-gray-600 font-semibold">
+                  Trang <span className="text-black">{currentPage}</span> / <span className="text-black">{totalPages}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handlePreviousPage}
+                    disabled={currentPage === 1}
+                    className={`px-6 py-3 rounded-xl flex items-center gap-2 font-semibold transition-all ${
+                      currentPage === 1
+                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        : 'bg-black text-white hover:bg-gray-800'
+                    }`}
+                  >
+                    <FaArrowLeft className="w-4 h-4" /> Trước
+                  </button>
+                  <button
+                    onClick={handleNextPage}
+                    disabled={currentPage === totalPages}
+                    className={`px-6 py-3 rounded-xl flex items-center gap-2 font-semibold transition-all ${
+                      currentPage === totalPages
+                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        : 'bg-green-400 text-white hover:bg-green-500'
+                    }`}
+                  >
+                    Tiếp <FaArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handlePreviousPage}
-                  disabled={currentPage === 1}
-                  className={`px-6 py-3 rounded-xl flex items-center gap-2 font-semibold transition-all ${
-                    currentPage === 1
-                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                      : 'bg-black text-white hover:bg-gray-800'
-                  }`}
-                >
-                  <FaArrowLeft className="w-4 h-4" /> Trước
-                </button>
-                <button
-                  onClick={handleNextPage}
-                  disabled={currentPage === totalPages}
-                  className={`px-6 py-3 rounded-xl flex items-center gap-2 font-semibold transition-all ${
-                    currentPage === totalPages
-                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                      : 'bg-green-400 text-white hover:bg-green-500'
-                  }`}
-                >
-                  Tiếp <FaArrowRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
+            )}
           </>
         ) : (
           <div className="text-center py-20">
