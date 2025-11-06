@@ -469,12 +469,6 @@ export default function Cart() {
   useEffect(() => {
     const calculateShippingFee = async () => {
       if (cartId && shippingInfo.fullName && shippingInfo.address && shippingInfo.phoneNumber) {
-        // Check if address contains "Thành phố Quy Nhơn" and display fixed fee of 10,000₫
-        if (shippingInfo.address.includes("Thành phố Quy Nhơn")) {
-          setShippingFee(10000);
-          return;
-        }
-        
         try {
           const fullAddress = `${shippingInfo.address}, ${shippingInfo.fullName}, ${shippingInfo.phoneNumber}`;
           const response = await cartApi.calculateGhnFee(fullAddress, cartId);
