@@ -419,14 +419,13 @@ export default function Navbar() {
                         e.stopPropagation();
                         setIsUserMenuOpen(!isUserMenuOpen);
                       }}
-                      className="flex items-center gap-3 p-1.5 pr-4 rounded-xl hover:bg-gray-50 transition-colors duration-200 border border-gray-200"
+                      className="flex items-center p-1 rounded-full hover:bg-gray-50 transition-colors duration-200 border border-gray-200 relative -top-1"
                     >
                       <img
                         src={userAvatar}
                         alt="avatar"
-                        className="w-8 h-8 rounded-lg object-cover"
+                        className="w-9 h-9 rounded-full object-cover"
                       />
-                      <span className="font-medium text-gray-900 text-sm">{truncatedUsername}</span>
                     </button>
 
                     <div
@@ -441,7 +440,7 @@ export default function Navbar() {
                           <img
                             src={userAvatar}
                             alt="avatar"
-                            className="w-12 h-12 rounded-xl object-cover border-2 border-gray-100"
+                            className="w-12 h-12 rounded-full object-cover border-2 border-gray-100"
                           />
                           <div>
                             <p className="font-semibold text-gray-900">{truncatedUsername}</p>

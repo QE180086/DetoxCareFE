@@ -7,51 +7,51 @@ export default function Testimonials() {
   const testimonials = [
     {
       id: 1,
-      name: "Nguyễn Văn A",
+      name: "Minh Tuấn",
       role: "Khách hàng thường xuyên",
       content: "Sản phẩm chất lượng tuyệt vời, giao hàng nhanh chóng. Tôi rất hài lòng với dịch vụ của cửa hàng!",
       rating: 5,
-      avatar: "https://ui-avatars.com/api/?name=Nguyen+Van+A&background=22c55e&color=fff"
+      avatar: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&h=200&q=80"
     },
     {
       id: 2,
-      name: "Trần Thị B",
+      name: "Thu Hà",
       role: "Khách hàng mới",
       content: "Giá cả hợp lý, nhiều combo ưu đãi. Chắc chắn sẽ quay lại mua hàng lần nữa.",
       rating: 5,
-      avatar: "https://ui-avatars.com/api/?name=Tran+Thi+B&background=22c55e&color=fff"
+      avatar: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&h=200&q=80"
     },
     {
       id: 3,
-      name: "Lê Minh C",
+      name: "Đức Anh",
       role: "Khách hàng VIP",
       content: "Đội ngũ tư vấn nhiệt tình, sản phẩm đa dạng. Đây là nơi mua sắm tin cậy của tôi!",
       rating: 5,
-      avatar: "https://ui-avatars.com/api/?name=Le+Minh+C&background=22c55e&color=fff"
+      avatar: "https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&h=200&q=80"
     },
     {
       id: 4,
-      name: "Phạm Thị D",
+      name: "Ngọc Linh",
       role: "Khách hàng thân thiết",
       content: "Chất lượng sản phẩm luôn đảm bảo, đóng gói cẩn thận. Rất đáng tin cậy!",
       rating: 5,
-      avatar: "https://ui-avatars.com/api/?name=Pham+Thi+D&background=22c55e&color=fff"
+      avatar: "https://images.unsplash.com/photo-1476820865390-c52aeebb9891?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&h=200&q=80"
     },
     {
       id: 5,
-      name: "Hoàng Văn E",
+      name: "Hữu Phước",
       role: "Khách hàng mới",
       content: "Dịch vụ chăm sóc khách hàng tận tâm, giao hàng đúng hẹn. Sẽ giới thiệu cho bạn bè!",
       rating: 5,
-      avatar: "https://ui-avatars.com/api/?name=Hoang+Van+E&background=22c55e&color=fff"
+      avatar: "https://images.unsplash.com/photo-1470240731273-7821a6eeb6bd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&h=200&q=80"
     },
     {
       id: 6,
-      name: "Võ Thị F",
+      name: "Thanh Ngân",
       role: "Khách hàng VIP",
       content: "Sản phẩm phong phú, giá cả cạnh tranh. Tôi rất hài lòng và sẽ ủng hộ lâu dài!",
       rating: 5,
-      avatar: "https://ui-avatars.com/api/?name=Vo+Thi+F&background=22c55e&color=fff"
+      avatar: "https://images.unsplash.com/photo-1475924156734-496f6cac6ec1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&h=200&q=80"
     }
   ];
 
@@ -106,7 +106,7 @@ export default function Testimonials() {
               {allTestimonials.map((testimonial, index) => (
                 <div
                   key={`${testimonial.id}-${index}`}
-                  className="flex-shrink-0 w-[350px] bg-white rounded-lg p-6 shadow-md hover:shadow-xl transition-shadow duration-300 border border-gray-200"
+                  className="flex-shrink-0 w-[350px] bg-white rounded-lg p-6 shadow-md hover:shadow-xl transition-shadow duration-300 border border-gray-200 flex flex-col"
                 >
                   {/* Rating Stars */}
                   <div className="flex gap-1 mb-4">
@@ -119,12 +119,12 @@ export default function Testimonials() {
                   </div>
 
                   {/* Content */}
-                  <p className="text-gray-700 mb-6 leading-relaxed">
+                  <p className="text-gray-700 mb-6 leading-relaxed flex-grow">
                     "{testimonial.content}"
                   </p>
 
                   {/* Author Info */}
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-4 mt-auto">
                     <img
                       src={testimonial.avatar}
                       alt={testimonial.name}

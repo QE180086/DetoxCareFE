@@ -16,6 +16,20 @@ import { useDispatch, useSelector } from 'react-redux';
 // import { getBlogById } from "../../data/blogs";
 import { blogApi } from "../../utils/api/blog.api";
 import Notification from '../common/Nontification';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
+
+// Add this helper function to safely render HTML content
+const renderHTMLContent = (content) => {
+  if (!content) return null;
+  
+  return (
+    <div 
+      className="text-lg leading-8"
+      dangerouslySetInnerHTML={{ __html: content }}
+    />
+  );
+};
 
 // Format date function
 const formatDate = (dateString) => {
@@ -73,13 +87,13 @@ export default function BlogDetail() {
       try {
         setLoading(true);
         setError("");
-        // Try to get blog by ID first, then by slug if needed
+        // Try to get blog by slug name first, then by ID if needed
         let res;
         try {
-          res = await blogApi.getById(blogId);
-        } catch (idError) {
-          // If getById fails, try getBySlugName
           res = await blogApi.getBySlugName(blogId);
+        } catch (slugError) {
+          // If getBySlugName fails, try getById
+          res = await blogApi.getById(blogId);
         }
 
         const data = res?.data || res;
@@ -194,18 +208,16 @@ export default function BlogDetail() {
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     
-    if (!comment.trim()) {
-      setShowNotification(true);
-      setNotificationType('error');
-      setNotificationMessage('Vui lòng nhập bình luận!');
+    // Check if comment has content (not just whitespace or empty HTML tags)
+    const strippedContent = comment.replace(/<[^>]*>/g, '').trim();
+    if (!strippedContent) {
+      alert('Vui lòng nhập bình luận!');
       return;
     }
 
     // Check if user is logged in
     if (!accessToken) {
-      setShowNotification(true);
-      setNotificationType('error');
-      setNotificationMessage('Vui lòng đăng nhập để bình luận!');
+      alert('Vui lòng đăng nhập để bình luận!');
       return;
     }
 
@@ -227,9 +239,6 @@ export default function BlogDetail() {
       
       // Refresh comments
       setCurrentPage(1); // Go back to first page to see the new comment
-      setShowNotification(true);
-      setNotificationType('success');
-      setNotificationMessage('Đã gửi bình luận thành công!');
       
       // Re-fetch comments to show the new one
       const response = await blogApi.getComments(
@@ -245,8 +254,11 @@ export default function BlogDetail() {
         const processedComments = processComments(response.data.content);
         setComments(processedComments);
       }
+      
+      // Remove success alert - no alert on success
     } catch (error) {
       console.error("Failed to submit comment:", error);
+      // Show error modal only when there's an actual error
       setShowNotification(true);
       setNotificationType('error');
       setNotificationMessage('Không thể gửi bình luận. Vui lòng thử lại sau!');
@@ -284,18 +296,16 @@ export default function BlogDetail() {
   const handleReplySubmit = async (e) => {
     e.preventDefault();
     
-    if (!replyComment.trim()) {
-      setShowNotification(true);
-      setNotificationType('error');
-      setNotificationMessage('Vui lòng nhập phản hồi!');
+    // Check if reply has content (not just whitespace or empty HTML tags)
+    const strippedContent = replyComment.replace(/<[^>]*>/g, '').trim();
+    if (!strippedContent) {
+      alert('Vui lòng nhập phản hồi!');
       return;
     }
 
     // Check if user is logged in
     if (!accessToken) {
-      setShowNotification(true);
-      setNotificationType('error');
-      setNotificationMessage('Vui lòng đăng nhập để phản hồi!');
+      alert('Vui lòng đăng nhập để phản hồi!');
       return;
     }
 
@@ -332,11 +342,10 @@ export default function BlogDetail() {
         setComments(processedComments);
       }
       
-      setShowNotification(true);
-      setNotificationType('success');
-      setNotificationMessage('Đã gửi phản hồi thành công!');
+      // Remove success alert - no alert on success
     } catch (error) {
       console.error("Failed to submit reply:", error);
+      // Show error modal only when there's an actual error
       setShowNotification(true);
       setNotificationType('error');
       setNotificationMessage('Không thể gửi phản hồi. Vui lòng thử lại sau!');
@@ -345,10 +354,10 @@ export default function BlogDetail() {
 
   // Function to save edited comment
   const saveEditedComment = async () => {
-    if (!editingCommentText.trim()) {
-      setShowNotification(true);
-      setNotificationType('error');
-      setNotificationMessage('Bình luận không được để trống!');
+    // Check if comment has content (not just whitespace or empty HTML tags)
+    const strippedContent = editingCommentText.replace(/<[^>]*>/g, '').trim();
+    if (!strippedContent) {
+      alert('Bình luận không được để trống!');
       return;
     }
 
@@ -380,11 +389,10 @@ export default function BlogDetail() {
       setEditingCommentId(null);
       setEditingCommentText('');
       
-      setShowNotification(true);
-      setNotificationType('success');
-      setNotificationMessage('Đã cập nhật bình luận thành công!');
+      // Remove success alert - no alert on success
     } catch (error) {
       console.error("Failed to update comment:", error);
+      // Show error modal only when there's an actual error
       setShowNotification(true);
       setNotificationType('error');
       setNotificationMessage('Không thể cập nhật bình luận. Vui lòng thử lại sau!');
@@ -448,11 +456,25 @@ export default function BlogDetail() {
               {/* Comment content - Editable */}
               {editingCommentId === c.id ? (
                 <div className="mt-3">
-                  <textarea
-                    rows={3}
-                    className="shadow-sm focus:ring-2 focus:ring-green-400 focus:border-green-400 block w-full text-sm border border-gray-300 rounded-xl p-3 bg-gray-50"
+                  <ReactQuill
                     value={editingCommentText}
-                    onChange={(e) => setEditingCommentText(e.target.value)}
+                    onChange={setEditingCommentText}
+                    modules={{
+                      toolbar: [
+                        [{ 'header': [2, 3, false] }],
+                        ['bold', 'italic', 'underline'],
+                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                        ['link'],
+                        ['clean']
+                      ]
+                    }}
+                    formats={[
+                      'header',
+                      'bold', 'italic', 'underline',
+                      'list', 'bullet',
+                      'link'
+                    ]}
+                    className="bg-white text-black"
                   />
                   <div className="flex justify-end gap-3 mt-3">
                     <button
@@ -471,9 +493,9 @@ export default function BlogDetail() {
                 </div>
               ) : (
                 <div>
-                  <p className={`text-gray-800 leading-relaxed ${level > 0 ? 'text-sm' : 'text-base'}`}>
-                    {c.content}
-                  </p>
+                  <div className={`text-gray-800 leading-relaxed ${level > 0 ? 'text-sm' : 'text-base'}`}>
+                    {renderHTMLContent(c.content)}
+                  </div>
                   {/* Reply button for level 1 comments only (not for level 2 replies) */}
                   {accessToken && level < 1 && (
                     <div className="mt-3">
@@ -492,14 +514,27 @@ export default function BlogDetail() {
                     <div className={`mt-4 bg-gray-100 rounded-xl p-4 ${level > 0 ? 'ml-2' : ''}`}>
                       <form onSubmit={handleReplySubmit} className="space-y-3">
                         <div>
-                          <textarea
+                          <ReactQuill
                             value={replyComment}
-                            onChange={(e) => setReplyComment(e.target.value)}
-                            rows="2"
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-green-400 focus:ring-2 focus:ring-green-400/20 transition-colors resize-none bg-white"
+                            onChange={setReplyComment}
+                            modules={{
+                              toolbar: [
+                                [{ 'header': [2, 3, false] }],
+                                ['bold', 'italic', 'underline'],
+                                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                ['link'],
+                                ['clean']
+                              ]
+                            }}
+                            formats={[
+                              'header',
+                              'bold', 'italic', 'underline',
+                              'list', 'bullet',
+                              'link'
+                            ]}
+                            className="bg-white text-black"
                             placeholder="Viết phản hồi của bạn..."
-                            required
-                          ></textarea>
+                          />
                         </div>
                         <div className="flex justify-end gap-2">
                           <button
@@ -620,11 +655,25 @@ export default function BlogDetail() {
                   {/* Comment content - Editable */}
                   {editingCommentId === reply.id ? (
                     <div className="mt-2">
-                      <textarea
-                        rows={3}
-                        className="shadow-sm focus:ring-2 focus:ring-green-400 focus:border-green-400 block w-full text-sm border border-gray-300 rounded-xl p-3 bg-gray-50"
+                      <ReactQuill
                         value={editingCommentText}
-                        onChange={(e) => setEditingCommentText(e.target.value)}
+                        onChange={setEditingCommentText}
+                        modules={{
+                          toolbar: [
+                            [{ 'header': [3, false] }],
+                            ['bold', 'italic', 'underline'],
+                            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                            ['link'],
+                            ['clean']
+                          ]
+                        }}
+                        formats={[
+                          'header',
+                          'bold', 'italic', 'underline',
+                          'list', 'bullet',
+                          'link'
+                        ]}
+                        className="bg-white text-black"
                       />
                       <div className="flex justify-end gap-3 mt-3">
                         <button
@@ -642,9 +691,9 @@ export default function BlogDetail() {
                       </div>
                     </div>
                   ) : (
-                    <p className="text-gray-800 leading-relaxed text-sm">
-                      {reply.content}
-                    </p>
+                    <div className="text-gray-800 leading-relaxed text-sm">
+                      {renderHTMLContent(reply.content)}
+                    </div>
                   )}
                 </div>
               </div>
@@ -721,8 +770,8 @@ export default function BlogDetail() {
                 ) : error ? (
                   <div className="text-red-600">{error}</div>
                 ) : (
-                  <div className="text-lg leading-8 whitespace-pre-wrap">
-                    {blog.content}
+                  <div className="text-lg leading-8">
+                    {renderHTMLContent(blog.content)}
                   </div>
                 )}
               </div>
@@ -800,15 +849,27 @@ export default function BlogDetail() {
                     >
                       Bình luận *
                     </label>
-                    <textarea
-                      id="comment"
+                    <ReactQuill
                       value={comment}
-                      onChange={(e) => setComment(e.target.value)}
-                      rows="5"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-green-400 focus:ring-2 focus:ring-green-400/20 transition-colors resize-none bg-white text-black"
+                      onChange={setComment}
+                      modules={{
+                        toolbar: [
+                          [{ 'header': [1, 2, 3, false] }],
+                          ['bold', 'italic', 'underline', 'strike'],
+                          [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                          ['link'],
+                          ['clean']
+                        ]
+                      }}
+                      formats={[
+                        'header',
+                        'bold', 'italic', 'underline', 'strike',
+                        'list', 'bullet',
+                        'link'
+                      ]}
+                      className="bg-white text-black"
                       placeholder="Chia sẻ ý kiến của bạn về bài viết này..."
-                      required
-                    ></textarea>
+                    />
                   </div>
                   <button
                     type="submit"

@@ -41,7 +41,7 @@ const ComboOffers = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
-          {/* Offer 1 */}
+          {/* Offer 1 - White */}
           <div className="bg-white border border-gray-200 rounded-2xl p-7 shadow-sm hover:shadow-md transition-shadow duration-300">
             <h3 className="text-xl font-bold text-gray-900 mb-2">GÓI THANH LỌC 3 NGÀY - RA MẮT</h3>
             <p className="text-gray-600 mb-5">Tiết kiệm 30% – Chỉ còn <span className="font-semibold text-green-600">250.000₫</span></p>
@@ -53,15 +53,39 @@ const ComboOffers = () => {
             </Link>
           </div>
 
-          {/* Offer 2 */}
-          <div className="bg-white border border-gray-200 rounded-2xl p-7 shadow-sm hover:shadow-md transition-shadow duration-300">
+          {/* Offer 2 - Green */}
+          <div className="bg-green-400 rounded-2xl p-7 shadow-sm hover:shadow-md transition-shadow duration-300">
             <h3 className="text-xl font-bold text-gray-900 mb-2">GIẢM 50% NƯỚC UỐNG DETOX</h3>
-            <p className="text-gray-600 mb-5">Dành riêng cho đơn hàng đầu tiên</p>
+            <p className="text-gray-900 mb-5">Dành riêng cho đơn hàng đầu tiên</p>
+            <Link
+              to="/search?query="
+              className="inline-flex items-center justify-center px-5 py-2.5 bg-white text-gray-900 font-semibold rounded-lg hover:bg-gray-100 transition-colors duration-200 shadow-sm hover:shadow"
+            >
+              Xem ưu đãi
+            </Link>
+          </div>
+          
+          {/* Offer 3 - Black */}
+          <div className="bg-gray-900 rounded-2xl p-7 shadow-sm hover:shadow-md transition-shadow duration-300">
+            <h3 className="text-xl font-bold text-white mb-2">MUA 2 TẶNG 1 SẢN PHẨM</h3>
+            <p className="text-gray-300 mb-5">Áp dụng cho tất cả các sản phẩm Detox</p>
             <Link
               to="/search?query="
               className="inline-flex items-center justify-center px-5 py-2.5 bg-green-400 text-gray-900 font-semibold rounded-lg hover:bg-green-300 transition-colors duration-200 shadow-sm hover:shadow"
             >
-              Xem ưu đãi
+              Khám phá ngay
+            </Link>
+          </div>
+
+          {/* Offer 4 - Gray */}
+          <div className="bg-gray-200 rounded-2xl p-7 shadow-sm hover:shadow-md transition-shadow duration-300">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">FREESHIP TOÀN QUỐC</h3>
+            <p className="text-gray-700 mb-5">Cho đơn hàng từ 500.000₫ trở lên</p>
+            <Link
+              to="/search?query="
+              className="inline-flex items-center justify-center px-5 py-2.5 bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors duration-200 shadow-sm hover:shadow"
+            >
+              Mua ngay
             </Link>
           </div>
         </div>

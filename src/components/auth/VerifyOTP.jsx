@@ -92,14 +92,13 @@ export default function VerifyOTP() {
       await dispatch(verifyOtp({
         email,
         otp: otpValue,
-        registerData: { role: 'USER' }, // Default role
+        registerData: { role: 'USER' },
         navigate
       }));
       
       setLoading(false);
       setSuccess('Xác thực thành công! Đang chuyển hướng...');
       
-      // Navigate after success
       setTimeout(() => {
         navigate('/login');
       }, 2000);
@@ -126,9 +125,7 @@ export default function VerifyOTP() {
         setResendMessage('Mã OTP mới đã được gửi!');
         setCountdown(60);
         setCanResend(false);
-        // Clear previous OTP
         setOtp(['', '', '', '', '', '']);
-        // Focus first input
         const firstInput = document.getElementById('otp-0');
         if (firstInput) firstInput.focus();
       }
@@ -141,50 +138,52 @@ export default function VerifyOTP() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-white to-emerald-50">
-      <div className="flex w-[500px] rounded-2xl overflow-hidden shadow-2xl bg-white">
-        {/* Verify OTP form */}
-        <div className="w-full p-10">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="mx-auto w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mb-4">
-              <AiOutlineLock className="w-8 h-8 text-white" />
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
+      <div className="w-full max-w-xl">
+        {/* Main Card */}
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+          {/* Logo/Brand Section */}
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-black rounded-xl mb-4 shadow-lg">
+              <div className="w-10 h-10 bg-green-400 rounded-lg flex items-center justify-center">
+                <AiOutlineLock className="w-6 h-6 text-black" />
+              </div>
             </div>
-            <h2 className="text-3xl font-bold text-gray-800 mb-2">Xác thực OTP</h2>
-            <p className="text-gray-600">
-              Mã xác thực đã được gửi đến<br />
-              <span className="font-semibold text-green-600">{email}</span>
+            <h1 className="text-3xl font-bold text-black mb-1">Xác Thực OTP</h1>
+            <p className="text-gray-500">
+              Mã xác thực đã được gửi đến
             </p>
+            <p className="text-green-400 font-semibold mt-1">{email}</p>
           </div>
 
           {/* Error message */}
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-              <p className="text-sm text-red-700 text-center">{error}</p>
+            <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-500 rounded-lg">
+              <p className="text-sm text-red-700">{error}</p>
             </div>
           )}
 
           {/* Success message */}
           {success && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
-              <p className="text-sm text-green-700 text-center">{success}</p>
+            <div className="mb-4 p-3 bg-green-50 border-l-4 border-green-500 rounded-lg">
+              <p className="text-sm text-green-700">{success}</p>
             </div>
           )}
 
           {/* Resend message */}
           {resendMessage && (
-            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-              <p className="text-sm text-blue-700 text-center">{resendMessage}</p>
+            <div className="mb-4 p-3 bg-blue-50 border-l-4 border-blue-500 rounded-lg">
+              <p className="text-sm text-blue-700">{resendMessage}</p>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* OTP Input */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-4 text-center">
+              <label className="block text-sm font-semibold text-black mb-4 text-center">
                 Nhập mã OTP (6 số)
               </label>
-              <div className="flex justify-center space-x-3">
+              <div className="flex justify-center gap-3">
                 {otp.map((digit, index) => (
                   <input
                     key={index}
@@ -194,33 +193,33 @@ export default function VerifyOTP() {
                     onChange={(e) => handleOtpChange(index, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(index, e)}
                     onPaste={index === 0 ? handlePaste : undefined}
-                    className="w-12 h-12 text-center text-lg font-bold border border-gray-300 
-                             rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 
-                             transition-all duration-200 bg-gray-50 hover:bg-white focus:bg-white"
+                    className="w-12 h-14 text-center text-xl font-bold border-2 border-gray-200 
+                             rounded-xl focus:border-green-400 focus:ring-0 outline-none
+                             transition-all duration-200 text-black hover:border-gray-300"
                     maxLength="1"
                   />
                 ))}
               </div>
             </div>
 
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-3 rounded-xl font-semibold text-white 
-                        transition-all duration-300 transform hover:scale-105 
-                        shadow-lg hover:shadow-xl ${
-                loading 
-                  ? 'bg-gray-400 cursor-not-allowed scale-100' 
-                  : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700'
+              className={`w-full py-4 rounded-xl font-bold text-lg
+                        transition-all duration-200 shadow-lg
+                        ${loading
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-green-400 text-black hover:bg-green-500 hover:shadow-xl active:scale-95'
               }`}
             >
               {loading ? (
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Đang xác thực...
+                <div className="flex items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-500 border-t-transparent"></div>
+                  <span>Đang xác thực...</span>
                 </div>
               ) : (
-                'Xác thực OTP'
+                'Xác Thực OTP'
               )}
             </button>
           </form>
@@ -231,11 +230,11 @@ export default function VerifyOTP() {
               <button
                 onClick={handleResendOtp}
                 disabled={resendLoading}
-                className={`flex items-center justify-center space-x-2 mx-auto px-4 py-2 
-                          rounded-lg font-medium transition-all duration-200 ${
+                className={`inline-flex items-center gap-2 px-5 py-2.5 
+                          rounded-xl font-medium transition-all duration-200 ${
                   resendLoading
-                    ? 'text-gray-400 cursor-not-allowed'
-                    : 'text-green-600 hover:text-green-700 hover:bg-green-50'
+                    ? 'text-gray-400 cursor-not-allowed bg-gray-50'
+                    : 'text-green-400 hover:text-green-500 hover:bg-green-50'
                 }`}
               >
                 <AiOutlineReload className={`w-4 h-4 ${resendLoading ? 'animate-spin' : ''}`} />
@@ -243,28 +242,30 @@ export default function VerifyOTP() {
               </button>
             ) : (
               <p className="text-gray-500 text-sm">
-                Gửi lại mã sau: <span className="font-semibold text-green-600">{countdown}s</span>
+                Gửi lại mã sau: <span className="font-semibold text-green-400">{countdown}s</span>
               </p>
             )}
           </div>
 
           {/* Navigation links */}
-          <div className="mt-8 space-y-4">
+          <div className="mt-8 space-y-3">
             <Link
-              to={`/register`}
-              className="flex items-center justify-center space-x-2 text-gray-600 
-                       hover:text-green-600 transition-colors duration-200 font-medium"
+              to="/register"
+              className="flex items-center justify-center gap-2 text-gray-500 
+                       hover:text-black transition-colors duration-200 font-medium"
             >
               <AiOutlineArrowLeft className="w-4 h-4" />
               <span>Quay lại đăng ký</span>
             </Link>
             
-            <p className="text-center text-sm text-gray-600">
-              Chưa có tài khoản?{' '}
-              <Link to="/register" className="text-green-600 hover:text-green-700 font-semibold hover:underline">
-                Đăng ký ngay
-              </Link>
-            </p>
+            <div className="text-center pt-2 border-t border-gray-100">
+              <p className="text-gray-500 text-sm">
+                Chưa có tài khoản?{' '}
+                <Link to="/register" className="text-green-400 hover:text-green-500 font-semibold transition-colors">
+                  Đăng ký ngay
+                </Link>
+              </p>
+            </div>
           </div>
         </div>
       </div>

@@ -27,4 +27,15 @@ export const ordersApi = {
     });
     return response.data;
   },
+
+  getGhnOrderDetail: async (orderCode) => {
+    const accessToken = sessionStorage.getItem("accessToken");
+    const response = await api.post("/api/ghn/order-detail", {}, {
+      params: { order_code: orderCode },
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    return response.data;
+  },
 };

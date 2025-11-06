@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { FaExchangeAlt, FaLeaf, FaGift, FaCheck } from "react-icons/fa";
+import { FaExchangeAlt, FaLeaf, FaGift, FaCheck, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import Notification from "../common/Nontification";
 import { productApi } from "../../utils/api/product.api";
 import { profileApi } from "../../utils/api/profile.api";
@@ -60,6 +60,117 @@ const voucherData = [
     name: "Giảm 50.000đ",
     description: "Cho đơn hàng từ 300.000đ",
     code: "VOUCHER50K"
+  },
+  // Adding 10 more vouchers
+  {
+    id: 6,
+    discountValue: 30000,
+    minOrderValue: 150000,
+    exchangePoint: 600,
+    active: true,
+    percentage: false,
+    name: "Giảm 30.000đ",
+    description: "Cho đơn hàng từ 150.000đ",
+    code: "VOUCHER30K"
+  },
+  {
+    id: 7,
+    discountValue: 20,
+    minOrderValue: 200000,
+    exchangePoint: 800,
+    active: true,
+    percentage: true,
+    name: "Giảm 20%",
+    description: "Cho đơn hàng từ 200.000đ",
+    code: "VOUCHER20P"
+  },
+  {
+    id: 8,
+    discountValue: 100000,
+    minOrderValue: 500000,
+    exchangePoint: 1500,
+    active: true,
+    percentage: false,
+    name: "Giảm 100.000đ",
+    description: "Cho đơn hàng từ 500.000đ",
+    code: "VOUCHER100K"
+  },
+  {
+    id: 9,
+    discountValue: 5,
+    minOrderValue: 30000,
+    exchangePoint: 150,
+    active: true,
+    percentage: true,
+    name: "Giảm 5%",
+    description: "Cho đơn hàng từ 30.000đ",
+    code: "VOUCHER5P"
+  },
+  {
+    id: 10,
+    discountValue: 15000,
+    minOrderValue: 70000,
+    exchangePoint: 250,
+    active: true,
+    percentage: false,
+    name: "Giảm 15.000đ",
+    description: "Cho đơn hàng từ 70.000đ",
+    code: "VOUCHER15K"
+  },
+  {
+    id: 11,
+    discountValue: 25,
+    minOrderValue: 250000,
+    exchangePoint: 900,
+    active: true,
+    percentage: true,
+    name: "Giảm 25%",
+    description: "Cho đơn hàng từ 250.000đ",
+    code: "VOUCHER25P"
+  },
+  {
+    id: 12,
+    discountValue: 70000,
+    minOrderValue: 350000,
+    exchangePoint: 1300,
+    active: true,
+    percentage: false,
+    name: "Giảm 70.000đ",
+    description: "Cho đơn hàng từ 350.000đ",
+    code: "VOUCHER70K"
+  },
+  {
+    id: 13,
+    discountValue: 10000,
+    minOrderValue: 50000,
+    exchangePoint: 200,
+    active: true,
+    percentage: false,
+    name: "Giảm 10.000đ",
+    description: "Cho đơn hàng từ 50.000đ",
+    code: "VOUCHER10K"
+  },
+  {
+    id: 14,
+    discountValue: 30,
+    minOrderValue: 300000,
+    exchangePoint: 1000,
+    active: true,
+    percentage: true,
+    name: "Giảm 30%",
+    description: "Cho đơn hàng từ 300.000đ",
+    code: "VOUCHER30P"
+  },
+  {
+    id: 15,
+    discountValue: 5000,
+    minOrderValue: 25000,
+    exchangePoint: 120,
+    active: true,
+    percentage: false,
+    name: "Giảm 5.000đ",
+    description: "Cho đơn hàng từ 25.000đ",
+    code: "VOUCHER5KA"
   }
 ];
 
@@ -70,10 +181,25 @@ export default function VoucherExchange() {
   const [notificationType, setNotificationType] = useState("info");
   const [notificationMessage, setNotificationMessage] = useState("");
   const [userPoints, setUserPoints] = useState(0);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [showNavButtons, setShowNavButtons] = useState(false);
 
   const dispatch = useDispatch();
   const auth = useSelector(state => state.auth);
   const profile = useSelector(state => state.profile);
+
+  // Calculate number of slides (5 vouchers per slide)
+  const vouchersPerSlide = 5;
+  const totalSlides = Math.ceil(voucherData.length / vouchersPerSlide);
+
+  // Auto slide effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % totalSlides);
+    }, 5000); // Change slide every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [totalSlides]);
 
   useEffect(() => {
     const fetchUserPoints = async () => {
@@ -102,23 +228,20 @@ export default function VoucherExchange() {
 
   const handleExchangeVoucher = async () => {
     if (!selectedVoucher) {
-      setNotificationType("error");
-      setNotificationMessage("Vui lòng chọn một voucher để đổi điểm!");
-      setShowNotification(true);
+      // Use alert instead of modal
+      alert("Vui lòng chọn một voucher để đổi điểm!");
       return;
     }
 
     if (userPoints < selectedVoucher.exchangePoint) {
-      setNotificationType("error");
-      setNotificationMessage(`Bạn cần ít nhất ${selectedVoucher.exchangePoint} điểm để đổi voucher này!`);
-      setShowNotification(true);
+      // Use alert instead of modal
+      alert(`Bạn cần ít nhất ${selectedVoucher.exchangePoint} điểm để đổi voucher này!`);
       return;
     }
 
     if (!auth?.accessToken) {
-      setNotificationType("error");
-      setNotificationMessage("Vui lòng đăng nhập để đổi voucher!");
-      setShowNotification(true);
+      // Use alert instead of modal
+      alert("Vui lòng đăng nhập để đổi voucher!");
       return;
     }
 
@@ -135,9 +258,8 @@ export default function VoucherExchange() {
       
       await productApi.exchangeVoucher(voucherPayload, auth.accessToken);
       
-      setNotificationType("success");
-      setNotificationMessage(`Đổi voucher "${selectedVoucher.name}" thành công!`);
-      setShowNotification(true);
+      // Use alert instead of modal for success
+      alert(`Đổi voucher "${selectedVoucher.name}" thành công!`);
       
       try {
         const response = await profileApi.getPointDetail(auth.accessToken);
@@ -151,9 +273,8 @@ export default function VoucherExchange() {
       setSelectedVoucher(null);
     } catch (error) {
       console.error("Failed to exchange voucher:", error);
-      setNotificationType("error");
-      setNotificationMessage("Không thể đổi voucher. Vui lòng thử lại sau!");
-      setShowNotification(true);
+      // Use alert instead of modal for error
+      alert("Không thể đổi voucher. Vui lòng thử lại sau!");
     } finally {
       setIsExchanging(false);
     }
@@ -171,8 +292,24 @@ export default function VoucherExchange() {
     setShowNotification(false);
   };
 
+  // Navigation functions
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % totalSlides);
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides);
+  };
+
+  // Get vouchers for current slide
+  const getCurrentVouchers = () => {
+    const startIndex = currentSlide * vouchersPerSlide;
+    const endIndex = startIndex + vouchersPerSlide;
+    return voucherData.slice(startIndex, endIndex);
+  };
+
   return (
-    <div className="max-w-6xl mx-auto bg-green-400 rounded-2xl shadow-lg p-6 md:p-8 mb-12">
+    <div className="w-full bg-white p-6 md:p-8 mb-12">
       <div className="text-center mb-10">
         <h2 className="text-2xl md:text-3xl font-bold text-black flex items-center justify-center gap-3">
           <FaGift className="text-black" />
@@ -188,43 +325,91 @@ export default function VoucherExchange() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
-        {voucherData.map((voucher) => (
-          <div
-            key={voucher.id}
-            onClick={() => handleVoucherSelect(voucher)}
-            className={`relative rounded-xl p-5 cursor-pointer transition-all duration-300 border-2 bg-black shadow-lg ${
-              selectedVoucher?.id === voucher.id
-                ? "border-green-400 shadow-md"
-                : "border-gray-700 hover:border-gray-600 hover:shadow-xl"
-            }`}
-          >
-            {selectedVoucher?.id === voucher.id && (
-              <div className="absolute -top-2 -right-2 bg-green-400 rounded-full p-1.5">
-                <FaCheck className="text-black text-xs font-bold" />
-              </div>
-            )}
-            <div className="text-center">
-              <div className="flex justify-center mb-3">
-                <div className="bg-green-400 rounded-full p-3 w-12 h-12 flex items-center justify-center">
-                  <FaLeaf className="text-black text-xl" />
+      {/* Voucher grid with carousel - buttons on sides */}
+      <div 
+        className="flex items-center justify-between gap-4"
+        onMouseEnter={() => setShowNavButtons(true)}
+        onMouseLeave={() => setShowNavButtons(false)}
+      >
+        {/* Previous button on the left */}
+        <button 
+          onClick={prevSlide}
+          className={`p-2 rounded-full bg-black text-green-400 hover:bg-gray-800 transition-all duration-300 ${
+            showNavButtons ? 'opacity-100 visible' : 'opacity-0 invisible'
+          } disabled:opacity-50 self-center`}
+          disabled={totalSlides <= 1}
+        >
+          <FaChevronLeft className="text-xl" />
+        </button>
+        
+        {/* Voucher grid in the center */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 flex-grow">
+          {getCurrentVouchers().map((voucher) => (
+            <div
+              key={voucher.id}
+              onClick={() => handleVoucherSelect(voucher)}
+              className={`relative rounded-xl p-5 cursor-pointer transition-all duration-300 border-2 bg-black shadow-lg ${
+                selectedVoucher?.id === voucher.id
+                  ? "border-green-400 shadow-md"
+                  : "border-gray-700 hover:border-gray-600 hover:shadow-xl"
+              }`}
+            >
+              {selectedVoucher?.id === voucher.id && (
+                <div className="absolute -top-2 -right-2 bg-green-400 rounded-full p-1.5 border-2 border-green-400">
+                  <FaCheck className="text-black text-xs font-bold" />
+                </div>
+              )}
+              <div className="text-center">
+                <div className="flex justify-center mb-3">
+                  <div className="bg-green-400 rounded-full p-3 w-12 h-12 flex items-center justify-center">
+                    <FaGift className="text-black text-xl" />
+                  </div>
+                </div>
+                <h3 className="font-bold text-white text-lg">
+                  {voucher.percentage 
+                    ? formatPercentage(voucher.discountValue) 
+                    : formatCurrency(voucher.discountValue)}
+                </h3>
+                <p className="text-xs text-gray-300 mt-1.5 font-medium">{voucher.description}</p>
+                <div className="mt-4 py-2 bg-gray-800 rounded-lg">
+                  <p className="font-semibold text-white text-sm">
+                    {voucher.exchangePoint.toLocaleString()} điểm
+                  </p>
                 </div>
               </div>
-              <h3 className="font-bold text-white text-lg">
-                {voucher.percentage 
-                  ? formatPercentage(voucher.discountValue) 
-                  : formatCurrency(voucher.discountValue)}
-              </h3>
-              <p className="text-xs text-gray-300 mt-1.5 font-medium">{voucher.description}</p>
-              <div className="mt-4 py-2 bg-gray-800 rounded-lg">
-                <p className="font-semibold text-white text-sm">
-                  {voucher.exchangePoint.toLocaleString()} điểm
-                </p>
-              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
+        
+        {/* Next button on the right */}
+        <button 
+          onClick={nextSlide}
+          className={`p-2 rounded-full bg-black text-green-400 hover:bg-gray-800 transition-all duration-300 ${
+            showNavButtons ? 'opacity-100 visible' : 'opacity-0 invisible'
+          } disabled:opacity-50 self-center`}
+          disabled={totalSlides <= 1}
+        >
+          <FaChevronRight className="text-xl" />
+        </button>
       </div>
+      
+      {/* Dot indicators below the vouchers */}
+      {totalSlides > 1 && (
+        <div className="flex justify-center mt-6 space-x-2">
+          {Array.from({ length: totalSlides }).map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentSlide(index)}
+              className={`w-3 h-3 rounded-full transition-colors ${
+                currentSlide === index 
+                  ? "bg-black" 
+                  : "bg-gray-400 hover:bg-gray-600"
+              }`}
+              aria-label={`Go to slide ${index + 1}`}
+            />
+          ))}
+        </div>
+      )}
 
       <div className="mt-10 text-center">
         <button
@@ -254,7 +439,7 @@ export default function VoucherExchange() {
         
         {selectedVoucher && (
           <div className="mt-4 text-black font-medium max-w-md mx-auto">
-            <p className="text-sm bg-white/80 backdrop-blur-sm rounded-lg p-3 shadow">
+            <p className="text-sm bg-gray-100 backdrop-blur-sm rounded-lg p-3 shadow border border-gray-300">
               Bạn sẽ đổi{" "}
               <span className="font-bold text-green-600">{selectedVoucher.exchangePoint.toLocaleString()} điểm</span>{" "}
               lấy voucher{" "}
