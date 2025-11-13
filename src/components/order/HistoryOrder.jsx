@@ -506,7 +506,7 @@ export default function HistoryOrders() {
                       <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
                         <p className="text-xs text-gray-500 mb-1">Mã vận đơn</p>
                         <p className="text-lg font-bold text-black">
-                          {order.orderCode ? `#{order.orderCode}` : 'Chưa có'}
+                          {order.orderCode ? `#${order.orderCode}` : 'Chưa có'}
                         </p>
                       </div>
                     </div>
