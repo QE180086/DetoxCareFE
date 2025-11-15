@@ -146,6 +146,11 @@ export default function HistoryOrders() {
   const toggleOrderDetails = async (orderId, orderCode) => {
     const isCurrentlyExpanded = expandedOrder === orderId;
     
+    // Set loading state when expanding
+    if (!isCurrentlyExpanded) {
+      setExpandedOrder('loading-' + orderId);
+    }
+    
     // If expanding and there's an order code, fetch GHN details
     if (!isCurrentlyExpanded && orderCode) {
       await fetchGhnOrderDetails(orderCode, orderId);
@@ -253,6 +258,33 @@ export default function HistoryOrders() {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  // Function to calculate voucher discount and display if applicable
+  const renderVoucherDiscount = (order) => {
+    // Calculate total product cost
+    const totalProductCost = order.orderItems?.reduce((sum, item) => {
+      const itemPrice = parseFloat(item.salePrice) > 0 ? parseFloat(item.salePrice) : parseFloat(item.priceProduct);
+      return sum + (itemPrice * item.quantity);
+    }, 0) || 0;
+
+    // Calculate discount amount
+    const discountAmount = totalProductCost - order.totalAmount;
+
+    // Only show voucher discount if there's a discount greater than 0
+    if (discountAmount > 0) {
+      return (
+        <div className="flex items-start gap-3 p-3 bg-green-50 rounded-xl border border-green-200">
+          <FaLeaf className="w-4 h-4 text-green-500 mt-1 flex-shrink-0" />
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-green-700 font-semibold">Mã giảm giá</p>
+            <p className="text-sm font-bold text-green-600">-{discountAmount.toLocaleString('vi-VN')}đ</p>
+          </div>
+        </div>
+      );
+    }
+    
+    return null;
   };
 
   // Function to render shipping timeline based on log data
@@ -516,7 +548,7 @@ export default function HistoryOrders() {
                       <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
                         <FaEnvelope className="w-4 h-4 text-green-400 mt-1 flex-shrink-0" />
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs text-gray-500">Email</p>
+                          <p className="text-xs text-gray-500 mb-1">Email</p>
                           <p className="text-sm font-semibold text-black truncate">{order.email}</p>
                         </div>
                       </div>
@@ -524,7 +556,7 @@ export default function HistoryOrders() {
                       <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
                         <FaPhone className="w-4 h-4 text-green-400 mt-1 flex-shrink-0" />
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs text-gray-500">Số điện thoại</p>
+                          <p className="text-xs text-gray-500 mb-1">Số điện thoại</p>
                           <p className="text-sm font-semibold text-black">{order.numberPhone}</p>
                         </div>
                       </div>
@@ -532,10 +564,15 @@ export default function HistoryOrders() {
                       <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
                         <FaMapMarkerAlt className="w-4 h-4 text-green-400 mt-1 flex-shrink-0" />
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs text-gray-500">Địa chỉ</p>
+                          <p className="text-xs text-gray-500 mb-1">Địa chỉ</p>
                           <p className="text-sm font-semibold text-black line-clamp-1">{order.address}</p>
                         </div>
                       </div>
+                    </div>
+
+                    {/* Voucher Discount Display - Moved above tracking notice */}
+                    <div className="mb-6">
+                      {renderVoucherDiscount(order)}
                     </div>
 
                     {/* Tracking Notice */}
@@ -556,9 +593,15 @@ export default function HistoryOrders() {
                     <div className="flex gap-3">
                       <button
                         onClick={() => toggleOrderDetails(order.id, order.orderCode)}
-                        className="flex-1 py-3 px-6 bg-black text-white rounded-xl hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 font-semibold"
+                        disabled={expandedOrder === 'loading-' + order.id}
+                        className="flex-1 py-3 px-6 bg-black text-white rounded-xl hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 font-semibold disabled:opacity-70"
                       >
-                        {expandedOrder === order.id ? (
+                        {expandedOrder === 'loading-' + order.id ? (
+                          <>
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            Đang tải...
+                          </>
+                        ) : expandedOrder === order.id ? (
                           <>
                             <FaChevronUp className="w-4 h-4" />
                             Ẩn chi tiết

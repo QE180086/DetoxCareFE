@@ -35,4 +35,11 @@ export const cartApi = {
     });
     return response.data;
   },
+
+  deleteOrder: async (orderid) => {
+    const response = await api.delete(`/api/orders/${orderid}/id`);
+    return response.data;
+  },
 };
+
+export default cartApi;

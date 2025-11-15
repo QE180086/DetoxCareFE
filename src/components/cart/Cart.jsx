@@ -193,7 +193,8 @@ export default function Cart() {
 
         const vouchers = contentArray
           .filter(item => {
-            return item && item.used === false;
+            // Only include vouchers that are not used and are active
+            return item && item.used === false && item.voucher?.active === true;
           })
           .map(item => {
             if (!item.voucher) {
@@ -453,6 +454,19 @@ export default function Cart() {
       // Show alert for errors
       alert("Có lỗi xảy ra trong quá trình thanh toán. Vui lòng thử lại.");
       setIsProcessingPayment(false);
+    }
+  };
+
+  // Function to cancel QR code payment and delete the order
+  const cancelQRPayment = async (orderId) => {
+    try {
+      // Call the deleteOrder API to cancel the order
+      await cartApi.deleteOrder(orderId);
+      console.log("Order deleted successfully");
+    } catch (error) {
+      console.error("Failed to delete order:", error);
+      // Show alert for errors
+      alert("Không thể hủy đơn hàng. Vui lòng thử lại sau.");
     }
   };
 
@@ -1336,7 +1350,12 @@ export default function Cart() {
                   Không
                 </button>
                 <button
-                  onClick={() => {
+                  onClick={async () => {
+                    // Call the cancelQRPayment function to delete the order
+                    if (paymentOrderId) {
+                      await cancelQRPayment(paymentOrderId);
+                    }
+                    
                     setShowQRCodeModal(false);
                     setShowCancelConfirm(false);
                     stopPolling();

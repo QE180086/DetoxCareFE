@@ -802,25 +802,7 @@ export default function BlogDetail() {
               </div>
 
               {/* Quick Stats */}
-              <div className="bg-gray-100 rounded-2xl p-6">
-                <h3 className="font-semibold text-black mb-4">Thống kê</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-700">Lượt xem</span>
-                    <span className="font-medium text-black">1,234</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-700">Chia sẻ</span>
-                    <span className="font-medium text-black">56</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-700">Bình luận</span>
-                    <span className="font-medium text-black">
-                      {comments.length}
-                    </span>
-                  </div>
-                </div>
-              </div>
+              
             </div>
           </div>
         </div>
