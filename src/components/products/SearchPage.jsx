@@ -107,6 +107,9 @@ export default function SearchPage() {
   useEffect(() => {
     let result = [...allProducts];
     
+    // Filter out inactive products
+    result = result.filter((p) => p.active === true);
+    
     // Apply category filter
     if (categoryFilter && categoryFilter !== "Tất cả") {
       result = result.filter((p) => p.typeProduct?.name === categoryFilter);
